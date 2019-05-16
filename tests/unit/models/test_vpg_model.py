@@ -15,6 +15,6 @@ def test_to_vnc_vpg():
 def test_from_vmware_vm(vmware_vm):
     vpg_models = models.VirtualPortGroupModel.from_vmware_vm(vmware_vm)
 
-    assert vpg_models[0].uuid == models.key_to_uuid("esxi-1_dvs-1")
+    assert vpg_models[0].uuid == models.generate_uuid("esxi-1_dvs-1")
     assert vpg_models[0].host_name == "esxi-1"
     assert vpg_models[0].dvs_name == "dvs-1"

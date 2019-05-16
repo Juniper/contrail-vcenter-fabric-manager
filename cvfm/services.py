@@ -47,11 +47,21 @@ class VirtualMachineInterfaceService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
-    def create_vmi_models_for_vm(self, vm_model):
-        logger.info(
-            "VirtualMachineInterfaceService.create_vmi_models_for_vm called"
-        )
-        return [object()]
+    def create_vmi_models_for_vm(self, vmware_vm):
+        return models.VirtualMachineInterfaceModel.from_vmware_vm(vmware_vm)
+
+    def create_vmi_in_vnc(self, vmi_model):
+        if self._vnc_api_client.read_vmi(vmi_model.uuid) is None:
+            project = self._vnc_api_client.get_project()
+            fabric_vn = self._vnc_api_client.read_vn(vmi_model.dpg_model.uuid)
+            vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
+            self._vnc_api_client.create_vmi(vnc_vmi)
+
+    def attach_vmi_to_vpg(self, vmi_model):
+        vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)
+        vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
+        vnc_vpg.add_virtual_machine_interface(vnc_vmi)
+        self._vnc_api_client.update_vpg(vnc_vpg)
 
     def delete_vmi(self, vm_uuid, vmware_vmi=None, vmi_model=None):
         logger.info("VirtualMachineInterfaceService.delete_vmi called")

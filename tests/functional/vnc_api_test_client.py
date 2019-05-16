@@ -21,9 +21,9 @@ class VNCAPITestClient(object):
             pass
 
     def tear_down(self):
+        self._delete_vpgs()
         self._delete_vmis()
         self._delete_vns()
-        self._delete_vpgs()
         self._delete_physical_interfaces()
         self._delete_ports()
         self._delete_physical_routers()
@@ -72,7 +72,30 @@ class VNCAPITestClient(object):
             )
         ]
         for vpg_uuid in vpg_uuids:
+            vpg = self.vnc_lib.virtual_port_group_read(id=vpg_uuid)
+            self._detach_vmis_from(vpg)
+            self._detach_pis_from(vpg)
             self.vnc_lib.virtual_port_group_delete(id=vpg_uuid)
+
+    def _detach_vmis_from(self, vpg):
+        vmi_uuids = [ref["uuid"] for ref in
+                     vpg.get_virtual_machine_interface_refs()]
+        vmis = [
+            self.vnc_lib.virtual_machine_interface_read(id=uuid)
+            for uuid in vmi_uuids
+        ]
+        for vmi in vmis:
+            vpg.del_virtual_machine_interface(vmi)
+        self.vnc_lib.virtual_port_group_update(vpg)
+
+    def _detach_pis_from(self, vpg):
+        pi_uuids = [ref["uuid"] for ref in vpg.get_physical_interface_refs()]
+        pis = [
+            self.vnc_lib.physical_interface_read(id=uuid) for uuid in pi_uuids
+        ]
+        for pi in pis:
+            vpg.del_physical_interface(pi)
+        self.vnc_lib.virtual_port_group_update(vpg)
 
     def _delete_vmis(self):
         vmi_uuids = [

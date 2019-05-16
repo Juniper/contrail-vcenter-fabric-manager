@@ -3,6 +3,9 @@ import pytest
 from vnc_api import vnc_api
 
 
+from cvfm import models
+
+
 @pytest.fixture
 def vmware_dpg():
     dpg = mock.Mock()
@@ -24,3 +27,10 @@ def vmware_vm(vmware_dpg):
 @pytest.fixture
 def project():
     return vnc_api.Project()
+
+
+@pytest.fixture
+def fabric_vn(project):
+    vn = vnc_api.VirtualNetwork(name="dvs-1_dpg-1", parent_obj=project)
+    vn.set_uuid(models.generate_uuid("dvportgroup-1"))
+    return vn

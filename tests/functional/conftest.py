@@ -1,6 +1,6 @@
 import mock
-import yaml
 import pytest
+import yaml
 import os
 
 from tests.functional.vnc_api_test_client import VNCAPITestClient

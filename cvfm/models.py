@@ -8,7 +8,7 @@ from cvfm.exceptions import DPGCreationException
 logger = logging.getLogger(__name__)
 
 
-def key_to_uuid(key):
+def generate_uuid(key):
     return str(uid.uuid3(uid.NAMESPACE_DNS, key))
 
 
@@ -39,7 +39,7 @@ class DistributePortGroupModel(object):
     def from_vmware_dpg(cls, vmware_dpg):
         cls._validate_vlan_id(vmware_dpg)
         vlan_id = vmware_dpg.config.defaultPortConfig.vlan.vlanId
-        uuid = key_to_uuid(vmware_dpg.key)
+        uuid = generate_uuid(vmware_dpg.key)
         name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         return cls(uuid, name, vlan_id, dvs_name)
@@ -86,7 +86,7 @@ class VirtualPortGroupModel(object):
         models = []
         for dpg in vmware_vm.network:
             dvs_name = dpg.config.distributedVirtualSwitch.name
-            uuid = key_to_uuid(
+            uuid = generate_uuid(
                 "{host_name}_{dvs_name}".format(
                     host_name=host_name, dvs_name=dvs_name
                 )
@@ -106,5 +106,48 @@ class VirtualPortGroupModel(object):
 
 
 class VirtualMachineInterfaceModel(object):
-    def __init__(self):
-        pass
+    def __init__(self, uuid, host_name, dpg_model):
+        self.uuid = uuid
+        self.host_name = host_name
+        self.dpg_model = dpg_model
+
+    def to_vnc_vmi(self, project, fabric_vn):
+        vnc_name = "{host_name}_{dvs_name}_{dpg_name}".format(
+            host_name=self.host_name,
+            dvs_name=self.dpg_model.dvs_name,
+            dpg_name=self.dpg_model.name,
+        )
+        vnc_vmi = vnc_api.VirtualMachineInterface(
+            name=vnc_name, parent_obj=project
+        )
+        vnc_vmi.set_uuid(self.uuid)
+        vnc_vmi.add_virtual_network(fabric_vn)
+        vmi_properties = vnc_api.VirtualMachineInterfacePropertiesType(
+            sub_interface_vlan_tag=self.dpg_model.vlan_id
+        )
+        vnc_vmi.set_virtual_machine_interface_properties(vmi_properties)
+        return vnc_vmi
+
+    @classmethod
+    def from_vmware_vm(cls, vmware_vm):
+        host_name = vmware_vm.runtime.host.name
+        models = []
+        for dpg in vmware_vm.network:
+            dpg_model = DistributePortGroupModel.from_vmware_dpg(dpg)
+            uuid = generate_uuid(
+                "{host_name}_{dvs_name}_{dpg_name}".format(
+                    host_name=host_name,
+                    dvs_name=dpg_model.dvs_name,
+                    dpg_name=dpg_model.name,
+                )
+            )
+            models.append(cls(uuid, host_name, dpg_model))
+        return models
+
+    @property
+    def vpg_uuid(self):
+        return generate_uuid(
+            "{host_name}_{dvs_name}".format(
+                host_name=self.host_name, dvs_name=self.dpg_model.dvs_name
+            )
+        )
