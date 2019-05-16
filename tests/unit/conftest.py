@@ -34,3 +34,10 @@ def fabric_vn(project):
     vn = vnc_api.VirtualNetwork(name="dvs-1_dpg-1", parent_obj=project)
     vn.set_uuid(models.generate_uuid("dvportgroup-1"))
     return vn
+
+
+@pytest.fixture
+def vnc_api_client(project):
+    client = mock.Mock()
+    client.get_project.return_value = project
+    return client

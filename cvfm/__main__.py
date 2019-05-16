@@ -31,6 +31,7 @@ from cvfm.services import (
     VirtualMachineService,
     VirtualMachineInterfaceService,
     DistributedPortGroupService,
+    VirtualPortGroupService,
 )
 from cvfm.event_listener import EventListener
 from cvfm.monitors import VMwareMonitor
@@ -72,7 +73,13 @@ def build_context(config):
         vcenter_api_client, vnc_api_client, database
     )
 
-    vm_updated_handler = VmUpdatedHandler(vm_service, vmi_service, dpg_service)
+    vpg_service = VirtualPortGroupService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+    vm_updated_handler = VmUpdatedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
     vm_reconfigured_handler = VmReconfiguredHandler(
         vm_service, vmi_service, dpg_service
     )

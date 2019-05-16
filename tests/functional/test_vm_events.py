@@ -16,13 +16,13 @@ def vmi_service(vnc_api_client):
 
 
 @pytest.fixture
-def dpg_service(vnc_api_client):
-    return services.DistributedPortGroupService(None, vnc_api_client, None)
+def vpg_service(vnc_api_client):
+    return services.VirtualPortGroupService(None, vnc_api_client, None)
 
 
 @pytest.fixture
-def update_handler(vmi_service, dpg_service):
-    vm_updated_handler = VmUpdatedHandler(None, vmi_service, dpg_service)
+def update_handler(vmi_service, vpg_service):
+    vm_updated_handler = VmUpdatedHandler(None, vmi_service, None, vpg_service)
     return UpdateHandler([vm_updated_handler])
 
 
