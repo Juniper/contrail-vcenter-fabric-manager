@@ -1,16 +1,8 @@
-import mock
 import pytest
 from vnc_api import vnc_api
 
 from cvfm import models
 from cvfm.services import VirtualMachineInterfaceService
-
-
-@pytest.fixture
-def vnc_api_client(project):
-    client = mock.Mock()
-    client.get_project.return_value = project
-    return client
 
 
 @pytest.fixture

@@ -89,53 +89,6 @@ class DistributedPortGroupService(Service):
         self._vnc_api_client.create_vn(vnc_vn)
         logger.info("Virtual Network %s created in VNC", vnc_vn.name)
 
-    def create_vpg_models(self, vmware_vm):
-        return models.VirtualPortGroupModel.from_vmware_vm(vmware_vm)
-
-    def create_vpg_in_vnc(self, vpg_model):
-        if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:
-            vnc_vpg = vpg_model.to_vnc_vpg()
-            self._vnc_api_client.create_vpg(vnc_vpg)
-
-    def attach_pis_to_vpg(self, vpg_model):
-        vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
-        pis = self.find_matches_physical_interfaces(
-            vpg_model.host_name, vpg_model.dvs_name
-        )
-        self._vnc_api_client.connect_physical_interfaces_to_vpg(vnc_vpg, pis)
-
-    def find_matches_physical_interfaces(self, host_name, dvs_name):
-        vnc_node = self._vnc_api_client.get_node_by_name(host_name)
-        if vnc_node is None:
-            return []
-        vnc_ports = self._vnc_api_client.get_node_ports(vnc_node)
-        vnc_ports = self.filter_node_ports_by_dvs_name(vnc_ports, dvs_name)
-        return self.collect_pis_from_ports(vnc_ports)
-
-    def filter_node_ports_by_dvs_name(self, ports, dvs_name):
-        return [
-            port
-            for port in ports
-            if self.is_dvs_in_port_annotations(port, dvs_name)
-        ]
-
-    def is_dvs_in_port_annotations(self, port, dvs_name):
-        annotations = port.get_annotations().key_value_pair
-        for annotation in annotations:
-            if (
-                annotation.value == const.DVS_ANNOTATION
-                and annotation.key == dvs_name
-            ):
-                return True
-        return False
-
-    def collect_pis_from_ports(self, vnc_ports):
-        pis = []
-        for port in vnc_ports:
-            port_pis = self._vnc_api_client.get_pis_by_port(port)
-            pis.extend(port_pis)
-        return pis
-
     def create_fabric_vmi_for_vm_vmi(self, vmi_model):
         logger.info(
             "DistributedPortGroupService.create_fabric_vmi_for_vm_vmi called"
@@ -169,3 +122,57 @@ class DistributedPortGroupService(Service):
 
     def delete_fabric_vn(self, dpg_model):
         logger.info("DistributedPortGroupService.delete_fabric_vn called")
+
+
+class VirtualPortGroupService(Service):
+    def __init__(self, vcenter_api_client, vnc_api_client, database):
+        super(VirtualPortGroupService, self).__init__(
+            vcenter_api_client, vnc_api_client, database
+        )
+
+    def create_vpg_models(self, vmware_vm):
+        return models.VirtualPortGroupModel.from_vmware_vm(vmware_vm)
+
+    def create_vpg_in_vnc(self, vpg_model):
+        if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:
+            vnc_vpg = vpg_model.to_vnc_vpg()
+            self._vnc_api_client.create_vpg(vnc_vpg)
+
+    def attach_pis_to_vpg(self, vpg_model):
+        vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
+        pis = self.find_matches_physical_interfaces(
+            vpg_model.host_name, vpg_model.dvs_name
+        )
+        self._vnc_api_client.connect_physical_interfaces_to_vpg(vnc_vpg, pis)
+
+    def find_matches_physical_interfaces(self, host_name, dvs_name):
+        vnc_node = self._vnc_api_client.get_node_by_name(host_name)
+        if vnc_node is None:
+            return []
+        vnc_ports = self._vnc_api_client.get_node_ports(vnc_node)
+        vnc_ports = self.filter_node_ports_by_dvs_name(vnc_ports, dvs_name)
+        return self.collect_pis_from_ports(vnc_ports)
+
+    def collect_pis_from_ports(self, vnc_ports):
+        pis = []
+        for port in vnc_ports:
+            port_pis = self._vnc_api_client.get_pis_by_port(port)
+            pis.extend(port_pis)
+        return pis
+
+    def filter_node_ports_by_dvs_name(self, ports, dvs_name):
+        return [
+            port
+            for port in ports
+            if self.is_dvs_in_port_annotations(port, dvs_name)
+        ]
+
+    def is_dvs_in_port_annotations(self, port, dvs_name):
+        annotations = port.get_annotations().key_value_pair
+        for annotation in annotations:
+            if (
+                annotation.value == const.DVS_ANNOTATION
+                and annotation.key == dvs_name
+            ):
+                return True
+        return False

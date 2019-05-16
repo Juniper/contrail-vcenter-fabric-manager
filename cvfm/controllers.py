@@ -97,10 +97,11 @@ class VmUpdatedHandler(AbstractEventHandler):
         vim.event.VmMacAssignedEvent,
     )
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         logger.info("VmUpdatedHandler: detected event: %s", event)
@@ -108,10 +109,10 @@ class VmUpdatedHandler(AbstractEventHandler):
         logger.info("VMware VM: %s", vmware_vm)
         vmware_host = event.host.host
         logger.info("VMware Host: %s", vmware_host)
-        vpg_models = self._dpg_service.create_vpg_models(vmware_vm)
+        vpg_models = self._vpg_service.create_vpg_models(vmware_vm)
         for vpg_model in vpg_models:
-            self._dpg_service.create_vpg_in_vnc(vpg_model)
-            self._dpg_service.attach_pis_to_vpg(vpg_model)
+            self._vpg_service.create_vpg_in_vnc(vpg_model)
+            self._vpg_service.attach_pis_to_vpg(vpg_model)
         vmi_models = self._vmi_service.create_vmi_models_for_vm(vmware_vm)
         for vmi_model in vmi_models:
             self._vmi_service.create_vmi_in_vnc(vmi_model)
