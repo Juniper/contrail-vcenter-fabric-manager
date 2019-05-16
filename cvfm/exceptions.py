@@ -1,0 +1,2 @@
+class DPGCreationException(Exception):
+    pass

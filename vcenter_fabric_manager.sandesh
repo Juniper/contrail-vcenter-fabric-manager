@@ -1,0 +1,11 @@
+struct DPGData {
+    1: string uuid;
+}
+
+request sandesh DPGRequest {
+    1: string uuid;
+}
+
+response sandesh DPGResponse {
+    1: list<DPGData> dpgs;
+}
