@@ -112,6 +112,10 @@ class VmUpdatedHandler(AbstractEventHandler):
         for vpg_model in vpg_models:
             self._dpg_service.create_vpg_in_vnc(vpg_model)
             self._dpg_service.attach_pis_to_vpg(vpg_model)
+        vmi_models = self._vmi_service.create_vmi_models_for_vm(vmware_vm)
+        for vmi_model in vmi_models:
+            self._vmi_service.create_vmi_in_vnc(vmi_model)
+            self._vmi_service.attach_vmi_to_vpg(vmi_model)
 
 
 class VmReconfiguredHandler(AbstractEventHandler):

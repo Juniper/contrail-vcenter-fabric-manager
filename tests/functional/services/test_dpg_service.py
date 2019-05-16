@@ -11,6 +11,7 @@ def dpg_service(vnc_api_client):
 def test_find_matches_physical_interfaces(
     topology_with_spine_switch, dpg_service
 ):
+
     pis = dpg_service.find_matches_physical_interfaces("esxi-1", "dvs-1")
     check_pi_names(pis, ["xe-0/0/1", "xe-0/0/5"])
 

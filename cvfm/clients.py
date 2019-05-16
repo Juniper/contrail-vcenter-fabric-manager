@@ -160,12 +160,38 @@ class VNCAPIClient(object):
         except vnc_api.RefsExistError:
             logger.info("VPG %s already exists in VNC", vnc_vpg)
 
+    def create_vmi(self, vnc_vmi):
+        try:
+            self.vnc_lib.virtual_machine_interface_create(vnc_vmi)
+        except vnc_api.RefsExistError:
+            logger.info("VMI %s already exists in VNC", vnc_vmi)
+
+    def read_vn(self, vn_uuid):
+        try:
+            return self.vnc_lib.virtual_network_read(id=vn_uuid)
+        except vnc_api.NoIdError:
+            logger.info("VN %s not found in VNC", vn_uuid)
+        return None
+
     def read_vpg(self, vpg_uuid):
         try:
             return self.vnc_lib.virtual_port_group_read(id=vpg_uuid)
         except vnc_api.NoIdError:
             logger.info("VPG %s not found in VNC", vpg_uuid)
         return None
+
+    def read_vmi(self, vmi_uuid):
+        try:
+            return self.vnc_lib.virtual_machine_interface_read(id=vmi_uuid)
+        except vnc_api.NoIdError:
+            logger.info("VMI %s not found in VNC", vmi_uuid)
+        return None
+
+    def update_vpg(self, vnc_vpg):
+        try:
+            self.vnc_lib.virtual_port_group_update(vnc_vpg)
+        except vnc_api.NoIdError:
+            logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
 
     def get_node_by_name(self, node_name):
         for node in self._read_all_nodes():

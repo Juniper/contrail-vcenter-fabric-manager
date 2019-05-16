@@ -53,7 +53,7 @@ def test_create_dpg_model_with_vpg_creation_in_vnc(
     vnc_api_client.read_vpg.return_value = None
 
     vpg_model = models.VirtualPortGroupModel(
-        models.key_to_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
+        models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
     )
     dpg_service.create_vpg_in_vnc(vpg_model)
 
@@ -67,7 +67,7 @@ def test_create_dpg_model_without_vpg_creation_in_vnc(
     vnc_api_client.read_vpg.return_value = mock.Mock()
 
     vpg_model = models.VirtualPortGroupModel(
-        models.key_to_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
+        models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
     )
     dpg_service.create_vpg_in_vnc(vpg_model)
 
