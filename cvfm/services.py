@@ -1,11 +1,8 @@
 import logging
-import uuid
 
-from vnc_api import vnc_api
-
-from cvfm.models import VirtualMachineModel
-from cvfm import models
 from cvfm import constants as const
+from cvfm import models
+from cvfm.exceptions import VNCVMICreationException
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +28,11 @@ class VirtualMachineService(Service):
 
     def delete_vm_model(self, vm_name):
         logger.info("VirtualMachineService.delete_vm_model called")
-        return VirtualMachineModel()
+        return models.VirtualMachineModel()
 
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
-        return VirtualMachineModel()
+        return models.VirtualMachineModel()
 
     def rename_vm_model(self, vm_uuid, new_name):
         logger.info("VirtualMachineService.rename_vm_model called")
@@ -54,7 +51,10 @@ class VirtualMachineInterfaceService(Service):
         if self._vnc_api_client.read_vmi(vmi_model.uuid) is None:
             project = self._vnc_api_client.get_project()
             fabric_vn = self._vnc_api_client.read_vn(vmi_model.dpg_model.uuid)
-            vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
+            try:
+                vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
+            except VNCVMICreationException:
+                return
             self._vnc_api_client.create_vmi(vnc_vmi)
 
     def attach_vmi_to_vpg(self, vmi_model):
@@ -80,7 +80,7 @@ class DistributedPortGroupService(Service):
         )
 
     def create_dpg_model(self, vmware_dpg):
-        return models.DistributePortGroupModel.from_vmware_dpg(vmware_dpg)
+        return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
 
     def create_fabric_vn(self, dpg_model):
         project = self._vnc_api_client.get_project()

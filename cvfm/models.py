@@ -1,15 +1,42 @@
 import logging
 import uuid as uid
 
+from pyVmomi import vim
 from vnc_api import vnc_api
 
-from cvfm.exceptions import DPGCreationException
+from cvfm.exceptions import DPGCreationException, VNCVMICreationException
 
 logger = logging.getLogger(__name__)
 
 
 def generate_uuid(key):
     return str(uid.uuid3(uid.NAMESPACE_DNS, key))
+
+
+def validate_dpg(vmware_dpg):
+    validate_type(vmware_dpg)
+    validate_dvs(vmware_dpg)
+    validate_vlan_id(vmware_dpg)
+
+
+def validate_type(vmware_dpg):
+    if not isinstance(vmware_dpg, vim.DistributedVirtualPortgroup):
+        raise DPGCreationException(
+            "{} is not a Distributed " "Portgroup".format(vmware_dpg.name)
+        )
+
+
+def validate_dvs(vmware_dpg):
+    pass
+
+
+def validate_vlan_id(vmware_dpg):
+    try:
+        vlan_id = int(vmware_dpg.config.defaultPortConfig.vlan.vlanId)
+    except (TypeError, AttributeError):
+        raise DPGCreationException("VLAN ID must be a number.")
+    if vlan_id == 0:
+        raise DPGCreationException("VLAN ID cannot be 0.")
 
 
 class VirtualMachineModel(object):
@@ -20,7 +47,7 @@ class VirtualMachineModel(object):
         return [object()]
 
 
-class DistributePortGroupModel(object):
+class DistributedPortGroupModel(object):
     def __init__(self, uuid, name, vlan_id, dvs_name):
         self.uuid = uuid
         self.name = name
@@ -37,21 +64,12 @@ class DistributePortGroupModel(object):
 
     @classmethod
     def from_vmware_dpg(cls, vmware_dpg):
-        cls._validate_vlan_id(vmware_dpg)
+        validate_dpg(vmware_dpg)
         vlan_id = vmware_dpg.config.defaultPortConfig.vlan.vlanId
         uuid = generate_uuid(vmware_dpg.key)
         name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         return cls(uuid, name, vlan_id, dvs_name)
-
-    @classmethod
-    def _validate_vlan_id(cls, vmware_dpg):
-        try:
-            vlan_id = int(vmware_dpg.config.defaultPortConfig.vlan.vlanId)
-        except (TypeError, AttributeError):
-            raise DPGCreationException("VLAN ID must be a number.")
-        if vlan_id == 0:
-            raise DPGCreationException("VLAN ID cannot be 0.")
 
     def __repr__(self):
         return (
@@ -85,6 +103,10 @@ class VirtualPortGroupModel(object):
         host_name = vmware_vm.runtime.host.name
         models = []
         for dpg in vmware_vm.network:
+            try:
+                validate_dpg(dpg)
+            except DPGCreationException:
+                continue
             dvs_name = dpg.config.distributedVirtualSwitch.name
             uuid = generate_uuid(
                 "{host_name}_{dvs_name}".format(
@@ -112,6 +134,11 @@ class VirtualMachineInterfaceModel(object):
         self.dpg_model = dpg_model
 
     def to_vnc_vmi(self, project, fabric_vn):
+        if fabric_vn is None:
+            raise VNCVMICreationException(
+                "Cannot create VNC VMI without a " "fabric VN."
+            )
+
         vnc_name = "{host_name}_{dvs_name}_{dpg_name}".format(
             host_name=self.host_name,
             dvs_name=self.dpg_model.dvs_name,
@@ -133,7 +160,10 @@ class VirtualMachineInterfaceModel(object):
         host_name = vmware_vm.runtime.host.name
         models = []
         for dpg in vmware_vm.network:
-            dpg_model = DistributePortGroupModel.from_vmware_dpg(dpg)
+            try:
+                dpg_model = DistributedPortGroupModel.from_vmware_dpg(dpg)
+            except DPGCreationException:
+                continue
             uuid = generate_uuid(
                 "{host_name}_{dvs_name}_{dpg_name}".format(
                     host_name=host_name,

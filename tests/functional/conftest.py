@@ -6,7 +6,7 @@ import os
 from tests.functional.vnc_api_test_client import VNCAPITestClient
 
 from cvfm.controllers import VmwareController
-from cvfm.services import DistributedPortGroupService
+from cvfm import services
 from cvfm.clients import VNCAPIClient
 
 # imports fixtures from sample_topologies.py file
@@ -43,8 +43,18 @@ def vnc_test_client(config):
 
 
 @pytest.fixture
+def vmi_service(vnc_api_client):
+    return services.VirtualMachineInterfaceService(None, vnc_api_client, None)
+
+
+@pytest.fixture
+def vpg_service(vnc_api_client):
+    return services.VirtualPortGroupService(None, vnc_api_client, None)
+
+
+@pytest.fixture
 def dpg_service(vnc_api_client):
-    return DistributedPortGroupService(None, vnc_api_client, None)
+    return services.DistributedPortGroupService(None, vnc_api_client, None)
 
 
 @pytest.fixture

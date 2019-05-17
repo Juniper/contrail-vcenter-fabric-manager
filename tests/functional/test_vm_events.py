@@ -1,40 +1,17 @@
-import mock
 import pytest
 from pyVmomi import vim
-
-from cvfm import models
 from tests import utils
 from vnc_api.vnc_api import VirtualNetwork
 
-from cvfm.controllers import UpdateHandler, VmUpdatedHandler, VmwareController
-from cvfm import services
-
-
-@pytest.fixture
-def vmi_service(vnc_api_client):
-    return services.VirtualMachineInterfaceService(None, vnc_api_client, None)
-
-
-@pytest.fixture
-def vpg_service(vnc_api_client):
-    return services.VirtualPortGroupService(None, vnc_api_client, None)
+from cvfm import controllers, models
 
 
 @pytest.fixture
 def update_handler(vmi_service, vpg_service):
-    vm_updated_handler = VmUpdatedHandler(None, vmi_service, None, vpg_service)
-    return UpdateHandler([vm_updated_handler])
-
-
-@pytest.fixture
-def vmware_controller(update_handler, lock):
-    return VmwareController(
-        vm_service=None,
-        vmi_service=None,
-        dpg_service=None,
-        update_handler=update_handler,
-        lock=lock,
+    vm_updated_handler = controllers.VmUpdatedHandler(
+        None, vmi_service, None, vpg_service
     )
+    return controllers.UpdateHandler([vm_updated_handler])
 
 
 @pytest.fixture
@@ -49,42 +26,33 @@ def fabric_vn(vnc_test_client):
 
 @pytest.fixture
 def vm_created_update():
-    portgroups = [
+    networks = [
         {
             "key": "dvportgroup-1",
             "name": "dpg-1",
+            "type": vim.DistributedVirtualPortgroup,
             "dvs-name": "dvs-1",
             "vlan": 5,
+        },
+        {"key": "network-1", "name": "network-1", "type": vim.Network},
+        {
+            "key": "dvportgroup-2",
+            "name": "dpg-2",
+            "type": vim.DistributedVirtualPortgroup,
+            "dvs-name": "dvs-1",
+            "vlan": 0
+        },
+        {
+            "key": "dvportgroup-3",
+            "name": "dpg-3",
+            "type": vim.DistributedVirtualPortgroup,
+            "dvs-name": "dvs-1",
+            "vlan": 8
         }
     ]
     return utils.create_vm_created_update(
-        vm_name="VM1", vm_host_name="esxi-1", vm_portgroups=portgroups
+        vm_name="VM1", vm_host_name="esxi-1", vm_networks=networks
     )
-
-
-@pytest.fixture
-def vmware_dpg():
-    dpg = mock.Mock()
-    dpg.configure_mock(name="dpg-1")
-    dpg.key = "dvportgroup-1"
-    dpg.config.distributedVirtualSwitch.name = "dvs-1"
-    dpg.config.defaultPortConfig.vlan.vlanId = 5
-    return dpg
-
-
-@pytest.fixture
-def vmware_vm(vmware_dpg):
-    vm = mock.Mock()
-    vm.network = [vmware_dpg]
-    vm.runtime.host.name = "esxi-1"
-    return vm
-
-
-@pytest.fixture
-def vm_created_update(vmware_vm):
-    event = mock.Mock(spec=vim.event.VmCreatedEvent())
-    event.vm.vm = vmware_vm
-    return utils.wrap_into_update_set(event=event)
 
 
 def test_vm_created(
@@ -95,6 +63,15 @@ def test_vm_created(
     fabric_vn,
 ):
     vmware_controller.handle_update(vm_created_update)
+
+    vmi_list = vnc_test_client.vnc_lib.virtual_machine_interfaces_list()[
+        "virtual-machine-interfaces"
+    ]
+    assert len(vmi_list) == 1
+    vpg_list = vnc_test_client.vnc_lib.virtual_port_groups_list()[
+        "virtual-port-groups"
+    ]
+    assert len(vpg_list) == 1
 
     created_vpg = vnc_test_client.vnc_lib.virtual_port_group_read(
         id=models.generate_uuid("esxi-1_dvs-1")
