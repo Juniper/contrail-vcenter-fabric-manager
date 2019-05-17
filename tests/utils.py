@@ -56,19 +56,21 @@ def connect_ports_with_pis(vnc_test_client, pis, ports, port_to_pi):
         )
 
 
-def create_vm_created_update(vm_name, vm_host_name, vm_portgroups):
+def create_vm_created_update(vm_name, vm_host_name, vm_networks):
     event = mock.Mock(spec=vim.event.VmCreatedEvent())
     vm = mock.Mock()
     vm.name = vm_name
-    dpgs = []
-    for dpg_data in vm_portgroups:
-        dpg = mock.Mock()
-        dpg.name = dpg_data["name"]
-        dpg.key = dpg_data["key"]
-        dpg.config.distributedVirtualSwitch.name = dpg_data["dvs-name"]
-        dpg.config.defaultPortConfig.vlan.vlanId = dpg_data["vlan"]
-        dpgs.append(dpg)
-    vm.network = dpgs
+    networks = []
+    for net_data in vm_networks:
+        network = mock.Mock(spec=net_data["type"])
+        network.configure_mock(name=net_data["name"])
+        network.key = net_data["key"]
+        if net_data.get("dvs-name"):
+            network.config.distributedVirtualSwitch.name = net_data["dvs-name"]
+        if net_data.get("vlan"):
+            network.config.defaultPortConfig.vlan.vlanId = net_data["vlan"]
+        networks.append(network)
+    vm.network = networks
     vm.runtime.host.name = vm_host_name
     vm.name = vm_name
     event.vm.vm = vm

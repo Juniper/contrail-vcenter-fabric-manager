@@ -19,7 +19,7 @@ def test_create_dpg_model(dpg_service, vmware_dpg):
 
 
 def test_create_fabric_vn(dpg_service, vnc_api_client, project):
-    dpg_model = models.DistributePortGroupModel(
+    dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
         name="dpg-1",
         vlan_id=None,

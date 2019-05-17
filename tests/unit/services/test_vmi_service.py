@@ -28,7 +28,7 @@ def test_create_vmi_in_vnc(vmi_service, vnc_api_client, project, fabric_vn):
     vnc_api_client.read_vn.return_value = fabric_vn
     vnc_api_client.read_vmi.return_value = None
 
-    dpg_model = models.DistributePortGroupModel(
+    dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
         name="dpg-1",
         vlan_id=5,
@@ -61,7 +61,7 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
     vnc_vpg = vnc_api.VirtualPortGroup()
     vnc_api_client.read_vpg.return_value = vnc_vpg
 
-    dpg_model = models.DistributePortGroupModel(
+    dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
         name="dpg-1",
         vlan_id=5,

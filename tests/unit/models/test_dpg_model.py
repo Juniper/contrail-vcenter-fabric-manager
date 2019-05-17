@@ -13,7 +13,7 @@ def test_generate_uuid():
 
 
 def test_from_vmware_dpg(vmware_dpg):
-    dpg_model = models.DistributePortGroupModel.from_vmware_dpg(vmware_dpg)
+    dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
 
     assert dpg_model.name == "dpg-1"
     assert dpg_model.uuid == models.generate_uuid("dvportgroup-1")
@@ -25,11 +25,11 @@ def test_invalid_vlan_id(vmware_dpg):
     vmware_dpg.config.defaultPortConfig.vlan.vlanId = mock.Mock()
 
     with pytest.raises(exceptions.DPGCreationException):
-        models.DistributePortGroupModel.from_vmware_dpg(vmware_dpg)
+        models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
 
 
 def test_to_vnc_vn(project):
-    dpg_model = models.DistributePortGroupModel(
+    dpg_model = models.DistributedPortGroupModel(
         uuid=models.generate_uuid("dvportgroup-1"),
         name="dpg-1",
         dvs_name="dvs-1",
