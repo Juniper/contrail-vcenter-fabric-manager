@@ -32,7 +32,9 @@ def lock():
 
 @pytest.fixture
 def vnc_api_client(config):
-    return VNCAPIClient(config)
+    vnc_client = VNCAPIClient(config)
+    vnc_client.project_name = "test-vcenter-fabric"
+    return vnc_client
 
 
 @pytest.fixture

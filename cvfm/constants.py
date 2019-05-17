@@ -1,3 +1,5 @@
+from vnc_api.vnc_api import IdPermsType
+
 EVENTS_TO_OBSERVE = [
     "VmCreatedEvent",
     "VmClonedEvent",
@@ -29,3 +31,6 @@ SUPERVISOR_TIMEOUT = 25
 HISTORY_COLLECTOR_PAGE_SIZE = 1000
 
 DVS_ANNOTATION = "vmware_dvs"
+
+VNC_PROJECT_NAME = "vCenter"
+ID_PERMS = IdPermsType(creator="vcenter-fabric-manager", enable=True)

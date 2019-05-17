@@ -4,6 +4,7 @@ import uuid as uid
 from pyVmomi import vim
 from vnc_api import vnc_api
 
+from cvfm import constants as const
 from cvfm.exceptions import DPGCreationException, VNCVMICreationException
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ class DistributedPortGroupModel(object):
         )
         vnc_vn = vnc_api.VirtualNetwork(name=vnc_name, parent_obj=project)
         vnc_vn.set_uuid(self.uuid)
+        vnc_vn.set_id_perms(const.ID_PERMS)
         return vnc_vn
 
     @classmethod
@@ -96,6 +98,7 @@ class VirtualPortGroupModel(object):
         )
         vnc_vpg = vnc_api.VirtualPortGroup(name=vnc_name)
         vnc_vpg.set_uuid(self.uuid)
+        vnc_vpg.set_id_perms(const.ID_PERMS)
         return vnc_vpg
 
     @classmethod
@@ -153,6 +156,7 @@ class VirtualMachineInterfaceModel(object):
             sub_interface_vlan_tag=self.dpg_model.vlan_id
         )
         vnc_vmi.set_virtual_machine_interface_properties(vmi_properties)
+        vnc_vmi.set_id_perms(const.ID_PERMS)
         return vnc_vmi
 
     @classmethod

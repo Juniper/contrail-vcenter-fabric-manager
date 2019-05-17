@@ -41,3 +41,4 @@ def test_to_vnc_vn(project):
     assert vnc_vn.name == "dvs-1_dpg-1"
     assert vnc_vn.uuid == models.generate_uuid("dvportgroup-1")
     assert vnc_vn.parent_name == project.name
+    assert vnc_vn.get_id_perms().get_creator() == "vcenter-fabric-manager"

@@ -4,11 +4,9 @@ import random
 
 from pyVim.connect import Disconnect, SmartConnectNoSSL
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
-
 from vnc_api import vnc_api
 
-
-from cvfm.constants import HISTORY_COLLECTOR_PAGE_SIZE
+from cvfm import constants as const
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +92,8 @@ class VCenterAPIClient(VSphereAPIClient):
         history_collector = event_manager.CreateCollectorForEvents(
             filter=event_filter_spec
         )
-        history_collector.SetCollectorPageSize(HISTORY_COLLECTOR_PAGE_SIZE)
+        history_collector.SetCollectorPageSize(
+            const.HISTORY_COLLECTOR_PAGE_SIZE)
         return history_collector
 
     def add_filter(self, obj, filters):
@@ -133,7 +132,7 @@ class VNCAPIClient(object):
             auth_host=vnc_cfg.get("auth_host"),
             auth_port=vnc_cfg.get("auth_port"),
         )
-        self.project_name = vnc_cfg.get("project_name", "vCenter")
+        self.project_name = const.VNC_PROJECT_NAME
 
     def get_project(self):
         try:
@@ -142,9 +141,9 @@ class VNCAPIClient(object):
             )
 
         except vnc_api.NoIdError:
-            self.vnc_lib.project_create(
-                vnc_api.Project(name=self.project_name)
-            )
+            project = vnc_api.Project(name=self.project_name)
+            project.set_id_perms(const.ID_PERMS)
+            self.vnc_lib.project_create(project)
 
         return self.vnc_lib.project_read(["default-domain", self.project_name])
 

@@ -36,6 +36,7 @@ def test_to_vnc_vmi(vmware_dpg, project, fabric_vn):
         vnc_vmi.virtual_machine_interface_properties.sub_interface_vlan_tag
         == 5
     )
+    assert vnc_vmi.get_id_perms().get_creator() == 'vcenter-fabric-manager'
 
 
 def test_no_fabric_vn(vmware_dpg, project):
