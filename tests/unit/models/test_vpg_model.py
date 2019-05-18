@@ -10,7 +10,7 @@ def test_to_vnc_vpg():
 
     assert vnc_vpg.name == "host_name_dvs_name"
     assert vnc_vpg.uuid == "vpg_uuid"
-    assert vnc_vpg.get_id_perms().get_creator() == 'vcenter-fabric-manager'
+    assert vnc_vpg.get_id_perms().get_creator() == "vcenter-fabric-manager"
 
 
 def test_from_vmware_vm(vmware_vm):

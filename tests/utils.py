@@ -2,6 +2,7 @@ import mock
 
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 from vnc_api import vnc_api
+from cvfm import models
 
 
 def wrap_into_update_set(event=None, change=None, obj=None):
@@ -75,6 +76,15 @@ def create_vm_created_update(vm_name, vm_host_name, vm_networks):
     vm.name = vm_name
     event.vm.vm = vm
     return wrap_into_update_set(event=event)
+
+
+def create_fabric_network(vnc_test_client, vn_name, vn_key):
+    project = vnc_test_client.vnc_lib.project_read(
+        ["default-domain", vnc_test_client.project_name]
+    )
+    fab_vn = vnc_api.VirtualNetwork(name=vn_name, parent_obj=project)
+    fab_vn.set_uuid(models.generate_uuid(vn_key))
+    vnc_test_client.vnc_lib.virtual_network_create(fab_vn)
 
 
 def verify_vnc_vpg(vnc_vpg, vpg_name=None, pi_names=None, vmi_names=None):

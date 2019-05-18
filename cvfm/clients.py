@@ -93,7 +93,8 @@ class VCenterAPIClient(VSphereAPIClient):
             filter=event_filter_spec
         )
         history_collector.SetCollectorPageSize(
-            const.HISTORY_COLLECTOR_PAGE_SIZE)
+            const.HISTORY_COLLECTOR_PAGE_SIZE
+        )
         return history_collector
 
     def add_filter(self, obj, filters):

@@ -1,9 +1,8 @@
 import pytest
 from pyVmomi import vim
 from tests import utils
-from vnc_api.vnc_api import VirtualNetwork
 
-from cvfm import controllers, models
+from cvfm import controllers
 
 
 @pytest.fixture
@@ -16,12 +15,9 @@ def update_handler(vmi_service, vpg_service):
 
 @pytest.fixture
 def fabric_vn(vnc_test_client):
-    project = vnc_test_client.vnc_lib.project_read(
-        ["default-domain", vnc_test_client.project_name]
+    utils.create_fabric_network(
+        vnc_test_client, "dvs-1_dpg-1", "dvportgroup-1"
     )
-    fab_vn = VirtualNetwork(name="dvs-1_dpg-1", parent_obj=project)
-    fab_vn.set_uuid(models.generate_uuid("dvportgroup-1"))
-    vnc_test_client.vnc_lib.virtual_network_create(fab_vn)
 
 
 @pytest.fixture
@@ -40,15 +36,15 @@ def vm_created_update():
             "name": "dpg-2",
             "type": vim.DistributedVirtualPortgroup,
             "dvs-name": "dvs-1",
-            "vlan": 0
+            "vlan": 0,
         },
         {
             "key": "dvportgroup-3",
             "name": "dpg-3",
             "type": vim.DistributedVirtualPortgroup,
             "dvs-name": "dvs-1",
-            "vlan": 8
-        }
+            "vlan": 8,
+        },
     ]
     return utils.create_vm_created_update(
         vm_name="VM1", vm_host_name="esxi-1", vm_networks=networks
@@ -64,23 +60,14 @@ def test_vm_created(
 ):
     vmware_controller.handle_update(vm_created_update)
 
-    vmi_list = vnc_test_client.vnc_lib.virtual_machine_interfaces_list()[
-        "virtual-machine-interfaces"
-    ]
-    assert len(vmi_list) == 1
-    vpg_list = vnc_test_client.vnc_lib.virtual_port_groups_list()[
-        "virtual-port-groups"
-    ]
-    assert len(vpg_list) == 1
+    vmis = vnc_test_client.read_all_vmis()
+    assert len(vmis) == 1
+    vpgs = vnc_test_client.read_all_vpgs()
+    assert len(vpgs) == 1
 
-    created_vpg = vnc_test_client.vnc_lib.virtual_port_group_read(
-        id=models.generate_uuid("esxi-1_dvs-1")
-    )
-    created_vmi = vnc_test_client.vnc_lib.virtual_machine_interface_read(
-        id=models.generate_uuid("esxi-1_dvs-1_dpg-1")
-    )
+    created_vpg = vpgs["esxi-1_dvs-1"]
+    created_vmi = vmis["esxi-1_dvs-1_dpg-1"]
 
-    assert created_vpg is not None
     utils.verify_vnc_vpg(
         vnc_vpg=created_vpg,
         vpg_name="esxi-1_dvs-1",
@@ -88,7 +75,6 @@ def test_vm_created(
         vmi_names=["esxi-1_dvs-1_dpg-1"],
     )
 
-    assert created_vmi is not None
     utils.verify_vnc_vmi(
         vnc_vmi=created_vmi,
         vmi_name="esxi-1_dvs-1_dpg-1",

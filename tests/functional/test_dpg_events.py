@@ -34,9 +34,7 @@ def dpg_created_update(vmware_dpg):
 def test_dpg_created(vnc_test_client, vmware_controller, dpg_created_update):
     vmware_controller.handle_update(dpg_created_update)
 
-    created_vn = vnc_test_client.vnc_lib.virtual_network_read(
-        id=models.generate_uuid("dvportgroup-1")
-    )
+    created_vn = vnc_test_client.read_vn(models.generate_uuid("dvportgroup-1"))
 
     assert created_vn is not None
     assert created_vn.name == "dvs-1_dpg-1"
