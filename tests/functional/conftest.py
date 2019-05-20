@@ -1,16 +1,17 @@
+import os
+
 import mock
 import pytest
 import yaml
-import os
 
-from tests.functional.vnc_api_test_client import VNCAPITestClient
-
-from cvfm.controllers import VmwareController
 from cvfm import services
 from cvfm.clients import VNCAPIClient
 
 # imports fixtures from sample_topologies.py file
+from cvfm.controllers import VmwareController
 from sample_topologies import *
+from tests import utils
+from tests.functional.vnc_api_test_client import VNCAPITestClient
 
 
 @pytest.fixture
@@ -42,6 +43,13 @@ def vnc_test_client(config):
     test_client = VNCAPITestClient(config)
     yield test_client
     test_client.tear_down()
+
+
+@pytest.fixture
+def fabric_vn(vnc_test_client):
+    return utils.create_fabric_network(
+        vnc_test_client, "dvs-1_dpg-1", "dvportgroup-1"
+    )
 
 
 @pytest.fixture

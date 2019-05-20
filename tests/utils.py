@@ -90,6 +90,7 @@ def create_fabric_network(vnc_test_client, vn_name, vn_key):
     fab_vn = vnc_api.VirtualNetwork(name=vn_name, parent_obj=project)
     fab_vn.set_uuid(models.generate_uuid(vn_key))
     vnc_test_client.vnc_lib.virtual_network_create(fab_vn)
+    return vnc_test_client.vnc_lib.virtual_network_read(id=fab_vn.uuid)
 
 
 def verify_vnc_vpg(vnc_vpg, vpg_name=None, pi_names=None, vmi_names=None):
