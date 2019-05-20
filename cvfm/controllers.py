@@ -166,10 +166,11 @@ class VmReconfiguredHandler(AbstractEventHandler):
 class VmRemovedHandler(AbstractEventHandler):
     EVENTS = (vim.event.VmRemovedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         logger.info("VmRemovedHandler: detected event: %s", event)

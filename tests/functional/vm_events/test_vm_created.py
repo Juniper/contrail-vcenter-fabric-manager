@@ -14,13 +14,6 @@ def update_handler(vmi_service, vpg_service):
 
 
 @pytest.fixture
-def fabric_vn(vnc_test_client):
-    utils.create_fabric_network(
-        vnc_test_client, "dvs-1_dpg-1", "dvportgroup-1"
-    )
-
-
-@pytest.fixture
 def vm_created_update():
     networks = [
         {
