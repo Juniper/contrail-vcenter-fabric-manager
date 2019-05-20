@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def minimalistic_topology(vnc_test_client):
     """
     Topology:
