@@ -78,9 +78,8 @@ class VNCAPITestClient(object):
             self.vnc_lib.virtual_port_group_delete(id=vpg_uuid)
 
     def _detach_vmis_from(self, vpg):
-        vmi_uuids = [
-            ref["uuid"] for ref in vpg.get_virtual_machine_interface_refs()
-        ]
+        vmi_refs = vpg.get_virtual_machine_interface_refs() or []
+        vmi_uuids = [ref["uuid"] for ref in vmi_refs]
         vmis = [
             self.vnc_lib.virtual_machine_interface_read(id=uuid)
             for uuid in vmi_uuids
@@ -90,7 +89,8 @@ class VNCAPITestClient(object):
         self.vnc_lib.virtual_port_group_update(vpg)
 
     def _detach_pis_from(self, vpg):
-        pi_uuids = [ref["uuid"] for ref in vpg.get_physical_interface_refs()]
+        pi_refs = vpg.get_physical_interface_refs() or []
+        pi_uuids = [ref["uuid"] for ref in pi_refs]
         pis = [
             self.vnc_lib.physical_interface_read(id=uuid) for uuid in pi_uuids
         ]

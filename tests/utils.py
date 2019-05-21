@@ -63,19 +63,24 @@ def create_vm_created_update(vm_name, vm_host_name, vm_networks):
     vm.name = vm_name
     networks = []
     for net_data in vm_networks:
-        network = mock.Mock(spec=net_data["type"])
-        network.configure_mock(name=net_data["name"])
-        network.key = net_data["key"]
-        if net_data.get("dvs-name"):
-            network.config.distributedVirtualSwitch.name = net_data["dvs-name"]
-        if net_data.get("vlan"):
-            network.config.defaultPortConfig.vlan.vlanId = net_data["vlan"]
+        network = create_vmware_net(net_data)
         networks.append(network)
     vm.network = networks
     vm.runtime.host.name = vm_host_name
     vm.name = vm_name
     event.vm.vm = vm
     return wrap_into_update_set(event=event)
+
+
+def create_vmware_net(net_data):
+    network = mock.Mock(spec=net_data["type"])
+    network.configure_mock(name=net_data["name"])
+    network.key = net_data["key"]
+    if net_data.get("dvs-name"):
+        network.config.distributedVirtualSwitch.name = net_data["dvs-name"]
+    if net_data.get("vlan"):
+        network.config.defaultPortConfig.vlan.vlanId = net_data["vlan"]
+    return network
 
 
 def create_fabric_network(vnc_test_client, vn_name, vn_key):
