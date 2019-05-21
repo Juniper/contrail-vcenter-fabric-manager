@@ -117,6 +117,24 @@ class VCenterAPIClient(VSphereAPIClient):
             self._version = update_set.version
         return update_set
 
+    def get_vms_by_portgroup(self, portgroup_key):
+        portgroup = self._get_dpg_by_key(portgroup_key)
+        if portgroup is None:
+            return []
+        return portgroup.vm
+
+    def _get_dpg_by_key(self, key):
+        content = self._si.content
+        container = content.viewManager.CreateContainerView(
+            content.rootFolder, [vim.dvs.DistributedVirtualPortgroup], True
+        )
+        try:
+            pg = (dpg for dpg in container.view if dpg.key == key).next()
+        except StopIteration:
+            pg = None
+        container.DestroyView()
+        return pg
+
 
 class VNCAPIClient(object):
     def __init__(self, vnc_cfg):
