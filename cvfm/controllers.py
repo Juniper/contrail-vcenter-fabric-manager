@@ -109,11 +109,12 @@ class VmUpdatedHandler(AbstractEventHandler):
         logger.info("VMware VM: %s", vmware_vm)
         vmware_host = event.host.host
         logger.info("VMware Host: %s", vmware_host)
-        vpg_models = self._vpg_service.create_vpg_models(vmware_vm)
+        vm_model = self._vm_service.create_vm_model(vmware_vm)
+        vpg_models = self._vpg_service.create_vpg_models(vm_model)
         for vpg_model in vpg_models:
             self._vpg_service.create_vpg_in_vnc(vpg_model)
             self._vpg_service.attach_pis_to_vpg(vpg_model)
-        vmi_models = self._vmi_service.create_vmi_models_for_vm(vmware_vm)
+        vmi_models = self._vmi_service.create_vmi_models_for_vm(vm_model)
         for vmi_model in vmi_models:
             self._vmi_service.create_vmi_in_vnc(vmi_model)
             self._vmi_service.attach_vmi_to_vpg(vmi_model)

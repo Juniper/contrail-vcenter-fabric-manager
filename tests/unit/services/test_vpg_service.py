@@ -14,6 +14,15 @@ def vpg_service(vnc_api_client):
     return VirtualPortGroupService(None, vnc_api_client, None)
 
 
+def test_create_vpg_models(vpg_service, vm_model):
+    vpg_models = vpg_service.create_vpg_models(vm_model)
+
+    assert len(vpg_models) == 1
+    assert vpg_models[0].uuid == models.generate_uuid("esxi-1_dvs-1")
+    assert vpg_models[0].host_name == "esxi-1"
+    assert vpg_models[0].dvs_name == "dvs-1"
+
+
 def test_create_dpg_model_with_vpg_creation_in_vnc(
     vpg_service, vnc_api_client
 ):

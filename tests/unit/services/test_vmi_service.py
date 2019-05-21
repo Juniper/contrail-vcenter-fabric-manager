@@ -10,8 +10,8 @@ def vmi_service(vnc_api_client):
     return VirtualMachineInterfaceService(None, vnc_api_client, None)
 
 
-def test_create_vmi_model(vmi_service, vmware_vm):
-    vmi_models = vmi_service.create_vmi_models_for_vm(vmware_vm)
+def test_create_vmi_model(vmi_service, vm_model):
+    vmi_models = vmi_service.create_vmi_models_for_vm(vm_model)
 
     assert vmi_models[0].uuid == models.generate_uuid("esxi-1_dvs-1_dpg-1")
     assert vmi_models[0].host_name == "esxi-1"

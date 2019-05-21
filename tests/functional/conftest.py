@@ -60,6 +60,11 @@ def dpg_service(vnc_api_client):
 
 
 @pytest.fixture
+def vm_service(vnc_api_client):
+    return services.VirtualMachineService(None, vnc_api_client, None)
+
+
+@pytest.fixture
 def vmware_controller(update_handler, lock):
     return VmwareController(
         vm_service=None,
