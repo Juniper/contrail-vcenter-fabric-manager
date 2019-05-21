@@ -1,8 +1,9 @@
 import mock
 import pytest
-from vnc_api import vnc_api
 from pyVmomi import vim
+from vnc_api import vnc_api
 
+from cvfm import database as db
 from cvfm import models
 
 
@@ -55,3 +56,8 @@ def vnc_api_client(project):
     client = mock.Mock()
     client.get_project.return_value = project
     return client
+
+
+@pytest.fixture
+def database():
+    return db.Database()
