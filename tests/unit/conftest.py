@@ -27,9 +27,15 @@ def vmware_network():
 @pytest.fixture
 def vmware_vm(vmware_dpg, vmware_network):
     vm = mock.Mock()
+    vm.configure_mock(name="vm-1")
     vm.network = [vmware_dpg, vmware_network]
     vm.runtime.host.name = "esxi-1"
     return vm
+
+
+@pytest.fixture
+def vm_model(vmware_vm):
+    return models.VirtualMachineModel.from_vmware_vm(vmware_vm)
 
 
 @pytest.fixture

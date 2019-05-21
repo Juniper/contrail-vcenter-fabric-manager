@@ -6,9 +6,9 @@ from cvfm import controllers
 
 
 @pytest.fixture
-def update_handler(vmi_service, vpg_service):
+def update_handler(vm_service, vmi_service, vpg_service):
     vm_updated_handler = controllers.VmUpdatedHandler(
-        None, vmi_service, None, vpg_service
+        vm_service, vmi_service, None, vpg_service
     )
     return controllers.UpdateHandler([vm_updated_handler])
 

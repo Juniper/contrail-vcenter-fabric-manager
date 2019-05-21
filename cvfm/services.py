@@ -23,8 +23,8 @@ class VirtualMachineService(Service):
     def get_host_model(self, host_name):
         logger.info("VirtualMachineService.get_host_model called")
 
-    def create_vm_model(self, vmware_vm, host_model):
-        logger.info("VirtualMachineService.create_vm_model called")
+    def create_vm_model(self, vmware_vm):
+        return models.VirtualMachineModel.from_vmware_vm(vmware_vm)
 
     def delete_vm_model(self, vm_name):
         logger.info("VirtualMachineService.delete_vm_model called")
@@ -44,8 +44,8 @@ class VirtualMachineInterfaceService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
-    def create_vmi_models_for_vm(self, vmware_vm):
-        return models.VirtualMachineInterfaceModel.from_vmware_vm(vmware_vm)
+    def create_vmi_models_for_vm(self, vm_model):
+        return models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
     def create_vmi_in_vnc(self, vmi_model):
         if self._vnc_api_client.read_vmi(vmi_model.uuid) is None:
@@ -130,8 +130,8 @@ class VirtualPortGroupService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
-    def create_vpg_models(self, vmware_vm):
-        return models.VirtualPortGroupModel.from_vmware_vm(vmware_vm)
+    def create_vpg_models(self, vm_model):
+        return models.VirtualPortGroupModel.from_vm_model(vm_model)
 
     def create_vpg_in_vnc(self, vpg_model):
         if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:

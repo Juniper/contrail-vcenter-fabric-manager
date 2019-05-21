@@ -41,11 +41,35 @@ def validate_vlan_id(vmware_dpg):
 
 
 class VirtualMachineModel(object):
-    def __init__(self):
-        pass
+    def __init__(self, name, host_name, dpg_models):
+        self.name = name
+        self.host_name = host_name
+        self.dpg_models = dpg_models
 
-    def get_all_vmis(self):
-        return [object()]
+    @classmethod
+    def from_vmware_vm(cls, vmware_vm):
+        dpg_models = set()
+        for net in vmware_vm.network:
+            try:
+                dpg_model = DistributedPortGroupModel.from_vmware_dpg(net)
+            except DPGCreationException:
+                continue
+            dpg_models.add(dpg_model)
+        return cls(
+            name=vmware_vm.name,
+            host_name=vmware_vm.runtime.host.name,
+            dpg_models=dpg_models,
+        )
+
+    def __repr__(self):
+        return (
+            "VirtualMachineModel(name={name}, host_name={host_name}, "
+            "dpg_models={dpg_models})".format(
+                name=self.name,
+                host_name=self.host_name,
+                dpg_models=self.dpg_models,
+            )
+        )
 
 
 class DistributedPortGroupModel(object):
@@ -119,6 +143,20 @@ class VirtualPortGroupModel(object):
             models.append(cls(uuid, host_name, dvs_name))
         return models
 
+    @classmethod
+    def from_vm_model(cls, vm_model):
+        host_name = vm_model.host_name
+        models = []
+        for dpg_model in vm_model.dpg_models:
+            dvs_name = dpg_model.dvs_name
+            uuid = generate_uuid(
+                "{host_name}_{dvs_name}".format(
+                    host_name=host_name, dvs_name=dvs_name
+                )
+            )
+            models.append(cls(uuid, host_name, dvs_name))
+        return models
+
     def __repr__(self):
         return (
             "VirtualPortGroupModel(uuid={uuid}, host_name={host_name}, "
@@ -159,23 +197,37 @@ class VirtualMachineInterfaceModel(object):
         vnc_vmi.set_id_perms(const.ID_PERMS)
         return vnc_vmi
 
+    # @classmethod
+    # def from_vmware_vm(cls, vmware_vm):
+    #     host_name = vmware_vm.runtime.host.name
+    #     models = []
+    #     for dpg in vmware_vm.network:
+    #         try:
+    #             dpg_model = DistributedPortGroupModel.from_vmware_dpg(dpg)
+    #         except DPGCreationException:
+    #             continue
+    #         uuid = generate_uuid(
+    #             "{host_name}_{dvs_name}_{dpg_name}".format(
+    #                 host_name=host_name,
+    #                 dvs_name=dpg_model.dvs_name,
+    #                 dpg_name=dpg_model.name,
+    #             )
+    #         )
+    #         models.append(cls(uuid, host_name, dpg_model))
+    #     return models
+
     @classmethod
-    def from_vmware_vm(cls, vmware_vm):
-        host_name = vmware_vm.runtime.host.name
+    def from_vm_model(cls, vm_model):
         models = []
-        for dpg in vmware_vm.network:
-            try:
-                dpg_model = DistributedPortGroupModel.from_vmware_dpg(dpg)
-            except DPGCreationException:
-                continue
+        for dpg_model in vm_model.dpg_models:
             uuid = generate_uuid(
                 "{host_name}_{dvs_name}_{dpg_name}".format(
-                    host_name=host_name,
+                    host_name=vm_model.host_name,
                     dvs_name=dpg_model.dvs_name,
                     dpg_name=dpg_model.name,
                 )
             )
-            models.append(cls(uuid, host_name, dpg_model))
+            models.append(cls(uuid, vm_model.host_name, dpg_model))
         return models
 
     @property

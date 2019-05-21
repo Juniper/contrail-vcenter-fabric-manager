@@ -4,8 +4,24 @@ from cvfm import models
 from cvfm.exceptions import VNCVMICreationException
 
 
-def test_from_vmware_vm(vmware_vm):
-    vmi_models = models.VirtualMachineInterfaceModel.from_vmware_vm(vmware_vm)
+# def test_from_vmware_vm(vmware_vm):
+#     vmi_models = models.VirtualMachineInterfaceModel.from_vmware_vm(vmware_vm)
+#
+#     assert vmi_models[0].uuid == models.generate_uuid("esxi-1_dvs-1_dpg-1")
+#     assert vmi_models[0].host_name == "esxi-1"
+#     assert vmi_models[0].dpg_model.dvs_name == "dvs-1"
+#     assert vmi_models[0].dpg_model.name == "dpg-1"
+#     assert vmi_models[0].dpg_model.uuid == models.generate_uuid(
+#         "dvportgroup-1"
+#     )
+#     assert vmi_models[0].vpg_uuid == models.generate_uuid("esxi-1_dvs-1")
+#
+
+
+def test_from_vm_model(vmware_vm):
+    vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+
+    vmi_models = models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
     assert vmi_models[0].uuid == models.generate_uuid("esxi-1_dvs-1_dpg-1")
     assert vmi_models[0].host_name == "esxi-1"
