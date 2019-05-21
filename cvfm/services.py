@@ -24,11 +24,14 @@ class VirtualMachineService(Service):
         logger.info("VirtualMachineService.get_host_model called")
 
     def create_vm_model(self, vmware_vm):
-        return models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+        vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+        self._database.add_vm_model(vm_model)
+        return vm_model
 
     def delete_vm_model(self, vm_name):
-        logger.info("VirtualMachineService.delete_vm_model called")
-        return models.VirtualMachineModel()
+        vm_model = self._database.get_vm_model(vm_name)
+        self._database.remove_vm_model(vm_name)
+        return vm_model
 
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
@@ -122,6 +125,14 @@ class DistributedPortGroupService(Service):
 
     def delete_fabric_vn(self, dpg_model):
         logger.info("DistributedPortGroupService.delete_fabric_vn called")
+
+    def is_pg_empty_on_host(self, portgroup_key, host):
+        vms_in_pg = set(
+            self._vcenter_api_client.get_vms_by_portgroup(portgroup_key)
+        )
+        vms_on_host = set(host.vm)
+        vms_in_pg_and_on_host = vms_in_pg.intersection(vms_on_host)
+        return vms_in_pg_and_on_host == set()
 
 
 class VirtualPortGroupService(Service):
