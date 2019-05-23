@@ -23,7 +23,7 @@ def validate_dpg(vmware_dpg):
 def validate_type(vmware_dpg):
     if not isinstance(vmware_dpg, vim.DistributedVirtualPortgroup):
         raise DPGCreationException(
-            "{} is not a Distributed " "Portgroup".format(vmware_dpg.name)
+            "{} is not a Distributed Portgroup".format(vmware_dpg.name)
         )
 
 
@@ -73,8 +73,9 @@ class VirtualMachineModel(object):
 
 
 class DistributedPortGroupModel(object):
-    def __init__(self, uuid, name, vlan_id, dvs_name):
+    def __init__(self, uuid, key, name, vlan_id, dvs_name):
         self.uuid = uuid
+        self.key = key
         self.name = name
         self.vlan_id = vlan_id
         self.dvs_name = dvs_name
@@ -93,9 +94,10 @@ class DistributedPortGroupModel(object):
         validate_dpg(vmware_dpg)
         vlan_id = vmware_dpg.config.defaultPortConfig.vlan.vlanId
         uuid = generate_uuid(vmware_dpg.key)
+        key = vmware_dpg.key
         name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
-        return cls(uuid, name, vlan_id, dvs_name)
+        return cls(uuid, key, name, vlan_id, dvs_name)
 
     def __repr__(self):
         return (
@@ -159,7 +161,7 @@ class VirtualMachineInterfaceModel(object):
     def to_vnc_vmi(self, project, fabric_vn):
         if fabric_vn is None:
             raise VNCVMICreationException(
-                "Cannot create VNC VMI without a " "fabric VN."
+                "Cannot create VNC VMI without a fabric VN."
             )
 
         vnc_name = "{host_name}_{dvs_name}_{dpg_name}".format(
