@@ -81,3 +81,22 @@ def test_filter_out_non_empty_dpgs(dpg_service, vcenter_api_client):
     )
 
     assert result_vmi_models == [vmi_model_3]
+
+
+def test_is_vlan_changed(dpg_service, vnc_api_client):
+    dpg_model = models.DistributedPortGroupModel(
+        uuid="dpg-uuid",
+        key="dvportgroup-1",
+        name="dpg-1",
+        vlan_id=5,
+        dvs_name="dvs-1",
+    )
+
+    vnc_api_client.get_vn_vlan.return_value = 15
+    assert dpg_service.should_update_vlan(dpg_model)
+
+    vnc_api_client.get_vn_vlan.return_value = 5
+    assert not dpg_service.should_update_vlan(dpg_model)
+
+    vnc_api_client.get_vn_vlan.return_value = None
+    assert not dpg_service.should_update_vlan(dpg_model)

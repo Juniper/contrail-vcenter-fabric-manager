@@ -322,16 +322,32 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        # TODO: what CVFM should do if dpg VLAN configuration was changed to Private VLAN/Trunk VLAN?
         logger.info(
             "DVPortgroupReconfiguredHandler: detected event: %s", event
         )
-
         vmware_dpg = event.net.network
         logger.info("VMware DPG: %s with uuid: %s", vmware_dpg, vmware_dpg.key)
 
-        if self._dpg_service.detect_vlan_change(vmware_dpg):
-            self._dpg_service.handle_vlan_change(vmware_dpg)
+        try:
+            dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
+        except exceptions.DPGCreationException:
+            # reconfigured DPG for valid/invalid VLAN to invalid
+            logger.exception("DPG %s has invalid VLAN type", vmware_dpg)
+            # TODO remove attached VMIs to corresponding VN to reconfigured DPG from VNC
+            # TODO remove corresponding VN to reconfigured DPG from VNC
+            # TODO update VM models in the Database
+            return
+
+        if not self._dpg_service.exists_vn_for_portgroup(dpg_model):
+            # reconfigured DPG from invalid VLAN to valid
+            # TODO create VN in VNC for DPG
+            # TODO update VM models in the Database
+            # TODO create VMIs (VPGs) in VNC
+            return
+
+        # reconfigured DPG from valid VLAN to another valid VLAN
+        if self._dpg_service.should_update_vlan(dpg_model):
+            self._dpg_service.handle_vlan_change(dpg_model)
 
 
 class DVPortgroupRenamedHandler(AbstractEventHandler):
