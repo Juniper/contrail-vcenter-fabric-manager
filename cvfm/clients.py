@@ -230,3 +230,13 @@ class VNCAPIClient(object):
         for pi in physical_interfaces:
             vpg.add_physical_interface(pi)
         self.vnc_lib.virtual_port_group_update(vpg)
+
+    def get_vn_vlan(self, vnc_vn):
+        vmi_refs = vnc_vn.get_virtual_machine_interface_back_refs()
+        if len(vmi_refs) == 0:
+            return None
+        vmi_ref = vmi_refs[0]
+        vmi_uuid = vmi_ref["uuid"]
+        vnc_vmi = self.read_vmi(vmi_uuid)
+        vmi_properties = vnc_vmi.get_virtual_machine_interface_properties()
+        return vmi_properties.get_sub_interface_vlan_tag()

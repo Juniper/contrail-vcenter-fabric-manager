@@ -4,3 +4,7 @@ class DPGCreationException(Exception):
 
 class VNCVMICreationException(Exception):
     pass
+
+
+class NotFoundVNCVNException(Exception):
+    pass
