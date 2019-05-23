@@ -92,3 +92,19 @@ def test_filter_node_ports_by_dvs_name(vpg_service):
     ]
     assert vpg_service.filter_node_ports_by_dvs_name(ports, "DVS3") == [port_2]
     assert vpg_service.filter_node_ports_by_dvs_name(ports, "DVS4") == []
+
+
+def test_prune_empty_vpgs(vpg_service, vnc_api_client):
+    vpg_1_uuid = models.generate_uuid("esxi-1_dvs-1")
+    vpg_1 = mock.Mock(uuid=vpg_1_uuid)
+    vpg_1.get_virtual_machine_interface_refs.return_value = [
+        {"uuid": "vmi-uuid-1"}
+    ]
+    vpg_2_uuid = models.generate_uuid("esxi-2_dvs-1")
+    vpg_2 = mock.Mock(uuid=vpg_2_uuid)
+    vpg_2.get_virtual_machine_interface_refs.return_value = None
+    vnc_api_client.read_vpg.side_effect = [vpg_1, vpg_2]
+
+    vpg_service.prune_empty_vpgs([vpg_1_uuid, vpg_2_uuid])
+
+    vnc_api_client.delete_vpg.assert_called_once_with(vpg_2_uuid)

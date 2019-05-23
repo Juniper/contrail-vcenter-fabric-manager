@@ -123,7 +123,7 @@ class VCenterAPIClient(VSphereAPIClient):
     def _get_dpg_by_key(self, key):
         content = self._si.content
         container = content.viewManager.CreateContainerView(
-            content.rootFolder, vim.dvs.DistributedVirtualPortgroup, True
+            content.rootFolder, [vim.dvs.DistributedVirtualPortgroup], True
         )
         try:
             return (dpg for dpg in container.view if dpg.key == key).next()
@@ -205,6 +205,18 @@ class VNCAPIClient(object):
             self.vnc_lib.virtual_port_group_update(vnc_vpg)
         except vnc_api.NoIdError:
             logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
+
+    def delete_vmi(self, vmi_uuid):
+        try:
+            self.vnc_lib.virtual_machine_interface_delete(id=vmi_uuid)
+        except vnc_api.NoIdError:
+            pass
+
+    def delete_vpg(self, vpg_uuid):
+        try:
+            self.vnc_lib.virtual_port_group_delete(id=vpg_uuid)
+        except vnc_api.NoIdError:
+            pass
 
     def get_node_by_name(self, node_name):
         for node in self._read_all_nodes():

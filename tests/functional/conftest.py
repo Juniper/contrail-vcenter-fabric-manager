@@ -7,8 +7,10 @@ import yaml
 from cvfm import services
 from cvfm.clients import VNCAPIClient
 
-# imports fixtures from sample_topologies.py file
 from cvfm.controllers import VmwareController
+from cvfm import database as db
+
+# imports fixtures from sample_topologies.py file
 from sample_topologies import *
 from tests import utils
 from tests.functional.vnc_api_test_client import VNCAPITestClient
@@ -53,23 +55,41 @@ def fabric_vn(vnc_test_client):
 
 
 @pytest.fixture
-def vmi_service(vnc_api_client):
-    return services.VirtualMachineInterfaceService(None, vnc_api_client, None)
+def database():
+    return db.Database()
 
 
 @pytest.fixture
-def vpg_service(vnc_api_client):
-    return services.VirtualPortGroupService(None, vnc_api_client, None)
+def vcenter_api_client():
+    return mock.Mock()
 
 
 @pytest.fixture
-def dpg_service(vnc_api_client):
-    return services.DistributedPortGroupService(None, vnc_api_client, None)
+def vmi_service(vcenter_api_client, vnc_api_client, database):
+    return services.VirtualMachineInterfaceService(
+        vcenter_api_client, vnc_api_client, database
+    )
 
 
 @pytest.fixture
-def vm_service(vnc_api_client):
-    return services.VirtualMachineService(None, vnc_api_client, None)
+def vpg_service(vcenter_api_client, vnc_api_client, database):
+    return services.VirtualPortGroupService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+
+@pytest.fixture
+def dpg_service(vcenter_api_client, vnc_api_client, database):
+    return services.DistributedPortGroupService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+
+@pytest.fixture
+def vm_service(vcenter_api_client, vnc_api_client, database):
+    return services.VirtualMachineService(
+        vcenter_api_client, vnc_api_client, database
+    )
 
 
 @pytest.fixture

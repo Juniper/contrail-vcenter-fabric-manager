@@ -72,7 +72,6 @@ def build_context(config):
     dpg_service = DistributedPortGroupService(
         vcenter_api_client, vnc_api_client, database
     )
-
     vpg_service = VirtualPortGroupService(
         vcenter_api_client, vnc_api_client, database
     )
@@ -83,7 +82,9 @@ def build_context(config):
     vm_reconfigured_handler = VmReconfiguredHandler(
         vm_service, vmi_service, dpg_service
     )
-    vm_removed_handler = VmRemovedHandler(vm_service, vmi_service, dpg_service)
+    vm_removed_handler = VmRemovedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
     vm_migrated_handler = VmMigratedHandler(
         vm_service, vmi_service, dpg_service
     )

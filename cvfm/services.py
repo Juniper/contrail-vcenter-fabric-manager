@@ -66,8 +66,19 @@ class VirtualMachineInterfaceService(Service):
         vnc_vpg.add_virtual_machine_interface(vnc_vmi)
         self._vnc_api_client.update_vpg(vnc_vpg)
 
-    def delete_vmi(self, vm_uuid, vmware_vmi=None, vmi_model=None):
-        logger.info("VirtualMachineInterfaceService.delete_vmi called")
+    def detach_vmi_from_vpg(self, vmi_model):
+        vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)
+        vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
+        vnc_vpg.del_virtual_machine_interface(vnc_vmi)
+        self._vnc_api_client.update_vpg(vnc_vpg)
+
+    def find_connected_vpgs(self, vmi_uuid):
+        vnc_vmi = self._vnc_api_client.read_vmi(vmi_uuid)
+        vpg_back_refs = vnc_vmi.get_virtual_port_group_back_refs() or []
+        return [ref["uuid"] for ref in vpg_back_refs]
+
+    def delete_vmi(self, vmi_uuid):
+        self._vnc_api_client.delete_vmi(vmi_uuid)
 
     def add_vmi(self, vm_uuid, vmware_vmi):
         logger.info("VirtualMachineInterfaceService.add_vmi called")
@@ -187,3 +198,9 @@ class VirtualPortGroupService(Service):
             ):
                 return True
         return False
+
+    def prune_empty_vpgs(self, vpg_uuids):
+        for vpg_uuid in vpg_uuids:
+            vnc_vpg = self._vnc_api_client.read_vpg(vpg_uuid)
+            if vnc_vpg.get_virtual_machine_interface_refs() is None:
+                self._vnc_api_client.delete_vpg(vpg_uuid)
