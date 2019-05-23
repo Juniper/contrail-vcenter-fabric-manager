@@ -1,3 +1,4 @@
+import mock
 import pytest
 from vnc_api import vnc_api
 
@@ -30,6 +31,7 @@ def test_create_vmi_in_vnc(vmi_service, vnc_api_client, project, fabric_vn):
 
     dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
+        key="dvportgroup-1",
         name="dpg-1",
         vlan_id=5,
         dvs_name="dvs-1",
@@ -63,6 +65,7 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
 
     dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
+        key="dvportgroup-1",
         name="dpg-1",
         vlan_id=5,
         dvs_name="dvs-1",
@@ -76,3 +79,18 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
     vmi_service.attach_vmi_to_vpg(vmi_model)
 
     assert len(vnc_vpg.virtual_machine_interface_refs) == 1
+
+
+def test_find_connected_vpgs(vmi_service, vnc_api_client):
+    vnc_vmi = mock.Mock()
+    vpg_uuid = models.generate_uuid("esxi-1_dvs-1")
+    vnc_vmi.get_virtual_port_group_back_refs.return_value = [
+        {"uuid": vpg_uuid}
+    ]
+    vnc_api_client.read_vmi.return_value = vnc_vmi
+
+    vpg_uuids = vmi_service.find_connected_vpgs(
+        models.generate_uuid("esxi-1_dvs-1_dpg-1")
+    )
+
+    assert vpg_uuids == [vpg_uuid]
