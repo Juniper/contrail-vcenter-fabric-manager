@@ -2,7 +2,7 @@ import logging
 
 from cvfm import constants as const
 from cvfm import models
-from cvfm.exceptions import VNCVMICreationException
+from cvfm.exceptions import VNCVMICreationException, NotFoundVNCVNException
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,20 @@ class DistributedPortGroupService(Service):
         self._vnc_api_client.create_vn(vnc_vn)
         logger.info("Virtual Network %s created in VNC", vnc_vn.name)
 
+    def exists_vn_for_portgroup(self, dpg_model):
+        vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)
+        return vnc_vn is not None
+
+    def is_vlan_changed(self, dpg_model):
+        vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)
+        vnc_vlan = self._vnc_api_client.get_vn_vlan(vnc_vn)
+        if vnc_vlan is None:
+            return False
+        return vnc_vlan != dpg_model.vlan_id
+
+    def handle_vlan_change(self, vmware_dpg):
+        logger.info("DistributedPortGroupService.handle_vlan_change called")
+
     def create_fabric_vmi_for_vm_vmi(self, vmi_model):
         logger.info(
             "DistributedPortGroupService.create_fabric_vmi_for_vm_vmi called"
@@ -106,13 +120,6 @@ class DistributedPortGroupService(Service):
 
     def get_dvs_model(self, vmware_dvs):
         logger.info("DistributedPortGroupService.get_dvs_model called")
-
-    def detect_vlan_change(self, vmware_dpg):
-        logger.info("DistributedPortGroupService.detect_vlan_change called")
-        return True
-
-    def handle_vlan_change(self, vmware_dpg):
-        logger.info("DistributedPortGroupService.handle_vlan_change called")
 
     def rename_dpg(self, dpg_uuid, new_dpg_name):
         logger.info("DistributedPortGroupService.rename_dpg called")
