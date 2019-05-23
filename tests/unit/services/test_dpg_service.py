@@ -60,3 +60,18 @@ def test_is_pg_empty_on_host(
     result = dpg_service.is_pg_empty_on_host("dvportgroup-1", host)
 
     assert result is expected
+
+
+def test_is_vlan_changed(dpg_service, vnc_api_client):
+    dpg_model = models.DistributedPortGroupModel(
+        uuid="dpg-uuid", key="dvportgroup-1", name="dpg-1", vlan_id=5, dvs_name="dvs-1"
+    )
+
+    vnc_api_client.get_vn_vlan.return_value = 15
+    assert dpg_service.should_update_vlan(dpg_model)
+
+    vnc_api_client.get_vn_vlan.return_value = 5
+    assert not dpg_service.should_update_vlan(dpg_model)
+
+    vnc_api_client.get_vn_vlan.return_value = None
+    assert not dpg_service.should_update_vlan(dpg_model)
