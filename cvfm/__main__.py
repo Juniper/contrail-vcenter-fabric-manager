@@ -80,7 +80,7 @@ def build_context(config):
         vm_service, vmi_service, dpg_service, vpg_service
     )
     vm_reconfigured_handler = VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, dpg_service
     )
     vm_removed_handler = VmRemovedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
