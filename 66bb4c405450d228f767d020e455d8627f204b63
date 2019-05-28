@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f5c4f37_3a32c9a8",
+        "filename": "cvfm/__main__.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-05-28T13:37:15Z",
+      "side": 1,
+      "message": "It should be vpg_service",
+      "range": {
+        "startLine": 83,
+        "startChar": 46,
+        "endLine": 83,
+        "endChar": 57
+      },
+      "revId": "66bb4c405450d228f767d020e455d8627f204b63",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5c4f37_ba1d9910",
+        "filename": "tests/functional/vm_events/test_vm_disconnected.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-05-28T13:37:15Z",
+      "side": 1,
+      "message": "rename to vm_reconfigured_handler",
+      "range": {
+        "startLine": 15,
+        "startChar": 4,
+        "endLine": 15,
+        "endChar": 22
+      },
+      "revId": "66bb4c405450d228f767d020e455d8627f204b63",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5c4f37_bae23900",
+        "filename": "tests/functional/vm_events/test_vm_disconnected.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-05-28T13:37:15Z",
+      "side": 1,
+      "message": "Here you can use create_vmware_net from test utils. This method accept same dpg schema like in fixture above",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 14
+      },
+      "revId": "66bb4c405450d228f767d020e455d8627f204b63",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5c4f37_9af1b5d0",
+        "filename": "tests/functional/vm_events/test_vm_disconnected.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-05-28T13:37:15Z",
+      "side": 1,
+      "message": "please add fixture for fabric_vn for dpg-1",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 16
+      },
+      "revId": "66bb4c405450d228f767d020e455d8627f204b63",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    }
+  ]
+}
