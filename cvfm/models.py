@@ -202,3 +202,12 @@ class VirtualMachineInterfaceModel(object):
                 host_name=self.host_name, dvs_name=self.dpg_model.dvs_name
             )
         )
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __ne__(self, other):
+        return self.uuid != other.uuid
+
+    def __hash__(self):
+        return hash(self.uuid)

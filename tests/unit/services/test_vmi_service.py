@@ -94,3 +94,21 @@ def test_find_connected_vpgs(vmi_service, vnc_api_client):
     )
 
     assert vpg_uuids == [vpg_uuid]
+
+
+def test_find_affected_vmis(vmi_service, vmware_vm):
+    old_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+    new_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+
+    affected_vmis_1 = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
+    )
+
+    assert len(affected_vmis_1) == 0
+
+    new_vm_model.dpg_models = []
+    affected_vmis_2 = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
+    )
+
+    assert len(affected_vmis_2) == 1

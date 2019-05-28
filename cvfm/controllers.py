@@ -148,7 +148,7 @@ class VmReconfiguredHandler(AbstractEventHandler):
             if operation == "add":
                 self._handle_add_interface(vm_uuid, device)
             elif operation == "remove":
-                self._handle_remove_interface(vm_uuid, device)
+                self._handle_remove_interface(event)
             else:
                 self._handle_edit_interface(vm_uuid, device)
 
@@ -156,9 +156,21 @@ class VmReconfiguredHandler(AbstractEventHandler):
         vmi_model = self._vmi_service.add_vmi(vm_uuid, vmware_vmi)
         self._dpg_service.create_fabric_vmi_for_vm_vmi(vmi_model)
 
-    def _handle_remove_interface(self, vm_uuid, vmware_vmi):
-        vmi_model = self._vmi_service.delete_vmi(vm_uuid, vmware_vmi)
-        self._dpg_service.delete_fabric_vmi_for_vm_vmi(vmi_model)
+    def _handle_remove_interface(self, event):
+        old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
+        new_vm_model = self._vm_service.create_vm_model(event.vm.vm)
+        affected_vmis = self._vmi_service.find_affected_vmis(
+            old_vm_model, new_vm_model
+        )
+        vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
+            affected_vmis, event.host.host
+        )
+        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
+        for vmi_model in vmis_to_delete:
+            self._vmi_service.detach_vmi_from_vpg(vmi_model)
+            self._vmi_service.delete_vmi(vmi_model)
+
+        self._vpg_service.prune_empty_vpgs(affected_vpgs)
 
     def _handle_edit_interface(self, vm_uuid, vmware_vmi):
         self._handle_remove_interface(vm_uuid, vmware_vmi)
