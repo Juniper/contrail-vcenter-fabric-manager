@@ -108,3 +108,23 @@ def test_prune_empty_vpgs(vpg_service, vnc_api_client):
     vpg_service.prune_empty_vpgs([vpg_1_uuid, vpg_2_uuid])
 
     vnc_api_client.delete_vpg.assert_called_once_with(vpg_2_uuid)
+
+
+def test_find_affected_vpgs(vpg_service, vnc_api_client):
+    vnc_vmi_1 = mock.Mock()
+    vnc_vmi_2 = mock.Mock()
+    vpg_uuid_1 = models.generate_uuid("esxi-1_dvs-1")
+    vpg_uuid_2 = models.generate_uuid("esxi-2_dvs-1")
+    vnc_vmi_1.get_virtual_port_group_back_refs.return_value = [
+        {"uuid": vpg_uuid_1}
+    ]
+    vnc_vmi_2.get_virtual_port_group_back_refs.return_value = [
+        {"uuid": vpg_uuid_1},
+        {"uuid": vpg_uuid_2},
+    ]
+    vnc_api_client.read_vmi.side_effect = [vnc_vmi_1, vnc_vmi_2]
+    vmi_models = [mock.Mock(), mock.Mock()]
+
+    vpg_uuids = vpg_service.find_affected_vpgs(vmi_models)
+
+    assert vpg_uuids == {vpg_uuid_1, vpg_uuid_2}
