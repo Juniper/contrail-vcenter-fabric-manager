@@ -60,3 +60,24 @@ def test_is_pg_empty_on_host(
     result = dpg_service.is_pg_empty_on_host("dvportgroup-1", host)
 
     assert result is expected
+
+
+def test_filter_out_non_empty_dpgs(dpg_service, vcenter_api_client):
+    vmi_model_1 = mock.Mock()
+    vmi_model_2 = mock.Mock()
+    vmi_model_3 = mock.Mock()
+    vmware_vm_1 = mock.Mock()
+    vmware_vm_2 = mock.Mock()
+
+    host = mock.Mock(vm=[vmware_vm_1, vmware_vm_2])
+    vcenter_api_client.get_vms_by_portgroup.side_effect = [
+        [vmware_vm_1],
+        [vmware_vm_2],
+        [],
+    ]
+
+    result_vmi_models = dpg_service.filter_out_non_empty_dpgs(
+        [vmi_model_1, vmi_model_2, vmi_model_3], host
+    )
+
+    assert result_vmi_models == [vmi_model_3]

@@ -74,6 +74,8 @@ def vm_reconfigured_update(vmware_vm):
     event.configSpec = mock.Mock(spec=vim.vm.ConfigSpec())
     event.configSpec.deviceChange = [device_spec]
     event.vm.vm = vmware_vm
+    event.vm.name = "vm-1"
+    event.host.host = mock.Mock(vm=[vmware_vm])
     return utils.wrap_into_update_set(event=event)
 
 
@@ -88,6 +90,7 @@ def test_last_vm_in_pg(
     minimalistic_topology,
     fabric_vn,
     fabric_vn_2,
+    vmware_vm,
     vmware_controller,
     vcenter_api_client,
     vm_created_update,
@@ -106,6 +109,9 @@ def test_last_vm_in_pg(
     assert vnc_vmi_1 is not None
     assert vnc_vmi_2 is not None
 
+    vcenter_api_client.get_vms_by_portgroup.side_effect = (
+        lambda x: [vmware_vm] if x == "dvportgroup-1" else []
+    )
     vmware_controller.handle_update(vm_reconfigured_update)
 
     vnc_vpg = vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-1"))
@@ -116,3 +122,13 @@ def test_last_vm_in_pg(
         vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-1_dpg-2"))
     assert vnc_vpg is not None
     assert vnc_vmi_1 is not None
+
+    vcenter_api_client.get_vms_by_portgroup.side_effect = None
+    vcenter_api_client.get_vms_by_portgroup.return_value = []
+    vmware_vm.network = []
+    vmware_controller.handle_update(vm_reconfigured_update)
+
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-1_dpg-1"))
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-1"))

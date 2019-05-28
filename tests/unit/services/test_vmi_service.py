@@ -81,16 +81,19 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
     assert len(vnc_vpg.virtual_machine_interface_refs) == 1
 
 
-def test_find_connected_vpgs(vmi_service, vnc_api_client):
-    vnc_vmi = mock.Mock()
-    vpg_uuid = models.generate_uuid("esxi-1_dvs-1")
-    vnc_vmi.get_virtual_port_group_back_refs.return_value = [
-        {"uuid": vpg_uuid}
-    ]
-    vnc_api_client.read_vmi.return_value = vnc_vmi
+def test_find_affected_vmis(vmi_service, vmware_vm):
+    old_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+    new_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
 
-    vpg_uuids = vmi_service.find_connected_vpgs(
-        models.generate_uuid("esxi-1_dvs-1_dpg-1")
+    affected_vmis_1 = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
     )
 
-    assert vpg_uuids == [vpg_uuid]
+    assert len(affected_vmis_1) == 0
+
+    new_vm_model.dpg_models = []
+    affected_vmis_2 = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
+    )
+
+    assert len(affected_vmis_2) == 1

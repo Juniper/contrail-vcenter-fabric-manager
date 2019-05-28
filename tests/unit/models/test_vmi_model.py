@@ -51,3 +51,13 @@ def test_no_fabric_vn(vmware_dpg, project):
 
     with pytest.raises(VNCVMICreationException):
         vmi_model.to_vnc_vmi(project, None)
+
+
+def test_hash(vmware_vm):
+    vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+
+    vmi_1 = models.VirtualMachineInterfaceModel.from_vm_model(vm_model)[0]
+    vmi_2 = models.VirtualMachineInterfaceModel.from_vm_model(vm_model)[0]
+
+    assert vmi_1 == vmi_2
+    assert len({vmi_1, vmi_2}) == 1
