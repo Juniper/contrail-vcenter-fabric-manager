@@ -49,9 +49,7 @@ def vm_reconfigured_handler(vm_service, vmi_service, dpg_service, vpg_service):
 
 
 def test_device_type(
-    vm_reconfigured_handler,
-    vm_service,
-    vm_reconfigured_change,
+    vm_reconfigured_handler, vm_service, vm_reconfigured_change
 ):
 
     vm_reconfigured_handler.handle_change(None, vm_reconfigured_change)

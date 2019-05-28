@@ -191,21 +191,17 @@ class VmRemovedHandler(AbstractEventHandler):
         vm_name = event.vm.name
         logger.info("VmRemovedEvent regards VM: %s", vm_name)
         vm_model = self._vm_service.delete_vm_model(vm_name)
-        affected_vpgs = []
-        for dpg_model in vm_model.dpg_models:
-            if not self._dpg_service.is_pg_empty_on_host(
-                dpg_model.key, event.host.host
-            ):
-                continue
-            for vmi_model in self._vmi_service.create_vmi_models_for_vm(
-                vm_model
-            ):
-                connected_vpgs = self._vmi_service.find_connected_vpgs(
-                    vmi_model.uuid
-                )
-                affected_vpgs.extend(connected_vpgs)
-                self._vmi_service.detach_vmi_from_vpg(vmi_model)
-                self._vmi_service.delete_vmi(vmi_model)
+
+        affected_vmis = self._vmi_service.create_vmi_models_for_vm(vm_model)
+        vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
+            affected_vmis, event.host.host
+        )
+
+        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
+
+        for vmi_model in vmis_to_delete:
+            self._vmi_service.detach_vmi_from_vpg(vmi_model)
+            self._vmi_service.delete_vmi(vmi_model)
 
         self._vpg_service.prune_empty_vpgs(affected_vpgs)
 

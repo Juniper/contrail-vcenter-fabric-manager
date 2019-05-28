@@ -120,7 +120,7 @@ def test_find_affected_vpgs(vpg_service, vnc_api_client):
     ]
     vnc_vmi_2.get_virtual_port_group_back_refs.return_value = [
         {"uuid": vpg_uuid_1},
-        {"uuid": vpg_uuid_2}
+        {"uuid": vpg_uuid_2},
     ]
     vnc_api_client.read_vmi.side_effect = [vnc_vmi_1, vnc_vmi_2]
     vmi_models = [mock.Mock(), mock.Mock()]
