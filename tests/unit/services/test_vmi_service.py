@@ -94,3 +94,19 @@ def test_find_connected_vpgs(vmi_service, vnc_api_client):
     )
 
     assert vpg_uuids == [vpg_uuid]
+
+
+def test_find_affected_vmis(vmi_service):
+    vmi_model = mock.Mock()
+    old_vm_model = mock.Mock()
+    new_vm_model = mock.Mock()
+    vmi_from_vm_model = mock.Mock(side_effect=[[vmi_model], []])
+    with mock.patch(
+        "cvfm.services.models.VirtualMachineInterfaceModel.from_vm_model",
+        vmi_from_vm_model,
+    ):
+        affected_vmis = vmi_service.find_affected_vmis(
+            old_vm_model, new_vm_model
+        )
+
+    assert affected_vmis == {vmi_model}

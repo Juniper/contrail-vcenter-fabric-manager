@@ -80,6 +80,11 @@ class VirtualMachineInterfaceService(Service):
         vpg_back_refs = vnc_vmi.get_virtual_port_group_back_refs() or []
         return [ref["uuid"] for ref in vpg_back_refs]
 
+    def find_affected_vmis(self, old_vm_model, new_vm_model):
+        old_vmi_models = set(self.create_vmi_models_for_vm(old_vm_model))
+        new_vmi_models = set(self.create_vmi_models_for_vm(new_vm_model))
+        return old_vmi_models - new_vmi_models
+
     def delete_vmi(self, vmi_model):
         self._vnc_api_client.delete_vmi(vmi_model.uuid)
 
@@ -139,6 +144,15 @@ class DistributedPortGroupService(Service):
 
     def delete_fabric_vn(self, dpg_model):
         logger.info("DistributedPortGroupService.delete_fabric_vn called")
+
+    def filter_out_non_empty_dpgs(self, vmi_models, host):
+        return [
+            vmi_model
+            for vmi_model in vmi_models
+            if self.is_pg_empty_on_host(
+                vmi_model.dpg_model.key, host
+            )
+        ]
 
     def is_pg_empty_on_host(self, portgroup_key, host):
         vms_in_pg = set(
@@ -201,6 +215,14 @@ class VirtualPortGroupService(Service):
             ):
                 return True
         return False
+
+    def find_affected_vpgs(self, vmi_models):
+        affected_vpgs = set()
+        for vmi_model in vmi_models:
+            vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
+            vpg_back_refs = vnc_vmi.get_virtual_port_group_back_refs() or []
+            affected_vpgs.update(ref["uuid"] for ref in vpg_back_refs)
+        return affected_vpgs
 
     def prune_empty_vpgs(self, vpg_uuids):
         for vpg_uuid in vpg_uuids:
