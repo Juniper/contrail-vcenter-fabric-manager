@@ -137,6 +137,29 @@ def vm_created_update_3():
     )
 
 
+@pytest.fixture
+def vm_created_update_4():
+    networks = [
+        {
+            "key": "dvportgroup-1",
+            "name": "dpg-1",
+            "type": vim.DistributedVirtualPortgroup,
+            "dvs-name": "dvs-1",
+            "vlan": 5,
+        },
+        {
+            "key": "dvportgroup-2",
+            "name": "dpg-2",
+            "type": vim.DistributedVirtualPortgroup,
+            "dvs-name": "dvs-1",
+            "vlan": 6,
+        },
+    ]
+    return utils.create_vm_created_update(
+        vm_name="vm-1", vm_host_name="esxi-1", vm_networks=networks
+    )
+
+
 def test_last_vm_from_pg(
     minimalistic_topology,
     fabric_vn,
@@ -228,3 +251,41 @@ def test_two_vms_two_pgs(
 
     assert vpg is not None
     assert vmi_2 is not None
+
+
+def test_two_pgs_one_empty(
+    minimalistic_topology,
+    fabric_vn,
+    fabric_vn_2,
+    vmware_controller,
+    vcenter_api_client,
+    vm_created_update_4,
+    vm_removed_update_2,
+    vmware_vm_2,
+    vnc_test_client,
+):
+    vmware_controller.handle_update(vm_created_update_4)
+    vnc_vpg = vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-1"))
+    vnc_vmi_1 = vnc_test_client.read_vmi(
+        models.generate_uuid("esxi-1_dvs-1_dpg-1")
+    )
+    vnc_vmi_2 = vnc_test_client.read_vmi(
+        models.generate_uuid("esxi-1_dvs-1_dpg-2")
+    )
+    assert vnc_vpg is not None
+    assert vnc_vmi_1 is not None
+    assert vnc_vmi_2 is not None
+
+    vcenter_api_client.get_vms_by_portgroup.side_effect = (
+        lambda x: [] if x == "dvportgroup-1" else [vmware_vm_2]
+    )
+    vmware_controller.handle_update(vm_removed_update_2)
+
+    vnc_vpg = vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-1"))
+    vnc_vmi_2 = vnc_test_client.read_vmi(
+        models.generate_uuid("esxi-1_dvs-1_dpg-2")
+    )
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-1_dpg-1"))
+    assert vnc_vpg is not None
+    assert vnc_vmi_2 is not None

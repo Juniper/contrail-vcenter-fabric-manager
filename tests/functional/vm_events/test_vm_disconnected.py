@@ -74,7 +74,7 @@ def vm_reconfigured_update(vmware_vm):
     event.configSpec = mock.Mock(spec=vim.vm.ConfigSpec())
     event.configSpec.deviceChange = [device_spec]
     event.vm.vm = vmware_vm
-    event.vm.name = 'vm-1'
+    event.vm.name = "vm-1"
     event.host.host = mock.Mock(vm=[vmware_vm])
     return utils.wrap_into_update_set(event=event)
 
@@ -109,8 +109,9 @@ def test_last_vm_in_pg(
     assert vnc_vmi_1 is not None
     assert vnc_vmi_2 is not None
 
-    vcenter_api_client.get_vms_by_portgroup.side_effect = lambda x: [
-        vmware_vm] if x == 'dvportgroup-1' else []
+    vcenter_api_client.get_vms_by_portgroup.side_effect = (
+        lambda x: [vmware_vm] if x == "dvportgroup-1" else []
+    )
     vmware_controller.handle_update(vm_reconfigured_update)
 
     vnc_vpg = vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-1"))
