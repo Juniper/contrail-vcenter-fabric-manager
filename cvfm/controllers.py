@@ -145,36 +145,32 @@ class VmReconfiguredHandler(AbstractEventHandler):
             logger.info(
                 "Reconfigured device: %s with operation: %s", device, operation
             )
-            if operation == "add":
-                self._handle_add_interface(vm_uuid, device)
-            elif operation == "remove":
-                self._handle_remove_interface(event)
-            else:
-                self._handle_edit_interface(vm_uuid, device)
+            old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
+            new_vm_model = self._vm_service.create_vm_model(event.vm.vm)
+            vmis_to_delete, vmis_to_create = self._vmi_service.find_affected_vmis(
+                old_vm_model, new_vm_model
+            )
+            vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
+                vmis_to_delete, event.host.host
+            )
+            self._create_vmis(new_vm_model, vmis_to_create)
+            self._delete_vmis(vmis_to_delete)
 
-    def _handle_add_interface(self, vm_uuid, vmware_vmi):
-        vmi_model = self._vmi_service.add_vmi(vm_uuid, vmware_vmi)
-        self._dpg_service.create_fabric_vmi_for_vm_vmi(vmi_model)
-
-    def _handle_remove_interface(self, event):
-        old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
-        new_vm_model = self._vm_service.create_vm_model(event.vm.vm)
-        affected_vmis = self._vmi_service.find_affected_vmis(
-            old_vm_model, new_vm_model
-        )
-        vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
-            affected_vmis, event.host.host
-        )
+    def _delete_vmis(self, vmis_to_delete):
         affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
         for vmi_model in vmis_to_delete:
             self._vmi_service.detach_vmi_from_vpg(vmi_model)
             self._vmi_service.delete_vmi(vmi_model)
-
         self._vpg_service.prune_empty_vpgs(affected_vpgs)
 
-    def _handle_edit_interface(self, vm_uuid, vmware_vmi):
-        self._handle_remove_interface(vm_uuid, vmware_vmi)
-        self._handle_add_interface(vm_uuid, vmware_vmi)
+    def _create_vmis(self, new_vm_model, vmis_to_create):
+        vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
+        for vpg_model in vpg_models:
+            self._vpg_service.create_vpg_in_vnc(vpg_model)
+            self._vpg_service.attach_pis_to_vpg(vpg_model)
+        for vmi_model in vmis_to_create:
+            self._vmi_service.create_vmi_in_vnc(vmi_model)
+            self._vmi_service.attach_vmi_to_vpg(vmi_model)
 
 
 class VmRemovedHandler(AbstractEventHandler):
