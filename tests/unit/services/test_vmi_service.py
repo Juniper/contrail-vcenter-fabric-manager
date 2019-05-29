@@ -82,18 +82,33 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
 
 
 def test_find_affected_vmis(vmi_service, vmware_vm):
+    dpg_model = models.DistributedPortGroupModel(
+        uuid=models.generate_uuid("dvs-1_dpg-2"),
+        key="dvportgroup-2",
+        name="dpg-2",
+        vlan_id=6,
+        dvs_name="dvs-1",
+    )
     old_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
     new_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
 
-    affected_vmis_1 = vmi_service.find_affected_vmis(
+    vmis_to_delete_1, vmis_to_create_1 = vmi_service.find_affected_vmis(
         old_vm_model, new_vm_model
     )
 
-    assert len(affected_vmis_1) == 0
+    assert len(vmis_to_delete_1) == 0
+    assert len(vmis_to_create_1) == 0
 
-    new_vm_model.dpg_models = []
-    affected_vmis_2 = vmi_service.find_affected_vmis(
+    new_vm_model.dpg_models = [dpg_model]
+    vmis_to_delete_2, vmis_to_create_2 = vmi_service.find_affected_vmis(
         old_vm_model, new_vm_model
     )
 
-    assert len(affected_vmis_2) == 1
+    assert len(vmis_to_delete_2) == 1
+    assert len(vmis_to_create_2) == 1
+    assert list(vmis_to_delete_2)[0].uuid == models.generate_uuid(
+        'esxi-1_dvs-1_dpg-1'
+    )
+    assert list(vmis_to_create_2)[0].uuid == models.generate_uuid(
+        'esxi-1_dvs-1_dpg-2'
+    )

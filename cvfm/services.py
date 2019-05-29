@@ -78,7 +78,9 @@ class VirtualMachineInterfaceService(Service):
     def find_affected_vmis(self, old_vm_model, new_vm_model):
         old_vmi_models = set(self.create_vmi_models_for_vm(old_vm_model))
         new_vmi_models = set(self.create_vmi_models_for_vm(new_vm_model))
-        return old_vmi_models - new_vmi_models
+        vmis_to_delete = old_vmi_models - new_vmi_models
+        vmis_to_create = new_vmi_models - old_vmi_models
+        return vmis_to_delete, vmis_to_create
 
     def delete_vmi(self, vmi_model):
         self._vnc_api_client.delete_vmi(vmi_model.uuid)

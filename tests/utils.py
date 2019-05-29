@@ -83,6 +83,20 @@ def create_vmware_net(net_data):
     return network
 
 
+def create_vm_reconfigured_update(vmware_vm, operation):
+    event = mock.Mock(spec=vim.event.VmReconfiguredEvent())
+    device = mock.Mock(spec=vim.vm.device.VirtualPCNet32())
+    device_spec = mock.Mock(spec=vim.vm.device.VirtualDeviceSpec())
+    device_spec.device = device
+    device_spec.operation = operation
+    event.configSpec = mock.Mock(spec=vim.vm.ConfigSpec())
+    event.configSpec.deviceChange = [device_spec]
+    event.vm.vm = vmware_vm
+    event.vm.name = vmware_vm.name
+    event.host.host = mock.Mock(vm=[vmware_vm])
+    return wrap_into_update_set(event=event)
+
+
 def create_fabric_network(vnc_test_client, vn_name, vn_key):
     project = vnc_test_client.vnc_lib.project_read(
         ["default-domain", vnc_test_client.project_name]
