@@ -146,15 +146,23 @@ class VmReconfiguredHandler(AbstractEventHandler):
                 "Reconfigured device: %s with operation: %s", device, operation
             )
             if operation == "add":
-                self._handle_add_interface(vm_uuid, device)
+                self._handle_add_interface(event)
             elif operation == "remove":
                 self._handle_remove_interface(event)
             else:
                 self._handle_edit_interface(vm_uuid, device)
 
-    def _handle_add_interface(self, vm_uuid, vmware_vmi):
-        vmi_model = self._vmi_service.add_vmi(vm_uuid, vmware_vmi)
-        self._dpg_service.create_fabric_vmi_for_vm_vmi(vmi_model)
+    def _handle_add_interface(self, event):
+        old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
+        new_vm_model = self._vm_service.create_vm_model(event.vm.vm)
+        vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
+        for vpg_model in vpg_models:
+            self._vpg_service.create_vpg_in_vnc(vpg_model)
+            self._vpg_service.attach_pis_to_vpg(vpg_model)
+        vmi_models = self._vmi_service.create_vmi_models_for_vm(new_vm_model)
+        for vmi_model in vmi_models:
+            self._vmi_service.create_vmi_in_vnc(vmi_model)
+            self._vmi_service.attach_vmi_to_vpg(vmi_model)
 
     def _handle_remove_interface(self, event):
         old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
