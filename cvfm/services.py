@@ -174,7 +174,8 @@ class VirtualPortGroupService(Service):
 
     def create_vpg_in_vnc(self, vpg_model):
         if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:
-            vnc_vpg = vpg_model.to_vnc_vpg()
+            fabric = self._vnc_api_client.get_fabric()
+            vnc_vpg = vpg_model.to_vnc_vpg(fabric)
             self._vnc_api_client.create_vpg(vnc_vpg)
 
     def attach_pis_to_vpg(self, vpg_model):
