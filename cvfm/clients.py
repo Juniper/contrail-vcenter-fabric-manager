@@ -151,7 +151,8 @@ class VNCAPIClient(object):
             auth_host=vnc_cfg.get("auth_host"),
             auth_port=vnc_cfg.get("auth_port"),
         )
-        self.project_name = const.VNC_PROJECT_NAME
+        self.project_name = vnc_cfg.get("project_name", const.VNC_PROJECT_NAME)
+        self.fabric_name = vnc_cfg.get("fabric_name", "default-fabric")
 
     def get_project(self):
         try:
@@ -166,21 +167,29 @@ class VNCAPIClient(object):
 
         return self.vnc_lib.project_read(["default-domain", self.project_name])
 
+    def get_fabric(self):
+        return self.vnc_lib.fabric_read(
+            ["default-global-system-config", self.fabric_name]
+        )
+
     def create_vn(self, vnc_vn):
         try:
             self.vnc_lib.virtual_network_create(vnc_vn)
+            logger.info('Created VN with name: %s', vnc_vn.name)
         except vnc_api.RefsExistError:
             logger.info("VN %s already exists in VNC", vnc_vn.name)
 
     def create_vpg(self, vnc_vpg):
         try:
             self.vnc_lib.virtual_port_group_create(vnc_vpg)
+            logger.info('Created VPG with name: %s', vnc_vpg.name)
         except vnc_api.RefsExistError:
             logger.info("VPG %s already exists in VNC", vnc_vpg)
 
     def create_vmi(self, vnc_vmi):
         try:
             self.vnc_lib.virtual_machine_interface_create(vnc_vmi)
+            logger.info('Created VMI with name: %s', vnc_vmi.name)
         except vnc_api.RefsExistError:
             logger.info("VMI %s already exists in VNC", vnc_vmi)
 
@@ -208,6 +217,7 @@ class VNCAPIClient(object):
     def update_vpg(self, vnc_vpg):
         try:
             self.vnc_lib.virtual_port_group_update(vnc_vpg)
+            logger.info('Updated VPG with name: %s', vnc_vpg.name)
         except vnc_api.NoIdError:
             logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
 

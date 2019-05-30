@@ -27,6 +27,9 @@ def test_create_dpg_model_with_vpg_creation_in_vnc(
     vpg_service, vnc_api_client
 ):
     vnc_api_client.read_vpg.return_value = None
+    fabric_mock = mock.Mock()
+    fabric_mock.fq_name = ["a", "b"]
+    vnc_api_client.get_fabric.return_value = fabric_mock
 
     vpg_model = models.VirtualPortGroupModel(
         models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"

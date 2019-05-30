@@ -1,16 +1,20 @@
 from cvfm import models
 
+import mock
+
 
 def test_to_vnc_vpg():
     vpg_model = models.VirtualPortGroupModel(
         "vpg_uuid", "host_name", "dvs_name"
     )
-
-    vnc_vpg = vpg_model.to_vnc_vpg()
+    fabric = mock.Mock()
+    fabric.fq_name = ["a", "b"]
+    vnc_vpg = vpg_model.to_vnc_vpg(fabric)
 
     assert vnc_vpg.name == "host_name_dvs_name"
     assert vnc_vpg.uuid == "vpg_uuid"
     assert vnc_vpg.get_id_perms().get_creator() == "vcenter-fabric-manager"
+    assert vnc_vpg.get_parent_fq_name() == ["a", "b"]
 
 
 def test_from_vm_model(vmware_vm):
