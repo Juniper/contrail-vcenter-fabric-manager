@@ -12,7 +12,7 @@ class VNCAPITestClient(object):
             auth_host=vnc_cfg.get("auth_host"),
             auth_port=vnc_cfg.get("auth_port"),
         )
-        self.project_name = "test-vcenter-fabric"
+        self.project_name = vnc_cfg.get("project_name", "test-vcenter-fabric")
         try:
             self.vnc_lib.project_create(
                 vnc_api.Project(name=self.project_name)

@@ -118,11 +118,11 @@ class VirtualPortGroupModel(object):
         self.host_name = host_name
         self.dvs_name = dvs_name
 
-    def to_vnc_vpg(self):
+    def to_vnc_vpg(self, fabric):
         vnc_name = "{host_name}_{dvs_name}".format(
             host_name=self.host_name, dvs_name=self.dvs_name
         )
-        vnc_vpg = vnc_api.VirtualPortGroup(name=vnc_name)
+        vnc_vpg = vnc_api.VirtualPortGroup(name=vnc_name, parent_obj=fabric)
         vnc_vpg.set_uuid(self.uuid)
         vnc_vpg.set_id_perms(const.ID_PERMS)
         return vnc_vpg
@@ -211,3 +211,13 @@ class VirtualMachineInterfaceModel(object):
 
     def __hash__(self):
         return hash(self.uuid)
+
+    def __repr__(self):
+        return (
+            "VirtualMachineInterfaceModel(uuid={uuid}, host_name={host_name}, "
+            "dpg_model={dpg_model})".format(
+                uuid=self.uuid,
+                host_name=self.host_name,
+                dpg_model=self.dpg_model,
+            )
+        )
