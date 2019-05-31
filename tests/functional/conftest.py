@@ -4,15 +4,12 @@ import mock
 import pytest
 import yaml
 
-from cvfm import services
-from cvfm.clients import VNCAPIClient
-
-from cvfm.controllers import VmwareController
+from cvfm import services, controllers, clients
 from cvfm import database as db
 
 # imports fixtures from sample_topologies.py file
 from sample_topologies import *
-from tests import utils
+from tests.functional.vcenter_api_mock_client import VCenterAPIMockClient
 from tests.functional.vnc_api_test_client import VNCAPITestClient
 
 
@@ -35,7 +32,7 @@ def lock():
 
 @pytest.fixture
 def vnc_api_client(config):
-    vnc_client = VNCAPIClient(config)
+    vnc_client = clients.VNCAPIClient(config)
     vnc_client.project_name = "test-vcenter-fabric"
     return vnc_client
 
@@ -48,20 +45,13 @@ def vnc_test_client(config):
 
 
 @pytest.fixture
-def fabric_vn(vnc_test_client):
-    return utils.create_fabric_network(
-        vnc_test_client, "dvs-1_dpg-1", "dvportgroup-1"
-    )
-
-
-@pytest.fixture
 def database():
     return db.Database()
 
 
 @pytest.fixture
 def vcenter_api_client():
-    return mock.Mock()
+    return VCenterAPIMockClient()
 
 
 @pytest.fixture
@@ -93,8 +83,36 @@ def vm_service(vcenter_api_client, vnc_api_client, database):
 
 
 @pytest.fixture
+def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
+    dpg_created_handler = controllers.DVPortgroupCreatedHandler(
+        vm_service, vmi_service, dpg_service
+    )
+    dpg_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
+        vm_service, vmi_service, dpg_service
+    )
+    vm_updated_handler = controllers.VmUpdatedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
+    vm_reconfigured_handler = controllers.VmReconfiguredHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
+    vm_removed_handler = controllers.VmRemovedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
+    handlers = [
+        dpg_created_handler,
+        dpg_reconfigured_handler,
+        vm_updated_handler,
+        vm_reconfigured_handler,
+        vm_removed_handler,
+    ]
+
+    return controllers.UpdateHandler(handlers)
+
+
+@pytest.fixture
 def vmware_controller(update_handler, lock):
-    return VmwareController(
+    return controllers.VmwareController(
         vm_service=None,
         vmi_service=None,
         dpg_service=None,

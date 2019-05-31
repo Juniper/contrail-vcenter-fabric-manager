@@ -1,17 +1,6 @@
-import pytest
-
-from cvfm.services import VirtualPortGroupService
-
-
-@pytest.fixture
-def vpg_service(vnc_api_client):
-    return VirtualPortGroupService(None, vnc_api_client, None)
-
-
 def test_find_matches_physical_interfaces(
     topology_with_spine_switch, vpg_service
 ):
-
     pis = vpg_service.find_matches_physical_interfaces("esxi-1", "dvs-1")
     check_pi_names(pis, ["xe-0/0/1", "xe-0/0/5"])
 

@@ -4,21 +4,6 @@ import pytest
 from pyVmomi import vim
 from tests import utils
 
-from cvfm import controllers
-
-
-@pytest.fixture
-def update_handler(dpg_service, vmi_service, vpg_service):
-    vm_updated_handler = controllers.VmUpdatedHandler(
-        None, vmi_service, None, vpg_service
-    )
-    dpg_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
-        None, None, dpg_service
-    )
-    return controllers.UpdateHandler(
-        [vm_updated_handler, dpg_reconfigured_handler]
-    )
-
 
 @pytest.fixture
 def fabric_vn(vnc_test_client):

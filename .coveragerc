@@ -1,0 +1,9 @@
+[run]
+source = cvfm
+omit =
+    cvfm/sandesh*
+    */__*__.py
+branch = True
+
+[report]
+sort = Cover

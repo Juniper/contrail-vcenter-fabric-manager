@@ -2,55 +2,67 @@ import pytest
 from pyVmomi import vim
 from tests import utils
 
-from cvfm import controllers
+
+@pytest.fixture
+def vmware_dpg_1():
+    net_data = {
+        "key": "dvportgroup-1",
+        "name": "dpg-1",
+        "type": vim.DistributedVirtualPortgroup,
+        "dvs-name": "dvs-1",
+        "vlan": 5,
+    }
+    return utils.create_vmware_net(net_data)
 
 
 @pytest.fixture
-def update_handler(vm_service, vmi_service, vpg_service):
-    vm_updated_handler = controllers.VmUpdatedHandler(
-        vm_service, vmi_service, None, vpg_service
-    )
-    return controllers.UpdateHandler([vm_updated_handler])
+def vmware_dpg_2():
+    net_data = {
+        "key": "dvportgroup-2",
+        "name": "dpg-2",
+        "type": vim.DistributedVirtualPortgroup,
+        "dvs-name": "dvs-1",
+        "vlan": 0,
+    }
+    return utils.create_vmware_net(net_data)
 
 
 @pytest.fixture
-def vm_created_update():
-    networks = [
-        {
-            "key": "dvportgroup-1",
-            "name": "dpg-1",
-            "type": vim.DistributedVirtualPortgroup,
-            "dvs-name": "dvs-1",
-            "vlan": 5,
-        },
-        {"key": "network-1", "name": "network-1", "type": vim.Network},
-        {
-            "key": "dvportgroup-2",
-            "name": "dpg-2",
-            "type": vim.DistributedVirtualPortgroup,
-            "dvs-name": "dvs-1",
-            "vlan": 0,
-        },
-        {
-            "key": "dvportgroup-3",
-            "name": "dpg-3",
-            "type": vim.DistributedVirtualPortgroup,
-            "dvs-name": "dvs-1",
-            "vlan": 8,
-        },
-    ]
-    return utils.create_vm_created_update(
-        vm_name="VM1", vm_host_name="esxi-1", vm_networks=networks
-    )
+def vmware_dpg_3():
+    net_data = {
+        "key": "dvportgroup-3",
+        "name": "dpg-3",
+        "type": vim.DistributedVirtualPortgroup,
+        "dvs-name": "dvs-1",
+        "vlan": 8,
+    }
+    return utils.create_vmware_net(net_data)
+
+
+@pytest.fixture
+def vmware_net_1():
+    net_data = {"key": "network-1", "name": "network-1", "type": vim.Network}
+    return utils.create_vmware_net(net_data)
+
+
+@pytest.fixture
+def vmware_vm(vmware_dpg_1, vmware_dpg_2, vmware_dpg_3, vmware_net_1):
+    networks = [vmware_dpg_1, vmware_dpg_2, vmware_dpg_3, vmware_net_1]
+    return utils.create_vmware_vm("vm-1", "esxi-1", networks)
 
 
 def test_vm_created(
     minimalistic_topology,
     vnc_test_client,
     vmware_controller,
-    vm_created_update,
-    fabric_vn,
+    vcenter_api_client,
+    vmware_vm,
+    vmware_dpg_1,
 ):
+    dpg_created_update = vcenter_api_client.create_dpg(vmware_dpg_1)
+    vmware_controller.handle_update(dpg_created_update)
+
+    vm_created_update = vcenter_api_client.create_vm(vmware_vm)
     vmware_controller.handle_update(vm_created_update)
 
     vmis = vnc_test_client.read_all_vmis()

@@ -59,17 +59,17 @@ def connect_ports_with_pis(vnc_test_client, pis, ports, port_to_pi):
 
 def create_vm_created_update(vm_name, vm_host_name, vm_networks):
     event = mock.Mock(spec=vim.event.VmCreatedEvent())
-    vm = mock.Mock()
-    vm.name = vm_name
-    networks = []
-    for net_data in vm_networks:
-        network = create_vmware_net(net_data)
-        networks.append(network)
-    vm.network = networks
-    vm.runtime.host.name = vm_host_name
-    vm.name = vm_name
-    event.vm.vm = vm
+    networks = [create_vmware_net(net_data) for net_data in vm_networks]
+    event.vm.vm = create_vmware_vm(vm_name, vm_host_name, networks)
     return wrap_into_update_set(event=event)
+
+
+def create_vmware_vm(name, host_name, networks):
+    vm = mock.Mock()
+    vm.configure_mock(name=name)
+    vm.network = networks
+    vm.runtime.host.name = host_name
+    return vm
 
 
 def create_vmware_net(net_data):
@@ -80,6 +80,7 @@ def create_vmware_net(net_data):
         network.config.distributedVirtualSwitch.name = net_data["dvs-name"]
     if net_data.get("vlan"):
         network.config.defaultPortConfig.vlan.vlanId = net_data["vlan"]
+    network.vm = []
     return network
 
 

@@ -4,50 +4,7 @@ from pyVmomi import vim
 from tests import utils
 from vnc_api import vnc_api
 
-from cvfm import controllers, models
-
-
-@pytest.fixture
-def update_handler(vm_service, vmi_service, vpg_service, dpg_service):
-    vm_updated_handler = controllers.VmUpdatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
-    vm_reconfigured_handler = controllers.VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
-    return controllers.UpdateHandler(
-        [vm_updated_handler, vm_reconfigured_handler]
-    )
-
-
-@pytest.fixture
-def vm_created_update():
-    networks = [
-        {
-            "key": "dvportgroup-1",
-            "name": "dpg-1",
-            "type": vim.DistributedVirtualPortgroup,
-            "dvs-name": "dvs-1",
-            "vlan": 5,
-        }
-    ]
-    return utils.create_vm_created_update(
-        vm_name="vm-1", vm_host_name="esxi-1", vm_networks=networks
-    )
-
-
-@pytest.fixture
-def fabric_vn_2(vnc_test_client):
-    return utils.create_fabric_network(
-        vnc_test_client, "dvs-1_dpg-2", "dvportgroup-2"
-    )
-
-
-@pytest.fixture
-def fabric_vn_3(vnc_test_client):
-    return utils.create_fabric_network(
-        vnc_test_client, "dvs-2_dpg-3", "dvportgroup-3"
-    )
+from cvfm import models
 
 
 @pytest.fixture
@@ -95,39 +52,30 @@ def vmware_vm(vmware_dpg_1):
     return vm
 
 
-@pytest.fixture
-def vm_reconfigured_update_add(vmware_vm):
-    return utils.create_vm_reconfigured_update(vmware_vm, "add")
-
-
-@pytest.fixture
-def vm_reconfigured_update_edit(vmware_vm):
-    return utils.create_vm_reconfigured_update(vmware_vm, "edit")
-
-
-@pytest.fixture
-def vm_reconfigured_update_remove(vmware_vm):
-    return utils.create_vm_reconfigured_update(vmware_vm, "remove")
-
-
 def test_vm_reconfigured(
     minimalistic_topology,
-    fabric_vn,
-    fabric_vn_2,
-    fabric_vn_3,
     vmware_vm,
     vmware_dpg_1,
     vmware_dpg_2,
     vmware_dpg_3,
-    vm_created_update,
-    vm_reconfigured_update_add,
-    vm_reconfigured_update_edit,
-    vm_reconfigured_update_remove,
     vmware_controller,
     vnc_test_client,
     vcenter_api_client,
 ):
+    # User creates a DPG (dpg-1) on dvs-1
+    dpg_created_update_1 = vcenter_api_client.create_dpg(vmware_dpg_1)
+    vmware_controller.handle_update(dpg_created_update_1)
+
+    # User creates another DPG (dpg-2) on dvs-1
+    dpg_created_update_2 = vcenter_api_client.create_dpg(vmware_dpg_2)
+    vmware_controller.handle_update(dpg_created_update_2)
+
+    # User creates a DPG (dpg-3) on dvs-2
+    dpg_created_update_3 = vcenter_api_client.create_dpg(vmware_dpg_3)
+    vmware_controller.handle_update(dpg_created_update_3)
+
     # User creates a VM (vm-1) with one interface connected to dpg-1
+    vm_created_update = vcenter_api_client.create_vm(vmware_vm)
     vmware_controller.handle_update(vm_created_update)
 
     # A VMI and VPG is created in VNC for dpg-1 on dvs-1 on esxi-1
@@ -139,7 +87,9 @@ def test_vm_reconfigured(
     assert vnc_vmi_1 is not None
 
     # User creates a different interface for vm-1 and connects it to dpg-2
-    vmware_vm.network = [vmware_dpg_1, vmware_dpg_2]
+    vm_reconfigured_update_add = vcenter_api_client.add_interface(
+        vmware_vm, vmware_dpg_2
+    )
     vmware_controller.handle_update(vm_reconfigured_update_add)
 
     # A VMI is created in VNC for dpg-2 on dvs-1 on esxi-1 and is connected
@@ -151,11 +101,8 @@ def test_vm_reconfigured(
 
     # User edits the configuration of the second interface and connects it
     # to dpg-3
-    vmware_vm.network = [vmware_dpg_1, vmware_dpg_3]
-    vcenter_api_client.get_vms_by_portgroup.side_effect = (
-        lambda x: [vmware_vm]
-        if x == "dvportgroup-1" or x == "dvportgroup-3"
-        else []
+    vm_reconfigured_update_edit = vcenter_api_client.edit_interface(
+        vmware_vm, vmware_dpg_2, vmware_dpg_3
     )
     vmware_controller.handle_update(vm_reconfigured_update_edit)
 
@@ -172,9 +119,8 @@ def test_vm_reconfigured(
         vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-1_dpg-2"))
 
     # User disconnects one interface from dpg-3
-    vmware_vm.network = [vmware_dpg_1]
-    vcenter_api_client.get_vms_by_portgroup.side_effect = (
-        lambda x: [vmware_vm] if x == "dvportgroup-1" else []
+    vm_reconfigured_update_remove = vcenter_api_client.remove_interface(
+        vmware_vm, vmware_dpg_3
     )
     vmware_controller.handle_update(vm_reconfigured_update_remove)
 
@@ -185,9 +131,9 @@ def test_vm_reconfigured(
         vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-2_dpg-3"))
 
     # User disconnects another interface from dpg-1
-    vmware_vm.network = []
-    vcenter_api_client.get_vms_by_portgroup.side_effect = None
-    vcenter_api_client.get_vms_by_portgroup.return_value = []
+    vm_reconfigured_update_remove = vcenter_api_client.remove_interface(
+        vmware_vm, vmware_dpg_1
+    )
     vmware_controller.handle_update(vm_reconfigured_update_remove)
 
     # The VMI and VPG for dpg-1 on dvs-1 on esxi-1 are deleted
