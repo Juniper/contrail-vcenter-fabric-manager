@@ -19,5 +19,8 @@ class Database(object):
     def remove_vm_model(self, vm_name):
         self._vm_models.pop(vm_name)
 
+    def get_all_vm_models(self):
+        return self._vm_models.values()
+
     def clear_database(self):
         pass

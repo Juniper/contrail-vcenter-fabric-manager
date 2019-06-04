@@ -12,6 +12,17 @@ def test_generate_uuid():
     assert uuid == "5a6bd262-1f96-3546-a762-6fa5260e9014"
 
 
+def test_get_vn_vnc_name():
+    dpg_name = "dpg-name"
+    dvs_name = "dvs-name"
+
+    vn_vnc_name = models.DistributedPortGroupModel.get_vnc_name(
+        dvs_name, dpg_name
+    )
+
+    assert vn_vnc_name == "dvs-name_dpg-name"
+
+
 def test_from_vmware_dpg(vmware_dpg):
     dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
 

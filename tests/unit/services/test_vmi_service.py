@@ -107,8 +107,8 @@ def test_find_affected_vmis(vmi_service, vmware_vm):
     assert len(vmis_to_delete_2) == 1
     assert len(vmis_to_create_2) == 1
     assert list(vmis_to_delete_2)[0].uuid == models.generate_uuid(
-        'esxi-1_dvs-1_dpg-1'
+        "esxi-1_dvs-1_dpg-1"
     )
     assert list(vmis_to_create_2)[0].uuid == models.generate_uuid(
-        'esxi-1_dvs-1_dpg-2'
+        "esxi-1_dvs-1_dpg-2"
     )
