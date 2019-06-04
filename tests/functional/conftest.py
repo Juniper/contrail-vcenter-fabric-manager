@@ -111,11 +111,13 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
 
 
 @pytest.fixture
-def vmware_controller(update_handler, lock):
+def vmware_controller(
+    vm_service, vmi_service, dpg_service, vpg_service, update_handler, lock
+):
     return controllers.VmwareController(
-        vm_service=None,
-        vmi_service=None,
-        dpg_service=None,
+        vm_service=vm_service,
+        vmi_service=vmi_service,
+        dpg_service=dpg_service,
         update_handler=update_handler,
         lock=lock,
     )

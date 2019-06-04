@@ -6,14 +6,9 @@ from cvfm.services import DistributedPortGroupService
 
 
 @pytest.fixture
-def vcenter_api_client():
-    return mock.Mock()
-
-
-@pytest.fixture
-def dpg_service(vcenter_api_client, vnc_api_client):
+def dpg_service(vcenter_api_client, vnc_api_client, database):
     return DistributedPortGroupService(
-        vcenter_api_client, vnc_api_client, None
+        vcenter_api_client, vnc_api_client, database
     )
 
 
@@ -100,3 +95,28 @@ def test_is_vlan_changed(dpg_service, vnc_api_client):
 
     vnc_api_client.get_vn_vlan.return_value = None
     assert not dpg_service.should_update_vlan(dpg_model)
+
+
+def test_sync_create(
+    dpg_service, vnc_api_client, vcenter_api_client, vmware_dpg, project
+):
+    vcenter_api_client.get_all_portgroups.return_value = [vmware_dpg]
+    vnc_api_client.read_all_vn_uuids.return_value = []
+
+    dpg_service.sync()
+
+    created_vn = vnc_api_client.create_vn.call_args[0][0]
+    assert created_vn.name == "dvs-1_dpg-1"
+    assert created_vn.uuid == "5a6bd262-1f96-3546-a762-6fa5260e9014"
+    assert created_vn.parent_name == project.name
+
+
+def test_sync_delete(
+    dpg_service, vnc_api_client, vcenter_api_client, fabric_vn
+):
+    vcenter_api_client.get_all_portgroups.return_value = []
+    vnc_api_client.read_all_vn_uuids.return_value = [fabric_vn.uuid]
+
+    dpg_service.sync()
+
+    vnc_api_client.delete_vn.assert_called_once_with(fabric_vn.uuid)

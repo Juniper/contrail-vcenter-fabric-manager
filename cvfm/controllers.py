@@ -21,7 +21,7 @@ class VmwareController(object):
     def sync(self):
         logger.info("Synchronizing Contrail vCenter Fabric Manager...")
         with self._lock:
-            pass
+            self._dpg_service.sync()
         logger.info("Synchronization completed")
 
     def handle_update(self, update_set):

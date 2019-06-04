@@ -59,5 +59,10 @@ def vnc_api_client(project):
 
 
 @pytest.fixture
+def vcenter_api_client():
+    return mock.Mock()
+
+
+@pytest.fixture
 def database():
     return db.Database()

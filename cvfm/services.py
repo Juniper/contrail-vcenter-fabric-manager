@@ -98,6 +98,23 @@ class DistributedPortGroupService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
+    def sync(self):
+        vmware_dpgs_in_vcenter = self._vcenter_api_client.get_all_portgroups()
+        vn_uuids_in_vnc = set(self._vnc_api_client.read_all_vn_uuids())
+
+        vns_to_create = self._calculate_vns_to_create(
+            vmware_dpgs_in_vcenter, vn_uuids_in_vnc
+        )
+        vns_to_delete = self._calculate_vns_to_delete(
+            vmware_dpgs_in_vcenter, vn_uuids_in_vnc
+        )
+
+        for dpg_model in vns_to_create:
+            self.create_fabric_vn(dpg_model)
+
+        for vn_uuid in vns_to_delete:
+            self.delete_fabric_vn(vn_uuid)
+
     def create_dpg_model(self, vmware_dpg):
         return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
 
@@ -146,8 +163,8 @@ class DistributedPortGroupService(Service):
     def delete_dpg_model(self, dpg_name):
         logger.info("DistributedPortGroupService.delete_dpg_model called")
 
-    def delete_fabric_vn(self, dpg_model):
-        logger.info("DistributedPortGroupService.delete_fabric_vn called")
+    def delete_fabric_vn(self, vn_uuid):
+        self._vnc_api_client.delete_vn(vn_uuid)
 
     def filter_out_non_empty_dpgs(self, vmi_models, host):
         return [
@@ -163,6 +180,27 @@ class DistributedPortGroupService(Service):
         vms_on_host = set(host.vm)
         vms_in_pg_and_on_host = vms_in_pg.intersection(vms_on_host)
         return vms_in_pg_and_on_host == set()
+
+    def _calculate_vns_to_create(
+        self, vmware_dpgs_in_vcenter, vn_uuids_in_vnc
+    ):
+        vmware_dpgs_in_vcenter = self._vcenter_api_client.get_all_portgroups()
+        dpg_models_to_create = [
+            self.create_dpg_model(vmware_dpg)
+            for vmware_dpg in vmware_dpgs_in_vcenter
+            if models.generate_uuid(vmware_dpg.key) not in vn_uuids_in_vnc
+        ]
+        return dpg_models_to_create
+
+    def _calculate_vns_to_delete(
+        self, vmware_dpgs_in_vcenter, vn_uuids_in_vnc
+    ):
+        vmware_dpg_uuids_in_vcenter = set(
+            self.create_dpg_model(vmware_dpg).uuid
+            for vmware_dpg in vmware_dpgs_in_vcenter
+        )
+        vn_uuids_in_vnc = set(self._vnc_api_client.read_all_vn_uuids())
+        return vn_uuids_in_vnc - vmware_dpg_uuids_in_vcenter
 
 
 class VirtualPortGroupService(Service):

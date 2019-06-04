@@ -16,6 +16,9 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key] = vmware_dpg
         return utils.wrap_into_update_set(event=event)
 
+    def destroy_dpg(self, vmware_dpg):
+        del self.portgroups[vmware_dpg.key]
+
     def create_vm(self, vmware_vm):
         for network in vmware_vm.network:
             network.vm.append(vmware_vm)
@@ -63,3 +66,6 @@ class VCenterAPIMockClient(VCenterAPIClient):
         vmware_vm.network.remove(vmware_dpg)
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
+
+    def get_all_portgroups(self):
+        return self.portgroups.values()
