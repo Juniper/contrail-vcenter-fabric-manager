@@ -235,6 +235,9 @@ class VNCAPIClient(object):
         except vnc_api.NoIdError:
             pass
 
+    def delete_vn(self, vn_uuid):
+        pass
+
     def get_node_by_name(self, node_name):
         for node in self._read_all_nodes():
             if node.name == node_name:

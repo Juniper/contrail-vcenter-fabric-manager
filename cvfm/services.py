@@ -144,7 +144,16 @@ class DistributedPortGroupService(Service):
         logger.info("DistributedPortGroupService.rename_dpg called")
 
     def delete_dpg_model(self, dpg_name):
-        logger.info("DistributedPortGroupService.delete_dpg_model called")
+        selected_dpg = None
+        for vm_model in self._database.get_all_vm_models():
+            dpg = self._get_dpg_from_vm_model(vm_model, dpg_name)
+            if dpg:
+                selected_dpg = dpg
+                vm_model.dpg_models.remove(dpg)
+                self._database.update_vm_model(vm_model)
+
+        logger.info("DPG model %s deleted", dpg_name)
+        return selected_dpg
 
     def delete_fabric_vn(self, dpg_model):
         logger.info("DistributedPortGroupService.delete_fabric_vn called")
@@ -163,6 +172,12 @@ class DistributedPortGroupService(Service):
         vms_on_host = set(host.vm)
         vms_in_pg_and_on_host = vms_in_pg.intersection(vms_on_host)
         return vms_in_pg_and_on_host == set()
+
+    def _get_dpg_from_vm_model(self, vm_model, dpg_name):
+        dpgs = [dpg for dpg in vm_model.dpg_models if dpg.name == dpg_name]
+        if len(dpgs) == 1:
+            return dpgs[0]
+        return None
 
 
 class VirtualPortGroupService(Service):

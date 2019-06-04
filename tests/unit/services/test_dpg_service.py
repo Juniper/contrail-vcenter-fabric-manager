@@ -11,9 +11,9 @@ def vcenter_api_client():
 
 
 @pytest.fixture
-def dpg_service(vcenter_api_client, vnc_api_client):
+def dpg_service(vcenter_api_client, vnc_api_client, database):
     return DistributedPortGroupService(
-        vcenter_api_client, vnc_api_client, None
+        vcenter_api_client, vnc_api_client, database
     )
 
 
@@ -100,3 +100,17 @@ def test_is_vlan_changed(dpg_service, vnc_api_client):
 
     vnc_api_client.get_vn_vlan.return_value = None
     assert not dpg_service.should_update_vlan(dpg_model)
+
+
+def test_destroy_dpg_from_vm(dpg_service, vm_model, database):
+    second_dpg = mock.Mock()
+    second_dpg.name = "dpg-2"
+    vm_model.dpg_models.add(second_dpg)
+    database.add_vm_model(vm_model)
+
+    dpg_model = dpg_service.delete_dpg_model("dpg-2")
+
+    result_model = database.get_vm_model("vm-1")
+    assert len(result_model.dpg_models) == 1
+    assert list(result_model.dpg_models)[0].name == "dpg-1"
+    assert dpg_model == second_dpg
