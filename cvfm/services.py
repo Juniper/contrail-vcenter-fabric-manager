@@ -144,10 +144,20 @@ class DistributedPortGroupService(Service):
         logger.info("DistributedPortGroupService.rename_dpg called")
 
     def delete_dpg_model(self, dpg_name):
-        logger.info("DistributedPortGroupService.delete_dpg_model called")
+        for vm_model in self._database.get_all_vm_models():
+            vm_model.detach_dpg(dpg_name)
+                # self._database.update_vm_model(vm_model)
 
-    def delete_fabric_vn(self, dpg_model):
-        logger.info("DistributedPortGroupService.delete_fabric_vn called")
+        logger.info("DPG model %s deleted", dpg_name)
+
+    def delete_fabric_vn(self, dvs_name, dpg_name):
+        project = self._vnc_api_client.get_project()
+        dpg_vnc_name = models.DistributedPortGroupModel.get_vnc_name(
+            dvs_name, dpg_name
+        )
+        dpg_fq_name = project.fq_name + [dpg_vnc_name]
+
+        self._vnc_api_client.delete_vn(dpg_fq_name)
 
     def filter_out_non_empty_dpgs(self, vmi_models, host):
         return [

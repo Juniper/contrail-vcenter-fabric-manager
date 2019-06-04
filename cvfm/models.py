@@ -46,6 +46,11 @@ class VirtualMachineModel(object):
         self.host_name = host_name
         self.dpg_models = dpg_models
 
+    def detach_dpg(self, dpg_name):
+        dpgs = [dpg for dpg in self.dpg_models if dpg.name == dpg_name]
+        if len(dpgs) == 1:
+            self.dpg_models.remove(dpgs[0])
+
     @classmethod
     def from_vmware_vm(cls, vmware_vm):
         dpg_models = set()
@@ -81,9 +86,7 @@ class DistributedPortGroupModel(object):
         self.dvs_name = dvs_name
 
     def to_vnc_vn(self, project):
-        vnc_name = "{dvs_name}_{dpg_name}".format(
-            dvs_name=self.dvs_name, dpg_name=self.name
-        )
+        vnc_name = self.get_vnc_name(self.dvs_name, self.name)
         vnc_vn = vnc_api.VirtualNetwork(name=vnc_name, parent_obj=project)
         vnc_vn.set_uuid(self.uuid)
         vnc_vn.set_id_perms(const.ID_PERMS)
@@ -98,6 +101,12 @@ class DistributedPortGroupModel(object):
         name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         return cls(uuid, key, name, vlan_id, dvs_name)
+
+    @staticmethod
+    def get_vnc_name(dvs_name, dpg_name):
+        return "{dvs_name}_{dpg_name}".format(
+            dvs_name=dvs_name, dpg_name=dpg_name
+        )
 
     def __repr__(self):
         return (
