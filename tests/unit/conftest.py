@@ -3,7 +3,7 @@ import pytest
 from pyVmomi import vim
 from vnc_api import vnc_api
 
-from cvfm import database as db
+from cvfm import database as db, synchronizers
 from cvfm import models
 
 
@@ -59,5 +59,15 @@ def vnc_api_client(project):
 
 
 @pytest.fixture
+def vcenter_api_client():
+    return mock.Mock()
+
+
+@pytest.fixture
 def database():
     return db.Database()
+
+
+@pytest.fixture
+def dpg_synchronizer(dpg_service):
+    return synchronizers.DPGSynchronizer(dpg_service)

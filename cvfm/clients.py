@@ -36,6 +36,7 @@ def make_filter_spec(obj, filters):
 class VSphereAPIClient(object):
     def __init__(self):
         self._si = None
+        self._pg_view = None
 
     def _get_object(self, vimtype, name):
         content = self._si.content
@@ -71,6 +72,12 @@ class VCenterAPIClient(VSphereAPIClient):
         self._property_collector = self._si.content.propertyCollector
         self._wait_options = vmodl.query.PropertyCollector.WaitOptions()
         self._version = ""
+        self._pg_view = self._si.content.viewManager.CreateContainerView(
+            self._si.content.rootFolder,
+            [vim.dvs.DistributedVirtualPortgroup],
+            True,
+        )
+        atexit.register(self._pg_view.DestroyView)
 
     def _get_datacenter(self, name):
         return self._get_object([vim.Datacenter], name)
@@ -123,17 +130,15 @@ class VCenterAPIClient(VSphereAPIClient):
             return []
         return portgroup.vm
 
+    def get_all_portgroups(self):
+        return self._pg_view.view
+
     def _get_dpg_by_key(self, key):
-        content = self._si.content
-        container = content.viewManager.CreateContainerView(
-            content.rootFolder, [vim.dvs.DistributedVirtualPortgroup], True
-        )
+        all_dpgs = self.get_all_portgroups()
         try:
-            pg = (dpg for dpg in container.view if dpg.key == key).next()
+            return (dpg for dpg in all_dpgs if dpg.key == key).next()
         except StopIteration:
-            pg = None
-        container.DestroyView()
-        return pg
+            return None
 
 
 class VNCAPIClient(object):
@@ -193,6 +198,12 @@ class VNCAPIClient(object):
         except vnc_api.RefsExistError:
             logger.info("VMI %s already exists in VNC", vnc_vmi)
 
+    def read_all_vn_uuids(self):
+        vn_list = self.vnc_lib.virtual_networks_list(
+            parent_id=self.get_project().get_uuid()
+        )["virtual-networks"]
+        return [vn["uuid"] for vn in vn_list]
+
     def read_vn(self, vn_uuid):
         try:
             return self.vnc_lib.virtual_network_read(id=vn_uuid)
@@ -220,6 +231,13 @@ class VNCAPIClient(object):
             logger.info("Updated VPG with name: %s", vnc_vpg.name)
         except vnc_api.NoIdError:
             logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
+
+    def delete_vn(self, vn_uuid):
+        try:
+            self.vnc_lib.virtual_network_delete(id=vn_uuid)
+            logger.info("VN %s deleted from VNC", vn_uuid)
+        except vnc_api.NoIdError:
+            pass
 
     def delete_vmi(self, vmi_uuid):
         try:
