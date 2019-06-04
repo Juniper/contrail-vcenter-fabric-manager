@@ -9,19 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class VmwareController(object):
-    def __init__(
-        self, vm_service, vmi_service, dpg_service, update_handler, lock
-    ):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
+    def __init__(self, synchronizer, update_handler, lock):
+        self._synchronizer = synchronizer
         self._update_handler = update_handler
         self._lock = lock
 
     def sync(self):
         logger.info("Synchronizing Contrail vCenter Fabric Manager...")
         with self._lock:
-            pass
+            self._synchronizer.sync()
         logger.info("Synchronization completed")
 
     def handle_update(self, update_set):

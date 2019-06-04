@@ -70,3 +70,6 @@ class VCenterAPIMockClient(VCenterAPIClient):
         vmware_vm.network.remove(vmware_dpg)
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
+
+    def get_all_portgroups(self):
+        return self.portgroups.values()
