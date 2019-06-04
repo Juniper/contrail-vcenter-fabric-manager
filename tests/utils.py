@@ -131,3 +131,9 @@ def verify_vnc_vmi(
     if vlan is not None:
         properties = vnc_vmi.get_virtual_machine_interface_properties()
         assert properties.get_sub_interface_vlan_tag() == vlan
+
+
+def not_touched_in_vnc(previous, current):
+    previous_mod_time = previous.get_id_perms().get_last_modified()
+    current_mod_time = current.get_id_perms().get_last_modified()
+    return current_mod_time == previous_mod_time

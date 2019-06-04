@@ -1,7 +1,6 @@
 import logging
 
-from cvfm import constants as const
-from cvfm import models
+from cvfm import models, exceptions
 from cvfm.exceptions import VNCVMICreationException
 
 logger = logging.getLogger(__name__)
@@ -107,6 +106,20 @@ class DistributedPortGroupService(Service):
 
         self._vnc_api_client.create_vn(vnc_vn)
         logger.info("Virtual Network %s created in VNC", vnc_vn.name)
+
+    def get_all_dpg_models(self):
+        dpg_models = []
+        for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
+            try:
+                dpg_models.append(self.create_dpg_model(vmware_dpg))
+            except exceptions.DPGCreationException:
+                logger.exception(
+                    "Error while creating a model for DPG: %s", vmware_dpg.name
+                )
+        return dpg_models
+
+    def get_all_fabric_vn_uuids(self):
+        return self._vnc_api_client.read_all_vn_uuids()
 
     def exists_vn_for_portgroup(self, dpg_model):
         vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)

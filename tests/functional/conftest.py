@@ -4,7 +4,7 @@ import mock
 import pytest
 import yaml
 
-from cvfm import services, controllers, clients
+from cvfm import services, controllers, clients, synchronizers
 from cvfm import database as db
 
 # imports fixtures from sample_topologies.py file
@@ -115,11 +115,17 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
 
 
 @pytest.fixture
-def vmware_controller(update_handler, lock):
+def dpg_synchronizer(dpg_service):
+    return synchronizers.DistributedPortGroupSynchronizer(dpg_service)
+
+
+@pytest.fixture
+def synchronizer(dpg_synchronizer):
+    return synchronizers.Synchronizer(dpg_synchronizer)
+
+
+@pytest.fixture
+def vmware_controller(synchronizer, update_handler, lock):
     return controllers.VmwareController(
-        vm_service=None,
-        vmi_service=None,
-        dpg_service=None,
-        update_handler=update_handler,
-        lock=lock,
+        synchronizer=synchronizer, update_handler=update_handler, lock=lock
     )

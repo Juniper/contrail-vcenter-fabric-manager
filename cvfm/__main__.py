@@ -36,6 +36,7 @@ from cvfm.services import (
 from cvfm.event_listener import EventListener
 from cvfm.monitors import VMwareMonitor
 from cvfm.supervisor import Supervisor
+from cvfm.synchronizers import DistributedPortGroupSynchronizer, Synchronizer
 
 gevent.monkey.patch_all()
 
@@ -119,9 +120,11 @@ def build_context(config):
         dvportgroup_destroyed_handler,
     ]
     update_handler = UpdateHandler(handlers)
-    vmware_controller = VmwareController(
-        vm_service, vmi_service, dpg_service, update_handler, lock
-    )
+
+    dpg_synchronizer = DistributedPortGroupSynchronizer(dpg_service)
+    synchronizer = Synchronizer(dpg_synchronizer)
+
+    vmware_controller = VmwareController(synchronizer, update_handler, lock)
     vmware_monitor = VMwareMonitor(vmware_controller, update_set_queue)
     event_listener = EventListener(
         vmware_controller, update_set_queue, vcenter_api_client, database
