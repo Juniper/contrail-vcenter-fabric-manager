@@ -11,9 +11,9 @@ def vcenter_api_client():
 
 
 @pytest.fixture
-def dpg_service(vcenter_api_client, vnc_api_client):
+def dpg_service(vcenter_api_client, vnc_api_client, database):
     return DistributedPortGroupService(
-        vcenter_api_client, vnc_api_client, None
+        vcenter_api_client, vnc_api_client, database
     )
 
 
@@ -41,6 +41,17 @@ def test_create_fabric_vn(dpg_service, vnc_api_client, project):
     assert created_vn.name == "dvs-1_dpg-1"
     assert created_vn.uuid == "5a6bd262-1f96-3546-a762-6fa5260e9014"
     assert created_vn.parent_name == project.name
+
+
+def test_delete_fabric_vn(dpg_service, vnc_api_client, project):
+    dpg_name = "dpg-1"
+    dvs_name = "dvs-1"
+
+    dpg_service.delete_fabric_vn(dvs_name, dpg_name)
+
+    delete_fq_name = vnc_api_client.delete_vn.call_args[0][0]
+    expected_fq_name = project.fq_name + ['dvs-1_dpg-1']
+    assert delete_fq_name == expected_fq_name
 
 
 # Strings are used here as a substitute for vmware_vm fixtures
@@ -100,3 +111,16 @@ def test_is_vlan_changed(dpg_service, vnc_api_client):
 
     vnc_api_client.get_vn_vlan.return_value = None
     assert not dpg_service.should_update_vlan(dpg_model)
+
+
+def test_destroy_dpg_from_vm(dpg_service, vm_model, database):
+    second_dpg = mock.Mock()
+    second_dpg.name = "dpg-2"
+    vm_model.dpg_models.add(second_dpg)
+    database.add_vm_model(vm_model)
+
+    dpg_service.delete_dpg_model("dpg-2")
+
+    result_model = database.get_vm_model("vm-1")
+    assert len(result_model.dpg_models) == 1
+    assert list(result_model.dpg_models)[0].name == "dpg-1"

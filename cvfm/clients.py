@@ -235,6 +235,13 @@ class VNCAPIClient(object):
         except vnc_api.NoIdError:
             pass
 
+    def delete_vn(self, vn_fq_name):
+        try:
+            self.vnc_lib.virtual_network_delete(fq_name=vn_fq_name)
+            logger.info("VN %s deleted from VNC", vn_fq_name)
+        except vnc_api.NoIdError:
+            pass
+
     def get_node_by_name(self, node_name):
         for node in self._read_all_nodes():
             if node.name == node_name:
