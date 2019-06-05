@@ -35,7 +35,7 @@ def minimalistic_topology(vnc_test_client):
     )
     node = vnc_test_client.create_node("esxi-1", "10.10.10.11")
     port = vnc_test_client.create_port(
-        "eth0", "11:22:33:44:55:01", node, ["dvs-1"]
+        "eth0", "11:22:33:44:55:01", node, "dvs-1"
     )
     vnc_test_client.add_port_to_physical_interface(pi, port)
 
@@ -80,10 +80,10 @@ def topology_with_two_nodes(vnc_test_client):
     esxi_1 = vnc_test_client.create_node("esxi-1", "10.10.10.11")
     esxi_2 = vnc_test_client.create_node("esxi-2", "10.10.10.12")
     port_1 = vnc_test_client.create_port(
-        "eth1", "11:22:33:44:55:01", esxi_1, ["dvs-1"]
+        "eth1", "11:22:33:44:55:01", esxi_1, "dvs-1"
     )
     port_2 = vnc_test_client.create_port(
-        "eth2", "11:22:33:44:55:02", esxi_2, ["dvs-1"]
+        "eth2", "11:22:33:44:55:02", esxi_2, "dvs-1"
     )
     vnc_test_client.add_port_to_physical_interface(pi_1, port_1)
     vnc_test_client.add_port_to_physical_interface(pi_2, port_2)
@@ -146,7 +146,7 @@ def topology_with_spine_switch(vnc_test_client):
 
     esxi_1 = vnc_test_client.create_node("esxi-1", "10.10.10.11")
     esxi_2 = vnc_test_client.create_node("esxi-2", "10.10.10.12")
-    port_dvses = [["dvs-1"], ["dvs-2"], ["dvs-1"], ["dvs-2"]]
+    port_dvses = ["dvs-1", "dvs-2", "dvs-1", "dvs-2"]
 
     esxi_1_port_nums = [1, 2, 3, 4]
     esxi_1_ports = utils.create_ports_for_node(

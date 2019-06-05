@@ -206,18 +206,15 @@ class VirtualPortGroupService(Service):
         return [
             port
             for port in ports
-            if self.is_dvs_in_port_annotations(port, dvs_name)
+            if self.is_dvs_name_in_port_info(port, dvs_name)
         ]
 
-    def is_dvs_in_port_annotations(self, port, dvs_name):
-        annotations = port.get_annotations().key_value_pair
-        for annotation in annotations:
-            if (
-                annotation.value == const.DVS_ANNOTATION
-                and annotation.key == dvs_name
-            ):
-                return True
-        return False
+    @staticmethod
+    def is_dvs_name_in_port_info(port, dvs_name):
+        esxi_port_info = port.get_esxi_port_info()
+        if esxi_port_info is None:
+            return False
+        return esxi_port_info.get_dvs_name() == dvs_name
 
     def find_affected_vpgs(self, vmi_models):
         affected_vpgs = set()

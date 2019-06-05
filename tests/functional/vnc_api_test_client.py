@@ -167,18 +167,16 @@ class VNCAPITestClient(object):
     def delete_node(self, node_uuid):
         self.vnc_lib.node_delete(id=node_uuid)
 
-    def create_port(self, port_name, mac_address, node, dvs_list):
-        port_info = vnc_api.BaremetalPortInfo(address=mac_address)
-        port = vnc_api.Port(port_name, node, bms_port_info=port_info)
+    def create_port(self, port_name, mac_address, node, dvs_name):
+        bms_port_info = vnc_api.BaremetalPortInfo(address=mac_address)
+        esxi_port_info = vnc_api.ESXIProperties(dvs_name=dvs_name)
+        port = vnc_api.Port(
+            name=port_name,
+            parent_obj=node,
+            bms_port_info=bms_port_info,
+            esxi_port_info=esxi_port_info,
+        )
         port_uuid = self.vnc_lib.port_create(port)
-        port = self.read_port(port_uuid)
-        annotations = [
-            vnc_api.KeyValuePair(key=dvs_name, value="vmware_dvs")
-            for dvs_name in dvs_list
-        ]
-        annotations = vnc_api.KeyValuePairs(key_value_pair=annotations)
-        port.annotations = annotations
-        self.vnc_lib.port_update(port)
         return self.read_port(port_uuid)
 
     def read_port(self, port_uuid):

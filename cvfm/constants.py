@@ -30,7 +30,5 @@ SUPERVISOR_TIMEOUT = 25
 
 HISTORY_COLLECTOR_PAGE_SIZE = 1000
 
-DVS_ANNOTATION = "vmware_dvs"
-
 VNC_PROJECT_NAME = "vCenter"
 ID_PERMS = IdPermsType(creator="vcenter-fabric-manager", enable=True)

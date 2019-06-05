@@ -22,14 +22,6 @@ def wrap_into_update_set(event=None, change=None, obj=None):
     return update_set
 
 
-def prepare_annotations(raw_annotations):
-    annotations = []
-    for key, value in raw_annotations.items():
-        annotations.append(vnc_api.KeyValuePair(key=key, value=value))
-    annotations = vnc_api.KeyValuePairs(key_value_pair=annotations)
-    return annotations
-
-
 def create_pis_for_pr(vnc_test_client, pr, pi_nums):
     pis = {}
     for pi_num in pi_nums:
@@ -42,10 +34,10 @@ def create_pis_for_pr(vnc_test_client, pr, pi_nums):
 
 def create_ports_for_node(vnc_test_client, node, port_nums, port_dvses):
     ports = {}
-    for port_num, dvses in zip(port_nums, port_dvses):
+    for port_num, dvs_name in zip(port_nums, port_dvses):
         port_name = "eth{}".format(port_num)
         port_mac = "11:22:33:44:55:{:02d}".format(port_num)
-        port = vnc_test_client.create_port(port_name, port_mac, node, dvses)
+        port = vnc_test_client.create_port(port_name, port_mac, node, dvs_name)
         ports[port_num] = port
     return ports
 
