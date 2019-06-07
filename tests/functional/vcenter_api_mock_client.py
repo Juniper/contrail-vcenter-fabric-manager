@@ -73,3 +73,9 @@ class VCenterAPIMockClient(VCenterAPIClient):
 
     def get_all_portgroups(self):
         return self.portgroups.values()
+
+    def get_all_vms(self):
+        vms = []
+        for host in self.hosts.values():
+            vms.extend(host.vm)
+        return vms

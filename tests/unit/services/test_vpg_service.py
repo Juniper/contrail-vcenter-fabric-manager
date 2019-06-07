@@ -4,14 +4,17 @@ from vnc_api import vnc_api
 
 from cvfm import models
 from cvfm.services import VirtualPortGroupService
-from cvfm import constants as const
-
-from tests import utils
 
 
 @pytest.fixture
-def vpg_service(vnc_api_client):
-    return VirtualPortGroupService(None, vnc_api_client, None)
+def vpg_service(vnc_api_client, database):
+    return VirtualPortGroupService(None, vnc_api_client, database)
+
+
+@pytest.fixture
+def port():
+    esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-1")
+    return vnc_api.Port(esxi_port_info=esxi_port_info)
 
 
 def test_create_vpg_models(vpg_service, vm_model):

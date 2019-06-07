@@ -150,6 +150,15 @@ class VirtualPortGroupModel(object):
             models.append(cls(uuid, host_name, dvs_name))
         return models
 
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __ne__(self, other):
+        return self.uuid != other.uuid
+
+    def __hash__(self):
+        return hash(self.uuid)
+
     def __repr__(self):
         return (
             "VirtualPortGroupModel(uuid={uuid}, host_name={host_name}, "

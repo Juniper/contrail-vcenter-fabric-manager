@@ -19,8 +19,10 @@ class VirtualMachineService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
-    def get_host_model(self, host_name):
-        logger.info("VirtualMachineService.get_host_model called")
+    def populate_db(self):
+        vmware_vms = self._vcenter_api_client.get_all_vms()
+        for vmware_vm in vmware_vms:
+            self.create_vm_model(vmware_vm)
 
     def create_vm_model(self, vmware_vm):
         vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
@@ -31,6 +33,9 @@ class VirtualMachineService(Service):
         vm_model = self._database.get_vm_model(vm_name)
         self._database.remove_vm_model(vm_name)
         return vm_model
+
+    def get_all_vm_models(self):
+        return self._database.get_all_vm_models()
 
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
