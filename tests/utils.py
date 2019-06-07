@@ -101,7 +101,7 @@ def create_fabric_network(vnc_test_client, vn_name, vn_key):
 
 
 def verify_vnc_vpg(vnc_vpg, vpg_name=None, pi_names=None, vmi_names=None):
-    if pi_names is not None:
+    if vpg_name is not None:
         assert vnc_vpg.name == vpg_name
     if pi_names is not None:
         pi_names = [

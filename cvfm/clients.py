@@ -39,14 +39,16 @@ class VSphereAPIClient(object):
         self._pg_view = None
 
     def _get_object(self, vimtype, name):
-        content = self._si.content
-        container = content.viewManager.CreateContainerView(
-            content.rootFolder, vimtype, True
-        )
+        container = self._create_view(vimtype)
         try:
             return [obj for obj in container.view if obj.name == name][0]
         except IndexError:
             return None
+
+    def _create_view(self, vimtype):
+        return self._si.content.viewManager.CreateContainerView(
+            self._si.content.rootFolder, vimtype, True
+        )
 
 
 class VCenterAPIClient(VSphereAPIClient):
@@ -72,11 +74,10 @@ class VCenterAPIClient(VSphereAPIClient):
         self._property_collector = self._si.content.propertyCollector
         self._wait_options = vmodl.query.PropertyCollector.WaitOptions()
         self._version = ""
-        self._pg_view = self._si.content.viewManager.CreateContainerView(
-            self._si.content.rootFolder,
-            [vim.dvs.DistributedVirtualPortgroup],
-            True,
+        self._pg_view = self._create_view(
+            [vim.dvs.DistributedVirtualPortgroup]
         )
+        self._vm_view = self._create_view([vim.VirtualMachine])
 
     def _get_datacenter(self, name):
         return self._get_object([vim.Datacenter], name)
@@ -122,6 +123,9 @@ class VCenterAPIClient(VSphereAPIClient):
         if update_set:
             self._version = update_set.version
         return update_set
+
+    def get_all_vms(self):
+        return self._vm_view.view
 
     def get_vms_by_portgroup(self, portgroup_key):
         portgroup = self._get_dpg_by_key(portgroup_key)
@@ -202,6 +206,12 @@ class VNCAPIClient(object):
             parent_id=self.get_project().get_uuid()
         )["virtual-networks"]
         return [vn["uuid"] for vn in vn_list]
+
+    def read_all_vpg_uuids(self):
+        vpg_list = self.vnc_lib.virtual_port_groups_list()[
+            "virtual-port-groups"
+        ]
+        return [vpg["uuid"] for vpg in vpg_list]
 
     def read_vn(self, vn_uuid):
         try:
@@ -292,9 +302,19 @@ class VNCAPIClient(object):
     def _read_physical_interface(self, pi_uuid):
         return self.vnc_lib.physical_interface_read(id=pi_uuid)
 
-    def connect_physical_interfaces_to_vpg(self, vpg, physical_interfaces):
+    def attach_pis_to_vpg(self, vpg, physical_interfaces):
+        if not physical_interfaces:
+            return
         for pi in physical_interfaces:
             vpg.add_physical_interface(pi)
+        self.vnc_lib.virtual_port_group_update(vpg)
+
+    def detach_pis_from_vpg(self, vpg, physical_interface_uuids):
+        if not physical_interface_uuids:
+            return
+        for pi_uuid in physical_interface_uuids:
+            pi = self._read_physical_interface(pi_uuid)
+            vpg.del_physical_interface(pi)
         self.vnc_lib.virtual_port_group_update(vpg)
 
     def get_vn_vlan(self, vnc_vn):

@@ -4,14 +4,17 @@ from vnc_api import vnc_api
 
 from cvfm import models
 from cvfm.services import VirtualPortGroupService
-from cvfm import constants as const
-
-from tests import utils
 
 
 @pytest.fixture
-def vpg_service(vnc_api_client):
-    return VirtualPortGroupService(None, vnc_api_client, None)
+def vpg_service(vnc_api_client, database):
+    return VirtualPortGroupService(None, vnc_api_client, database)
+
+
+@pytest.fixture
+def port():
+    esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-1")
+    return vnc_api.Port(esxi_port_info=esxi_port_info)
 
 
 def test_create_vpg_models(vpg_service, vm_model):
@@ -109,3 +112,43 @@ def test_find_affected_vpgs(vpg_service, vnc_api_client):
     vpg_uuids = vpg_service.find_affected_vpgs(vmi_models)
 
     assert vpg_uuids == {vpg_uuid_1, vpg_uuid_2}
+
+
+def test_update_pis(vpg_service, vnc_api_client):
+    pr = vnc_api.PhysicalRouter("qfx-1")
+    pi_1 = vnc_api.PhysicalInterface(name="pi-1", parent_obj=pr)
+    pi_2 = vnc_api.PhysicalInterface(name="pi-2", parent_obj=pr)
+    pi_3 = vnc_api.PhysicalInterface(name="pi-3", parent_obj=pr)
+    pi_1.set_uuid("pi-1-uuid")
+    pi_2.set_uuid("pi-2-uuid")
+    pi_3.set_uuid("pi-3-uuid")
+    previous_vpg = vnc_api.VirtualPortGroup()
+    previous_vpg.add_physical_interface(pi_1)
+    previous_vpg.add_physical_interface(pi_2)
+    current_pis = [pi_2, pi_3]
+
+    vpg_service.update_pis_for_vpg(previous_vpg, current_pis)
+
+    vnc_api_client.detach_pis_from_vpg.assert_called_once_with(
+        previous_vpg, ["pi-1-uuid"]
+    )
+    vnc_api_client.attach_pis_to_vpg.assert_called_once_with(
+        previous_vpg, [pi_3]
+    )
+
+
+def test_update_pis_empty_refs(vpg_service, vnc_api_client):
+    pr = vnc_api.PhysicalRouter("qfx-1")
+    pi = vnc_api.PhysicalInterface(name="pi-1", parent_obj=pr)
+    pi.set_uuid("pi-1-uuid")
+    previous_vpg = vnc_api.VirtualPortGroup()
+    current_pis = [pi]
+
+    vpg_service.update_pis_for_vpg(previous_vpg, current_pis)
+
+    vnc_api_client.detach_pis_from_vpg.assert_called_once_with(
+        previous_vpg, []
+    )
+    vnc_api_client.attach_pis_to_vpg.assert_called_once_with(
+        previous_vpg, [pi]
+    )
