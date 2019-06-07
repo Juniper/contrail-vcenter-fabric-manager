@@ -1,22 +1,22 @@
 def test_find_matches_physical_interfaces(
     topology_with_spine_switch, vpg_service
 ):
-    pis = vpg_service.find_matches_physical_interfaces("esxi-1", "dvs-1")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-1", "dvs-1")
     check_pi_names(pis, ["xe-0/0/1", "xe-0/0/5"])
 
-    pis = vpg_service.find_matches_physical_interfaces("esxi-1", "dvs-2")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-1", "dvs-2")
     check_pi_names(pis, ["xe-0/0/2", "xe-0/0/6"])
 
-    pis = vpg_service.find_matches_physical_interfaces("esxi-2", "dvs-1")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-2", "dvs-1")
     check_pi_names(pis, ["xe-0/0/3", "xe-0/0/7"])
 
-    pis = vpg_service.find_matches_physical_interfaces("esxi-2", "dvs-2")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-2", "dvs-2")
     check_pi_names(pis, ["xe-0/0/4", "xe-0/0/8"])
 
-    pis = vpg_service.find_matches_physical_interfaces("esxi-1", "dvs-3")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-1", "dvs-3")
     check_pi_names(pis, [])
 
-    pis = vpg_service.find_matches_physical_interfaces("esxi-3", "dvs-1")
+    pis = vpg_service.find_matching_physical_interfaces("esxi-3", "dvs-1")
     check_pi_names(pis, [])
 
 

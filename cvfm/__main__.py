@@ -1,42 +1,22 @@
 #!/usr/bin/env python
 
 import argparse
-import gevent
 import logging
 import random
 import socket
 import sys
-import yaml
 
+import gevent
+import yaml
 from pysandesh.sandesh_base import Sandesh, SandeshConfig
 
-from cvfm.sandesh_handler import SandeshHandler
+from cvfm import controllers, services, synchronizers
 from cvfm.clients import VCenterAPIClient, VNCAPIClient
-from cvfm.controllers import (
-    UpdateHandler,
-    VmReconfiguredHandler,
-    VmRemovedHandler,
-    VmRenamedHandler,
-    VmUpdatedHandler,
-    VmPowerStateHandler,
-    VmMigratedHandler,
-    DVPortgroupCreatedHandler,
-    DVPortgroupReconfiguredHandler,
-    DVPortgroupRenamedHandler,
-    DVPortgroupDestroyedHandler,
-    VmwareController,
-)
 from cvfm.database import Database
-from cvfm.services import (
-    VirtualMachineService,
-    VirtualMachineInterfaceService,
-    DistributedPortGroupService,
-    VirtualPortGroupService,
-)
 from cvfm.event_listener import EventListener
 from cvfm.monitors import VMwareMonitor
+from cvfm.sandesh_handler import SandeshHandler
 from cvfm.supervisor import Supervisor
-from cvfm.synchronizers import DistributedPortGroupSynchronizer, Synchronizer
 
 gevent.monkey.patch_all()
 
@@ -64,46 +44,48 @@ def build_context(config):
     vcenter_api_client = VCenterAPIClient(config["vcenter"])
     vnc_api_client = VNCAPIClient(config["vnc"])
 
-    vm_service = VirtualMachineService(
+    vm_service = services.VirtualMachineService(
         vcenter_api_client, vnc_api_client, database
     )
-    vmi_service = VirtualMachineInterfaceService(
+    vmi_service = services.VirtualMachineInterfaceService(
         vcenter_api_client, vnc_api_client, database
     )
-    dpg_service = DistributedPortGroupService(
+    dpg_service = services.DistributedPortGroupService(
         vcenter_api_client, vnc_api_client, database
     )
-    vpg_service = VirtualPortGroupService(
+    vpg_service = services.VirtualPortGroupService(
         vcenter_api_client, vnc_api_client, database
     )
 
-    vm_updated_handler = VmUpdatedHandler(
+    vm_updated_handler = controllers.VmUpdatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
-    vm_reconfigured_handler = VmReconfiguredHandler(
+    vm_reconfigured_handler = controllers.VmReconfiguredHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
-    vm_removed_handler = VmRemovedHandler(
+    vm_removed_handler = controllers.VmRemovedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
-    vm_migrated_handler = VmMigratedHandler(
+    vm_migrated_handler = controllers.VmMigratedHandler(
         vm_service, vmi_service, dpg_service
     )
-    vm_renamed_handler = VmRenamedHandler(vm_service, vmi_service, dpg_service)
-    vm_powerstate_handler = VmPowerStateHandler(
+    vm_renamed_handler = controllers.VmRenamedHandler(
+        vm_service, vmi_service, dpg_service
+    )
+    vm_powerstate_handler = controllers.VmPowerStateHandler(
         vm_service, vmi_service, dpg_service
     )
 
-    dvportgroup_created_handler = DVPortgroupCreatedHandler(
+    dvportgroup_created_handler = controllers.DVPortgroupCreatedHandler(
         vm_service, vmi_service, dpg_service
     )
-    dvportgroup_reconfigured_handler = DVPortgroupReconfiguredHandler(
+    dvportgroup_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
         vm_service, vmi_service, dpg_service
     )
-    dvportgroup_renamed_handler = DVPortgroupRenamedHandler(
+    dvportgroup_renamed_handler = controllers.DVPortgroupRenamedHandler(
         vm_service, vmi_service, dpg_service
     )
-    dvportgroup_destroyed_handler = DVPortgroupDestroyedHandler(
+    dvportgroup_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
         vm_service, vmi_service, dpg_service
     )
 
@@ -119,12 +101,22 @@ def build_context(config):
         dvportgroup_renamed_handler,
         dvportgroup_destroyed_handler,
     ]
-    update_handler = UpdateHandler(handlers)
+    update_handler = controllers.UpdateHandler(handlers)
 
-    dpg_synchronizer = DistributedPortGroupSynchronizer(dpg_service)
-    synchronizer = Synchronizer(dpg_synchronizer)
+    vm_synchronizer = synchronizers.VirtualMachineSynchronizer(vm_service)
+    dpg_synchronizer = synchronizers.DistributedPortGroupSynchronizer(
+        dpg_service
+    )
+    vpg_synchronizer = synchronizers.VirtualPortGroupSynchronizer(
+        vm_service, vpg_service
+    )
+    synchronizer = synchronizers.Synchronizer(
+        vm_synchronizer, dpg_synchronizer, vpg_synchronizer
+    )
 
-    vmware_controller = VmwareController(synchronizer, update_handler, lock)
+    vmware_controller = controllers.VmwareController(
+        synchronizer, update_handler, lock
+    )
     vmware_monitor = VMwareMonitor(vmware_controller, update_set_queue)
     event_listener = EventListener(
         vmware_controller, update_set_queue, vcenter_api_client, database
