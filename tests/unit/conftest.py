@@ -71,3 +71,13 @@ def database():
 @pytest.fixture
 def dpg_synchronizer(dpg_service):
     return synchronizers.DistributedPortGroupSynchronizer(dpg_service)
+
+
+@pytest.fixture
+def vpg_synchronizer(vm_service, vpg_service):
+    return synchronizers.VirtualPortGroupSynchronizer(vm_service, vpg_service)
+
+
+@pytest.fixture
+def vm_synchronizer(vm_service):
+    return synchronizers.VirtualMachineSynchronizer(vm_service)

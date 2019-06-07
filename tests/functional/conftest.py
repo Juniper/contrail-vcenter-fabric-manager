@@ -120,8 +120,20 @@ def dpg_synchronizer(dpg_service):
 
 
 @pytest.fixture
-def synchronizer(dpg_synchronizer):
-    return synchronizers.Synchronizer(dpg_synchronizer)
+def vpg_synchronizer(vm_service, vpg_service):
+    return synchronizers.VirtualPortGroupSynchronizer(vm_service, vpg_service)
+
+
+@pytest.fixture
+def vm_synchronizer(vm_service):
+    return synchronizers.VirtualMachineSynchronizer(vm_service)
+
+
+@pytest.fixture
+def synchronizer(vm_synchronizer, dpg_synchronizer, vpg_synchronizer):
+    return synchronizers.Synchronizer(
+        vm_synchronizer, dpg_synchronizer, vpg_synchronizer
+    )
 
 
 @pytest.fixture
