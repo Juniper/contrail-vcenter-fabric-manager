@@ -393,7 +393,8 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("DVPortgroupDestroyedHandler: detected event: %s", event)
 
         dpg_name = event.net.name
+        dvs_name = event.dvs.name
         logger.info("Deleted DPG with name %s", dpg_name)
 
-        dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
-        self._dpg_service.delete_fabric_vn(dpg_model)
+        self._dpg_service.delete_dpg_model(dpg_name)
+        self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)

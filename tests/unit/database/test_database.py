@@ -21,3 +21,11 @@ def test_remove_vm_model(database, vm_model):
 
     database.remove_vm_model("vm-1")
     assert database.get_vm_model("vm-1") is None
+
+
+def test_get_all_vm_models(database, vm_model):
+    database.add_vm_model(vm_model)
+
+    vm_models = database.get_all_vm_models()
+
+    assert list(vm_models) == [vm_model]
