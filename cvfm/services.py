@@ -19,8 +19,10 @@ class VirtualMachineService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
-    def get_host_model(self, host_name):
-        logger.info("VirtualMachineService.get_host_model called")
+    def populate_db_with_vms(self):
+        vmware_vms = self._vcenter_api_client.get_all_vms()
+        for vmware_vm in vmware_vms:
+            self.create_vm_model(vmware_vm)
 
     def create_vm_model(self, vmware_vm):
         vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
@@ -31,6 +33,9 @@ class VirtualMachineService(Service):
         vm_model = self._database.get_vm_model(vm_name)
         self._database.remove_vm_model(vm_name)
         return vm_model
+
+    def get_all_vm_models(self):
+        return self._database.get_all_vm_models()
 
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
@@ -204,12 +209,41 @@ class VirtualPortGroupService(Service):
 
     def attach_pis_to_vpg(self, vpg_model):
         vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
-        pis = self.find_matches_physical_interfaces(
+        pis = self.find_pis_for_vpg(vpg_model)
+        self._vnc_api_client.attach_pis_to_vpg(vnc_vpg, pis)
+
+    def find_pis_for_vpg(self, vpg_model):
+        pis = self.find_matching_physical_interfaces(
             vpg_model.host_name, vpg_model.dvs_name
         )
-        self._vnc_api_client.connect_physical_interfaces_to_vpg(vnc_vpg, pis)
+        return pis
 
-    def find_matches_physical_interfaces(self, host_name, dvs_name):
+    def create_vpg_with_pis_in_vnc(self, vpg_model, pis):
+        if not pis:
+            return
+        existing_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
+        if existing_vpg is None:
+            self.create_vpg_in_vnc(vpg_model)
+        self.update_pis_for_vpg(existing_vpg, pis)
+
+    def update_pis_for_vpg(self, existing_vpg, pis):
+        previous_pis_uuids = [
+            pi_ref["uuid"]
+            for pi_ref in existing_vpg.get_physical_interface_refs()
+        ]
+        pis_to_attach = [pi for pi in pis if pi.uuid not in previous_pis_uuids]
+
+        current_pis_uuids = [pi.uuid for pi in pis]
+        pis_to_detach = [
+            pi_uuid
+            for pi_uuid in previous_pis_uuids
+            if pi_uuid not in current_pis_uuids
+        ]
+
+        self._vnc_api_client.attach_pis_to_vpg(existing_vpg, pis_to_attach)
+        self._vnc_api_client.detach_pis_from_vpg(existing_vpg, pis_to_detach)
+
+    def find_matching_physical_interfaces(self, host_name, dvs_name):
         vnc_node = self._vnc_api_client.get_node_by_name(host_name)
         if vnc_node is None:
             return []

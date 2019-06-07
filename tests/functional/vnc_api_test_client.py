@@ -152,6 +152,14 @@ class VNCAPITestClient(object):
     def read_physical_interface(self, pi_uuid):
         return self.vnc_lib.physical_interface_read(id=pi_uuid)
 
+    def read_all_physical_interface_uuids(self):
+        return [
+            pi["uuid"]
+            for pi in self.vnc_lib.physical_interfaces_list()[
+                "physical-interfaces"
+            ]
+        ]
+
     def delete_physical_interface(self, pi_uuid):
         self.vnc_lib.physical_interface_delete(id=pi_uuid)
 
@@ -178,6 +186,12 @@ class VNCAPITestClient(object):
         )
         port_uuid = self.vnc_lib.port_create(port)
         return self.read_port(port_uuid)
+
+    def update_ports_dvs_name(self, port_uuid, dvs_name):
+        port = self.read_port(port_uuid)
+        esxi_port_info = vnc_api.ESXIProperties(dvs_name=dvs_name)
+        port.set_esxi_port_info(esxi_port_info)
+        self.vnc_lib.port_update(port)
 
     def read_port(self, port_uuid):
         return self.vnc_lib.port_read(id=port_uuid)
