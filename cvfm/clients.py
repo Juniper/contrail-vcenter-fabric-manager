@@ -306,3 +306,39 @@ class VNCAPIClient(object):
         vnc_vmi = self.read_vmi(vmi_uuid)
         vmi_properties = vnc_vmi.get_virtual_machine_interface_properties()
         return vmi_properties.get_sub_interface_vlan_tag()
+
+    def get_vmis_by_vn(self, vnc_vn):
+        vmi_refs = vnc_vn.get_virtual_machine_interface_back_refs() or ()
+        return [self.read_vmi(vmi_ref["uuid"]) for vmi_ref in vmi_refs]
+
+    def recreate_vmi_with_new_vlan(self, old_vnc_vmi, vnc_vn, new_vlan):
+        vpg_ref = old_vnc_vmi.get_virtual_port_group_back_refs()[0]
+        vnc_vpg = self.read_vpg(vpg_ref["uuid"])
+        new_vnc_vmi = self._create_vnc_vmi_obj_with_new_vlan(
+            new_vlan, old_vnc_vmi, vnc_vn
+        )
+        self._delete_old_vmi(old_vnc_vmi, vnc_vpg)
+        self._create_new_vmi(new_vnc_vmi, vnc_vpg)
+
+    def _create_vnc_vmi_obj_with_new_vlan(self, new_vlan, old_vnc_vmi, vnc_vn):
+        new_vnc_vmi = vnc_api.VirtualMachineInterface(
+            name=old_vnc_vmi.name, parent_obj=self.get_project()
+        )
+        new_vnc_vmi.set_uuid(old_vnc_vmi.uuid)
+        new_vnc_vmi.add_virtual_network(vnc_vn)
+        vmi_properties = vnc_api.VirtualMachineInterfacePropertiesType(
+            sub_interface_vlan_tag=new_vlan
+        )
+        new_vnc_vmi.set_virtual_machine_interface_properties(vmi_properties)
+        new_vnc_vmi.set_id_perms(const.ID_PERMS)
+        return new_vnc_vmi
+
+    def _delete_old_vmi(self, vnc_vmi, vnc_vpg):
+        vnc_vpg.del_virtual_machine_interface(vnc_vmi)
+        self.update_vpg(vnc_vpg)
+        self.delete_vmi(vnc_vmi.uuid)
+
+    def _create_new_vmi(self, new_vnc_vmi, vnc_vpg):
+        self.create_vmi(new_vnc_vmi)
+        vnc_vpg.add_virtual_machine_interface(new_vnc_vmi)
+        self.update_vpg(vnc_vpg)

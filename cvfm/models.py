@@ -51,6 +51,12 @@ class VirtualMachineModel(object):
         if len(dpgs) == 1:
             self.dpg_models.remove(dpgs[0])
 
+    def has_interface_in_dpg(self, dpg_model):
+        return dpg_model in self.dpg_models
+
+    def attach_dpg(self, dpg_model):
+        self.dpg_models.add(dpg_model)
+
     @classmethod
     def from_vmware_vm(cls, vmware_vm):
         dpg_models = set()
@@ -111,14 +117,24 @@ class DistributedPortGroupModel(object):
     def __repr__(self):
         return (
             "DistributePortGroupModel(uuid={uuid}, "
-            "name={name}, vlan_id={vlan_id}, "
+            "key={key}, name={name}, vlan_id={vlan_id}, "
             "dvs_name={dvs_name})".format(
                 uuid=self.uuid,
+                key=self.key,
                 name=self.name,
                 vlan_id=self.vlan_id,
                 dvs_name=self.dvs_name,
             )
         )
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __ne__(self, other):
+        return self.uuid != other.uuid
+
+    def __hash__(self):
+        return hash(self.uuid)
 
 
 class VirtualPortGroupModel(object):
