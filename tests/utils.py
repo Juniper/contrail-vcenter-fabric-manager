@@ -137,3 +137,9 @@ def not_touched_in_vnc(previous, current):
     previous_mod_time = previous.get_id_perms().get_last_modified()
     current_mod_time = current.get_id_perms().get_last_modified()
     return current_mod_time == previous_mod_time
+
+
+def not_deleted_from_vnc(previous, current):
+    previous_create_time = previous.get_id_perms().get_created()
+    current_create_time = current.get_id_perms().get_created()
+    return current_create_time == previous_create_time
