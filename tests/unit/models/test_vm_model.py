@@ -21,3 +21,38 @@ def test_detach_dpg(vm_model):
 
     assert len(vm_model.dpg_models) == 1
     assert list(vm_model.dpg_models)[0].name == "dpg-1"
+
+
+def test_has_interface_in_dpg(vm_model):
+    dpg_model_1 = models.DistributedPortGroupModel(
+        models.generate_uuid("dvportgroup-1"),
+        "dvportgroup-1",
+        "dpg-1",
+        5,
+        "dvs-1",
+    )
+    assert vm_model.has_interface_in_dpg(dpg_model_1)
+    dpg_model_2 = models.DistributedPortGroupModel(
+        models.generate_uuid("dvportgroup-2"),
+        "dvportgroup-2",
+        "dpg-2",
+        6,
+        "dvs-1",
+    )
+    assert not vm_model.has_interface_in_dpg(dpg_model_2)
+
+
+def test_attach_dpg(vm_model):
+    dpg_model = models.DistributedPortGroupModel(
+        models.generate_uuid("dvportgroup-2"),
+        "dvportgroup-2",
+        "dpg-2",
+        6,
+        "dvs-1",
+    )
+    vm_model.attach_dpg(dpg_model)
+    assert len(vm_model.dpg_models) == 2
+    assert sorted(dpg.name for dpg in vm_model.dpg_models) == [
+        "dpg-1",
+        "dpg-2",
+    ]

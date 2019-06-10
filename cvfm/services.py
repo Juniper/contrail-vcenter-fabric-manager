@@ -32,6 +32,12 @@ class VirtualMachineService(Service):
         self._database.remove_vm_model(vm_name)
         return vm_model
 
+    def update_dpg_in_vm_models(self, dpg_model):
+        for vm_model in self._database.get_all_vm_models():
+            if vm_model.has_interface_in_dpg(dpg_model):
+                vm_model.detach_dpg(dpg_model.name)
+                vm_model.attach_dpg(dpg_model)
+
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
         return models.VirtualMachineModel()
@@ -130,10 +136,35 @@ class DistributedPortGroupService(Service):
         vnc_vlan = self._vnc_api_client.get_vn_vlan(vnc_vn)
         if vnc_vlan is None:
             return False
-        return vnc_vlan != dpg_model.vlan_id
+        should_update = vnc_vlan != dpg_model.vlan_id
+        if should_update:
+            logger.info(
+                "Detected VLAN change for %s from %s to %s",
+                dpg_model,
+                vnc_vlan,
+                dpg_model.vlan_id,
+            )
+        else:
+            logger.info("No VLAN change for %s", dpg_model)
+        return should_update
 
-    def handle_vlan_change(self, vmware_dpg):
-        logger.info("DistributedPortGroupService.handle_vlan_change called")
+    def update_vmis_vlan_in_vnc(self, dpg_model):
+        vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)
+        vnc_vmis = self._vnc_api_client.get_vmis_by_vn(vnc_vn)
+        for vnc_vmi in vnc_vmis:
+            logger.info(
+                "Recreating VMI %s with new VLAN %s in VNC...",
+                vnc_vmi.name,
+                dpg_model.vlan_id,
+            )
+            self._vnc_api_client.recreate_vmi_with_new_vlan(
+                vnc_vmi, vnc_vn, dpg_model.vlan_id
+            )
+            logger.info(
+                "Recreated VMI %s with new VLAN %s in VNC",
+                vnc_vmi.name,
+                dpg_model.vlan_id,
+            )
 
     def create_fabric_vmi_for_vm_vmi(self, vmi_model):
         logger.info(

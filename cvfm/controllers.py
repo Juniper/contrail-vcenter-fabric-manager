@@ -348,9 +348,9 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
             # TODO create VMIs (VPGs) in VNC
             return
 
-        # reconfigured DPG from valid VLAN to another valid VLAN
         if self._dpg_service.should_update_vlan(dpg_model):
-            self._dpg_service.handle_vlan_change(dpg_model)
+            self._dpg_service.update_vmis_vlan_in_vnc(dpg_model)
+            self._vm_service.update_dpg_in_vm_models(dpg_model)
 
 
 class DVPortgroupRenamedHandler(AbstractEventHandler):

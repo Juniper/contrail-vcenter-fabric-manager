@@ -1,6 +1,6 @@
 import pytest
 
-from cvfm import services
+from cvfm import services, models
 
 
 @pytest.fixture
@@ -25,3 +25,22 @@ def test_delete_vm_model(vm_service, vm_model, database):
 
     assert database.get_vm_model("vm-1") is None
     assert result_vm_model == vm_model
+
+
+def test_update_dpg_in_vm_models(vm_service, vm_model, database):
+    database.add_vm_model(vm_model)
+
+    assert len(vm_model.dpg_models) == 1
+    dpg_model = list(vm_model.dpg_models)[0]
+    assert dpg_model.vlan_id == 5
+
+    dpg_model = models.DistributedPortGroupModel(
+        models.generate_uuid("dvportgroup-1"),
+        "dvportgroup-1",
+        "dpg-1",
+        6,
+        "dvs-1",
+    )
+    vm_service.update_dpg_in_vm_models(dpg_model)
+    dpg_model = list(vm_model.dpg_models)[0]
+    assert dpg_model.vlan_id == 6
