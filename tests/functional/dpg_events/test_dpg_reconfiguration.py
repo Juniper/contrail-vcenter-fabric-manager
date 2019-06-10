@@ -17,18 +17,6 @@ def vmware_dpg():
 
 
 @pytest.fixture
-def vmware_dpg_reconfigured():
-    net_data = {
-        "key": "dvportgroup-1",
-        "name": "dpg-1",
-        "type": vim.DistributedVirtualPortgroup,
-        "dvs-name": "dvs-1",
-        "vlan": 15,
-    }
-    return utils.create_vmware_net(net_data)
-
-
-@pytest.fixture
 def vmware_vm_1(vmware_dpg):
     return utils.create_vmware_vm("vm-1", "esxi-1", [vmware_dpg])
 
@@ -44,7 +32,6 @@ def test_dpg_reconfiguration(
     vcenter_api_client,
     vmware_controller,
     vmware_dpg,
-    vmware_dpg_reconfigured,
     vmware_vm_1,
     vmware_vm_2,
 ):
@@ -84,7 +71,7 @@ def test_dpg_reconfiguration(
 
     # dpg-1 VLAN reconfigured from 5 to 15
     dpg_reconfigured_update = vcenter_api_client.reconfigure_dpg(
-        vmware_dpg_reconfigured
+        vmware_dpg, 15
     )
     vmware_controller.handle_update(dpg_reconfigured_update)
 

@@ -79,5 +79,12 @@ def vpg_synchronizer(vm_service, vpg_service):
 
 
 @pytest.fixture
+def vmi_synchronizer(vm_service, vmi_service):
+    return synchronizers.VirtualMachineInterfaceSynchronizer(
+        vm_service, vmi_service
+    )
+
+
+@pytest.fixture
 def vm_synchronizer(vm_service):
     return synchronizers.VirtualMachineSynchronizer(vm_service)

@@ -16,13 +16,10 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key] = vmware_dpg
         return utils.wrap_into_update_set(event=event)
 
-    def reconfigure_dpg(self, vmware_dpg):
+    def reconfigure_dpg(self, vmware_dpg, new_vlan_id):
+        vmware_dpg.config.defaultPortConfig.vlan.vlanId = new_vlan_id
         event = mock.Mock(spec=vim.event.DVPortgroupReconfiguredEvent())
         event.net.network = vmware_dpg
-        old_vmware_dpg = self.portgroups[vmware_dpg.key]
-        vmware_dpg.vm = old_vmware_dpg.vm
-        self._update_vms_interfaces_in_dpg(vmware_dpg)
-        self.portgroups[vmware_dpg.key] = vmware_dpg
         return utils.wrap_into_update_set(event=event)
 
     def _update_vms_interfaces_in_dpg(self, vmware_dpg):

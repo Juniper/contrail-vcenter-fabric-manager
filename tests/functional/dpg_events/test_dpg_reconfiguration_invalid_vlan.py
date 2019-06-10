@@ -57,7 +57,6 @@ def test_dpg_reconfiguration_from_invalid_vlan(
     vcenter_api_client,
     vmware_controller,
     vmware_dpg_invalid_vlan,
-    vmware_dpg_valid_vlan,
     vmware_vm_1_invalid_dpg,
     vmware_vm_2_invalid_dpg,
 ):
@@ -82,7 +81,7 @@ def test_dpg_reconfiguration_from_invalid_vlan(
 
     # dpg-1 VLAN reconfigured from 0 to 5
     dpg_reconfigured_update = vcenter_api_client.reconfigure_dpg(
-        vmware_dpg_valid_vlan
+        vmware_dpg_invalid_vlan, 5
     )
     vmware_controller.handle_update(dpg_reconfigured_update)
 
@@ -116,7 +115,6 @@ def test_dpg_reconfiguration_to_invalid_vlan(
     vnc_test_client,
     vcenter_api_client,
     vmware_controller,
-    vmware_dpg_invalid_vlan,
     vmware_dpg_valid_vlan,
     vmware_vm_1_valid_dpg,
     vmware_vm_2_valid_dpg,
@@ -159,7 +157,7 @@ def test_dpg_reconfiguration_to_invalid_vlan(
 
     # dpg-1 VLAN reconfigured from 5 to 0
     dpg_reconfigured_update = vcenter_api_client.reconfigure_dpg(
-        vmware_dpg_invalid_vlan
+        vmware_dpg_valid_vlan, 0
     )
     vmware_controller.handle_update(dpg_reconfigured_update)
 
