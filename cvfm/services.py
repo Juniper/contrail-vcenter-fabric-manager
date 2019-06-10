@@ -61,22 +61,37 @@ class VirtualMachineInterfaceService(Service):
         return models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
     def create_vmi_in_vnc(self, vmi_model):
-        if self._vnc_api_client.read_vmi(vmi_model.uuid) is None:
-            project = self._vnc_api_client.get_project()
-            fabric_vn = self._vnc_api_client.read_vn(vmi_model.dpg_model.uuid)
-            try:
-                vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
-            except VNCVMICreationException:
-                return
+        fabric_vn = self._vnc_api_client.read_vn(vmi_model.dpg_model.uuid)
+        project = self._vnc_api_client.get_project()
+        try:
+            vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
+        except VNCVMICreationException:
+            return
+        existing_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
+        if existing_vmi is None:
             self._vnc_api_client.create_vmi(vnc_vmi)
+        else:
+            self._update_existing_vmi(vmi_model, existing_vmi, fabric_vn)
+
+    def _update_existing_vmi(self, vmi_model, existing_vmi, fabric_vn):
+        old_props = existing_vmi.get_virtual_machine_interface_properties()
+        old_vlan = old_props.get_sub_interface_vlan_tag()
+        new_vlan = vmi_model.dpg_model.vlan_id
+        if old_vlan != new_vlan:
+            self._vnc_api_client.recreate_vmi_with_new_vlan(
+                existing_vmi, fabric_vn, new_vlan
+            )
 
     def attach_vmi_to_vpg(self, vmi_model):
         vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
         if vnc_vmi is None:
             return
         vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)
-        vnc_vpg.add_virtual_machine_interface(vnc_vmi)
-        self._vnc_api_client.update_vpg(vnc_vpg)
+        vmi_refs = vnc_vpg.get_virtual_machine_interface_refs() or ()
+        vmi_uuids = [vmi_ref["uuid"] for vmi_ref in vmi_refs]
+        if vnc_vmi.uuid not in vmi_uuids:
+            vnc_vpg.add_virtual_machine_interface(vnc_vmi)
+            self._vnc_api_client.update_vpg(vnc_vpg)
 
     def detach_vmi_from_vpg(self, vmi_model):
         vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)

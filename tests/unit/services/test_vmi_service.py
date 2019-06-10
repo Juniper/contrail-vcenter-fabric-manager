@@ -4,6 +4,7 @@ from vnc_api import vnc_api
 
 from cvfm import models
 from cvfm.services import VirtualMachineInterfaceService
+from tests import utils
 
 
 @pytest.fixture
@@ -111,4 +112,38 @@ def test_find_affected_vmis(vmi_service, vmware_vm):
     )
     assert list(vmis_to_create_2)[0].uuid == models.generate_uuid(
         "esxi-1_dvs-1_dpg-2"
+    )
+
+
+def test_update_vlan_id(vmi_service, project, fabric_vn, vnc_api_client):
+    vnc_api_client.read_vn.return_value = fabric_vn
+
+    dpg_model = models.DistributedPortGroupModel(
+        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
+        key="dvportgroup-1",
+        name="dpg-1",
+        vlan_id=5,
+        dvs_name="dvs-1",
+    )
+    dpg_model_2 = models.DistributedPortGroupModel(
+        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
+        key="dvportgroup-1",
+        name="dpg-1",
+        vlan_id=6,
+        dvs_name="dvs-1",
+    )
+    vmi_model = models.VirtualMachineInterfaceModel(
+        uuid="0b1016bf-374b-3829-afba-807b8bf8396a",
+        host_name="esxi-1",
+        dpg_model=dpg_model,
+    )
+    vnc_api_client.read_vmi.return_value = vmi_model.to_vnc_vmi(
+        project, fabric_vn
+    )
+    vmi_model.dpg_model = dpg_model_2
+
+    vmi_service.create_vmi_in_vnc(vmi_model)
+
+    vnc_api_client.recreate_vmi_with_new_vlan.assert_called_once_with(
+        mock.ANY, fabric_vn, 6
     )
