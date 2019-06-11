@@ -158,6 +158,22 @@ class DistributedPortGroupService(Service):
 
         self._vnc_api_client.delete_vn(dpg_fq_name)
 
+    def clean_fabric_vn(self, dvs_name, dpg_name):
+        project = self._vnc_api_client.get_project()
+        dpg_vnc_name = models.DistributedPortGroupModel.get_vnc_name(
+            dvs_name, dpg_name
+        )
+        dpg_fq_name = project.fq_name + [dpg_vnc_name]
+
+        affected_vpgs = set()
+        vmis = self._vnc_api_client.get_vmi_in_vn(dpg_fq_name)
+        for vmi in vmis:
+            for vpg_ref in vmi.get_virtual_port_group_back_refs():
+                affected_vpgs.add(vpg_ref["uuid"])
+                self._vnc_api_client.dettach_vmi_from_vpg(vmi, vpg_ref["uuid"])
+            self._vnc_api_client.delete_vmi(vmi.uuid)
+        return affected_vpgs
+
     def filter_out_non_empty_dpgs(self, vmi_models, host):
         return [
             vmi_model

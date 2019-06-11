@@ -91,7 +91,7 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
         vm_service, vmi_service, dpg_service
     )
     dpg_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
     vm_updated_handler = controllers.VmUpdatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
