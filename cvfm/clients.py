@@ -220,6 +220,13 @@ class VNCAPIClient(object):
             logger.info("VN %s not found in VNC", vn_uuid)
         return None
 
+    def read_vn_by_fq_name(self, vn_fq_name):
+        try:
+            return self.vnc_lib.virtual_network_read(fq_name=vn_fq_name)
+        except vnc_api.NoIdError:
+            logger.info("VN %s not found in VNC", vn_fq_name)
+        return None
+
     def read_vpg(self, vpg_uuid):
         try:
             return self.vnc_lib.virtual_port_group_read(id=vpg_uuid)
@@ -362,3 +369,8 @@ class VNCAPIClient(object):
         self.create_vmi(new_vnc_vmi)
         vnc_vpg.add_virtual_machine_interface(new_vnc_vmi)
         self.update_vpg(vnc_vpg)
+
+    def detach_vmi_from_vpg(self, vmi, vpg_uuid):
+        vpg = self.read_vpg(vpg_uuid)
+        vpg.del_virtual_machine_interface(vmi)
+        self.vnc_lib.virtual_port_group_update(vpg)

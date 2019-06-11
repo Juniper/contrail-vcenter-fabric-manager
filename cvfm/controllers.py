@@ -380,10 +380,11 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
 class DVPortgroupDestroyedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupDestroyedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         logger.info("DVPortgroupDestroyedHandler: detected event: %s", event)
@@ -393,4 +394,6 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("Deleted DPG with name %s", dpg_name)
 
         self._dpg_service.delete_dpg_model(dpg_name)
+        affected_vpgs = self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
+        self._vpg_service.prune_empty_vpgs(affected_vpgs)
         self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
