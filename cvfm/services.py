@@ -20,6 +20,7 @@ class VirtualMachineService(Service):
         )
 
     def populate_db_with_vms(self):
+        self._database.clear_database()
         vmware_vms = self._vcenter_api_client.get_all_vms()
         for vmware_vm in vmware_vms:
             self.create_vm_model(vmware_vm)
@@ -102,13 +103,6 @@ class VirtualMachineInterfaceService(Service):
             vnc_vpg.add_virtual_machine_interface(vnc_vmi)
             self._vnc_api_client.update_vpg(vnc_vpg)
 
-    def detach_vmi_from_vpg(self, vmi_model):
-        vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)
-        vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
-        vnc_vpg.del_virtual_machine_interface(vnc_vmi)
-        self._vnc_api_client.update_vpg(vnc_vpg)
-        logger.info("VMI %s detached from VPG %s", vnc_vmi.name, vnc_vpg.name)
-
     def find_affected_vmis(self, old_vm_model, new_vm_model):
         old_vmi_models = set(self.create_vmi_models_for_vm(old_vm_model))
         new_vmi_models = set(self.create_vmi_models_for_vm(new_vm_model))
@@ -116,11 +110,11 @@ class VirtualMachineInterfaceService(Service):
         vmis_to_create = new_vmi_models - old_vmi_models
         return vmis_to_delete, vmis_to_create
 
-    def delete_vmi(self, vmi_model):
-        self._vnc_api_client.delete_vmi(vmi_model.uuid)
+    def delete_vmi(self, vmi_uuid):
+        self._vnc_api_client.delete_vmi(vmi_uuid)
 
-    def add_vmi(self, vm_uuid, vmware_vmi):
-        logger.info("VirtualMachineInterfaceService.add_vmi called")
+    def read_all_vmis(self):
+        return self._vnc_api_client.read_all_vmis()
 
     def migrate_vmi(self, vmi_model, source_host_model, target_host_model):
         logger.info("VirtualMachineInterfaceService.migrate_vmi called")
@@ -196,23 +190,10 @@ class DistributedPortGroupService(Service):
                 dpg_model.vlan_id,
             )
 
-    def create_fabric_vmi_for_vm_vmi(self, vmi_model):
-        logger.info(
-            "DistributedPortGroupService.create_fabric_vmi_for_vm_vmi called"
-        )
-
-    def delete_fabric_vmi_for_vm_vmi(self, vmi_model):
-        logger.info(
-            "DistributedPortGroupService.delete_fabric_vmi_for_vm_vmi called"
-        )
-
     def handle_vm_vmi_migration(self, vmi_model, source_host_model):
         logger.info(
             "DistributedPortGroupService.handle_vm_vmi_migration called"
         )
-
-    def get_dvs_model(self, vmware_dvs):
-        logger.info("DistributedPortGroupService.get_dvs_model called")
 
     def rename_dpg(self, dpg_uuid, new_dpg_name):
         logger.info("DistributedPortGroupService.rename_dpg called")
@@ -238,16 +219,11 @@ class DistributedPortGroupService(Service):
             dvs_name, dpg_name
         )
         dpg_fq_name = project.fq_name + [dpg_vnc_name]
-        dpg_vn = self._vnc_api_client.read_vn_by_fq_name(dpg_fq_name)
+        vnc_vn = self._vnc_api_client.read_vn_by_fq_name(dpg_fq_name)
 
-        affected_vpgs = set()
-        vmis = self._vnc_api_client.get_vmis_by_vn(dpg_vn)
+        vmis = self._vnc_api_client.get_vmis_by_vn(vnc_vn)
         for vmi in vmis:
-            for vpg_ref in vmi.get_virtual_port_group_back_refs():
-                affected_vpgs.add(vpg_ref["uuid"])
-                self._vnc_api_client.detach_vmi_from_vpg(vmi, vpg_ref["uuid"])
             self._vnc_api_client.delete_vmi(vmi.uuid)
-        return affected_vpgs
 
     def filter_out_non_empty_dpgs(self, vmi_models, host):
         return [
@@ -332,20 +308,3 @@ class VirtualPortGroupService(Service):
         if esxi_port_info is None:
             return False
         return esxi_port_info.get_dvs_name() == dvs_name
-
-    def find_affected_vpgs(self, vmi_models):
-        affected_vpgs = set()
-        for vmi_model in vmi_models:
-            vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
-            vpg_back_refs = vnc_vmi.get_virtual_port_group_back_refs() or []
-            affected_vpgs.update(ref["uuid"] for ref in vpg_back_refs)
-        return affected_vpgs
-
-    def prune_empty_vpgs(self, vpg_uuids):
-        for vpg_uuid in vpg_uuids:
-            vnc_vpg = self._vnc_api_client.read_vpg(vpg_uuid)
-            if vnc_vpg.get_virtual_machine_interface_refs() is None:
-                logger.info(
-                    "VPG %s has no VMIs attached. Deleting...", vnc_vpg.name
-                )
-                self._vnc_api_client.delete_vpg(vpg_uuid)

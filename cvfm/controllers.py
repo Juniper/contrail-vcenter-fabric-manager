@@ -145,11 +145,8 @@ class VmReconfiguredHandler(AbstractEventHandler):
         self._delete_vmis(vmis_to_delete)
 
     def _delete_vmis(self, vmis_to_delete):
-        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
         for vmi_model in vmis_to_delete:
-            self._vmi_service.detach_vmi_from_vpg(vmi_model)
-            self._vmi_service.delete_vmi(vmi_model)
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+            self._vmi_service.delete_vmi(vmi_model.uuid)
 
     def _create_vmis(self, new_vm_model, vmis_to_create):
         vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
@@ -200,13 +197,8 @@ class VmRemovedHandler(AbstractEventHandler):
             affected_vmis, event.host.host
         )
 
-        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
-
         for vmi_model in vmis_to_delete:
-            self._vmi_service.detach_vmi_from_vpg(vmi_model)
-            self._vmi_service.delete_vmi(vmi_model)
-
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+            self._vmi_service.delete_vmi(vmi_model.uuid)
 
 
 class VmMigratedHandler(AbstractEventHandler):
@@ -353,8 +345,7 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         dpg_name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         self._dpg_service.delete_dpg_model(dpg_name)
-        affected_vpgs = self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+        self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
         self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
 
     def _reconfigure_from_invalid_to_valid_vlan(self, dpg_model):
@@ -403,11 +394,8 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
 class DVPortgroupDestroyedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupDestroyedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
+    def __init__(self, dpg_service):
         self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         logger.info("DVPortgroupDestroyedHandler: detected event: %s", event)
@@ -417,6 +405,5 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("Deleted DPG with name %s", dpg_name)
 
         self._dpg_service.delete_dpg_model(dpg_name)
-        affected_vpgs = self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+        self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
         self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)

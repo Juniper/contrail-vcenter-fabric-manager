@@ -144,7 +144,7 @@ def test_clean_fabric_vn(dpg_service, vnc_api_client, make_vmi, project):
     vmi_3 = make_vmi(vmi_uuid="vmi-3", vpg_uuid="vpg-2")
     vnc_api_client.get_vmis_by_vn.return_value = [vmi_1, vmi_2, vmi_3]
 
-    affected_vpg = dpg_service.clean_fabric_vn("dvs-1", "dpg-1")
+    dpg_service.clean_fabric_vn("dvs-1", "dpg-1")
 
     expected_name = project.fq_name + ["dvs-1_dpg-1"]
     assert vnc_api_client.read_vn_by_fq_name.call_args[0][0] == expected_name
@@ -154,9 +154,3 @@ def test_clean_fabric_vn(dpg_service, vnc_api_client, make_vmi, project):
         mock.call("vmi-2"),
         mock.call("vmi-3"),
     ]
-    assert vnc_api_client.detach_vmi_from_vpg.call_args_list == [
-        mock.call(vmi_1, "vpg-1"),
-        mock.call(vmi_2, "vpg-1"),
-        mock.call(vmi_3, "vpg-2"),
-    ]
-    assert affected_vpg == {"vpg-1", "vpg-2"}

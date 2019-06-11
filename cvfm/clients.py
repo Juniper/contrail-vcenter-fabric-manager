@@ -33,6 +33,12 @@ def make_filter_spec(obj, filters):
     return filter_spec
 
 
+def has_proper_creator(vnc_object):
+    id_perms = vnc_object.get_id_perms()
+    if id_perms is not None:
+        return id_perms.get_creator() == const.ID_PERMS.get_creator()
+
+
 class VSphereAPIClient(object):
     def __init__(self):
         self._si = None
@@ -213,6 +219,15 @@ class VNCAPIClient(object):
         ]
         return [vpg["uuid"] for vpg in vpg_list]
 
+    def read_all_vmis(self):
+        vmi_ref_list = self.vnc_lib.virtual_machine_interfaces_list(
+            parent_id=self.get_project().get_uuid()
+        )["virtual-machine-interfaces"]
+        vmis_in_vnc = [
+            self.read_vmi(vmi_ref["uuid"]) for vmi_ref in vmi_ref_list
+        ]
+        return [vmi for vmi in vmis_in_vnc if has_proper_creator(vmi)]
+
     def read_vn(self, vn_uuid):
         try:
             return self.vnc_lib.virtual_network_read(id=vn_uuid)
@@ -249,6 +264,7 @@ class VNCAPIClient(object):
             logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
 
     def delete_vmi(self, vmi_uuid):
+        self.detach_vmi_from_vpg(vmi_uuid)
         try:
             self.vnc_lib.virtual_machine_interface_delete(id=vmi_uuid)
             logger.info("VMI %s deleted from VNC", vmi_uuid)
@@ -317,6 +333,16 @@ class VNCAPIClient(object):
             vpg.del_physical_interface(pi)
         self.vnc_lib.virtual_port_group_update(vpg)
 
+    def detach_vmi_from_vpg(self, vmi_uuid):
+        vmi = self.read_vmi(vmi_uuid)
+        vpg_ref = vmi.get_virtual_port_group_back_refs()[0]
+        vpg = self.read_vpg(vpg_ref["uuid"])
+        vpg.del_virtual_machine_interface(vmi)
+        self.update_vpg(vpg)
+        logger.info("VMI %s detached from VPG %s", vmi.name, vpg.name)
+        if not vpg.get_virtual_machine_interface_refs():
+            self.delete_vpg(vpg.uuid)
+
     def get_vn_vlan(self, vnc_vn):
         vmi_refs = vnc_vn.get_virtual_machine_interface_back_refs() or ()
         if len(vmi_refs) == 0:
@@ -356,14 +382,9 @@ class VNCAPIClient(object):
     def _delete_old_vmi(self, vnc_vmi, vnc_vpg):
         vnc_vpg.del_virtual_machine_interface(vnc_vmi)
         self.update_vpg(vnc_vpg)
-        self.delete_vmi(vnc_vmi.uuid)
+        self.vnc_lib.virtual_machine_interface_delete(id=vnc_vmi.uuid)
 
     def _create_new_vmi(self, new_vnc_vmi, vnc_vpg):
         self.create_vmi(new_vnc_vmi)
         vnc_vpg.add_virtual_machine_interface(new_vnc_vmi)
         self.update_vpg(vnc_vpg)
-
-    def detach_vmi_from_vpg(self, vmi, vpg_uuid):
-        vpg = self.read_vpg(vpg_uuid)
-        vpg.del_virtual_machine_interface(vmi)
-        self.vnc_lib.virtual_port_group_update(vpg)
