@@ -145,11 +145,8 @@ class VmReconfiguredHandler(AbstractEventHandler):
         self._delete_vmis(vmis_to_delete)
 
     def _delete_vmis(self, vmis_to_delete):
-        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
         for vmi_model in vmis_to_delete:
-            self._vmi_service.detach_vmi_from_vpg(vmi_model)
-            self._vmi_service.delete_vmi(vmi_model)
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+            self._vmi_service.delete_vmi(vmi_model.uuid)
 
     def _create_vmis(self, new_vm_model, vmis_to_create):
         vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
@@ -200,13 +197,8 @@ class VmRemovedHandler(AbstractEventHandler):
             affected_vmis, event.host.host
         )
 
-        affected_vpgs = self._vpg_service.find_affected_vpgs(vmis_to_delete)
-
         for vmi_model in vmis_to_delete:
-            self._vmi_service.detach_vmi_from_vpg(vmi_model)
-            self._vmi_service.delete_vmi(vmi_model)
-
-        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+            self._vmi_service.delete_vmi(vmi_model.uuid)
 
 
 class VmMigratedHandler(AbstractEventHandler):

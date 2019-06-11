@@ -20,6 +20,7 @@ class VirtualMachineService(Service):
         )
 
     def populate_db_with_vms(self):
+        self._database.clear_database()
         vmware_vms = self._vcenter_api_client.get_all_vms()
         for vmware_vm in vmware_vms:
             self.create_vm_model(vmware_vm)
@@ -104,8 +105,11 @@ class VirtualMachineInterfaceService(Service):
         vmis_to_create = new_vmi_models - old_vmi_models
         return vmis_to_delete, vmis_to_create
 
-    def delete_vmi(self, vmi_model):
-        self._vnc_api_client.delete_vmi(vmi_model.uuid)
+    def delete_vmi(self, vmi_uuid):
+        self._vnc_api_client.delete_vmi(vmi_uuid)
+
+    def read_all_vmis(self):
+        return self._vnc_api_client.read_all_vmis()
 
     def add_vmi(self, vm_uuid, vmware_vmi):
         logger.info("VirtualMachineInterfaceService.add_vmi called")
@@ -302,20 +306,3 @@ class VirtualPortGroupService(Service):
         if esxi_port_info is None:
             return False
         return esxi_port_info.get_dvs_name() == dvs_name
-
-    def find_affected_vpgs(self, vmi_models):
-        affected_vpgs = set()
-        for vmi_model in vmi_models:
-            vnc_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
-            vpg_back_refs = vnc_vmi.get_virtual_port_group_back_refs() or []
-            affected_vpgs.update(ref["uuid"] for ref in vpg_back_refs)
-        return affected_vpgs
-
-    def prune_empty_vpgs(self, vpg_uuids):
-        for vpg_uuid in vpg_uuids:
-            vnc_vpg = self._vnc_api_client.read_vpg(vpg_uuid)
-            if vnc_vpg.get_virtual_machine_interface_refs() is None:
-                logger.info(
-                    "VPG %s has no VMIs attached. Deleting...", vnc_vpg.name
-                )
-                self._vnc_api_client.delete_vpg(vpg_uuid)
