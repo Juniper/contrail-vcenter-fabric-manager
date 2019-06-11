@@ -21,8 +21,15 @@ class VCenterAPIMockClient(VCenterAPIClient):
         event.net.network = vmware_dpg
         old_vmware_dpg = self.portgroups[vmware_dpg.key]
         vmware_dpg.vm = old_vmware_dpg.vm
+        self._update_vms_interfaces_in_dpg(vmware_dpg)
         self.portgroups[vmware_dpg.key] = vmware_dpg
         return utils.wrap_into_update_set(event=event)
+
+    def _update_vms_interfaces_in_dpg(self, vmware_dpg):
+        for vm in vmware_dpg.vm:
+            for index, net in list(enumerate(vm.network)):
+                if net.key == vmware_dpg.key:
+                    vm.network[index] = vmware_dpg
 
     def destroy_dpg(self, vmware_dpg):
         event = mock.Mock(spec=vim.event.DVPortgroupDestroyedEvent())

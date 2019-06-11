@@ -319,38 +319,61 @@ class DVPortgroupCreatedHandler(AbstractEventHandler):
 class DVPortgroupReconfiguredHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupReconfiguredEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        logger.info(
+        logger.debug(
             "DVPortgroupReconfiguredHandler: detected event: %s", event
         )
         vmware_dpg = event.net.network
-        logger.info("VMware DPG: %s with uuid: %s", vmware_dpg, vmware_dpg.key)
+        logger.info(
+            "Reconfigured DPG: %s with name: %s", vmware_dpg, vmware_dpg.name
+        )
 
         try:
             dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
         except exceptions.DPGCreationException:
-            # reconfigured DPG for valid/invalid VLAN to invalid
-            logger.exception("DPG %s has invalid VLAN type", vmware_dpg)
-            # TODO remove attached VMIs to corresponding VN to reconfigured DPG from VNC
-            # TODO remove corresponding VN to reconfigured DPG from VNC
-            # TODO update VM models in the Database
+            self._reconfigure_to_invalid_vlan(vmware_dpg)
             return
 
-        if not self._dpg_service.exists_vn_for_portgroup(dpg_model):
-            # reconfigured DPG from invalid VLAN to valid
-            # TODO create VN in VNC for DPG
-            # TODO update VM models in the Database
-            # TODO create VMIs (VPGs) in VNC
+        if not self._dpg_service.exists_vn_for_portgroup(vmware_dpg.key):
+            self._reconfigure_from_invalid_to_valid_vlan(dpg_model)
             return
 
         if self._dpg_service.should_update_vlan(dpg_model):
-            self._dpg_service.update_vmis_vlan_in_vnc(dpg_model)
-            self._vm_service.update_dpg_in_vm_models(dpg_model)
+            self._handle_vlan_change(dpg_model)
+
+    def _reconfigure_to_invalid_vlan(self, vmware_dpg):
+        if not self._dpg_service.exists_vn_for_portgroup(vmware_dpg.key):
+            return
+        dpg_name = vmware_dpg.name
+        dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
+        self._dpg_service.delete_dpg_model(dpg_name)
+        affected_vpgs = self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
+        self._vpg_service.prune_empty_vpgs(affected_vpgs)
+        self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
+
+    def _reconfigure_from_invalid_to_valid_vlan(self, dpg_model):
+        self._dpg_service.create_fabric_vn(dpg_model)
+        for vm_model in self._vm_service.create_vm_models_for_dpg_model(
+            dpg_model
+        ):
+            vpg_models = self._vpg_service.create_vpg_models(vm_model)
+            for vpg_model in vpg_models:
+                self._vpg_service.create_vpg_in_vnc(vpg_model)
+                self._vpg_service.attach_pis_to_vpg(vpg_model)
+            vmi_models = self._vmi_service.create_vmi_models_for_vm(vm_model)
+            for vmi_model in vmi_models:
+                self._vmi_service.create_vmi_in_vnc(vmi_model)
+                self._vmi_service.attach_vmi_to_vpg(vmi_model)
+
+    def _handle_vlan_change(self, dpg_model):
+        self._dpg_service.update_vmis_vlan_in_vnc(dpg_model)
+        self._vm_service.update_dpg_in_vm_models(dpg_model)
 
 
 class DVPortgroupRenamedHandler(AbstractEventHandler):

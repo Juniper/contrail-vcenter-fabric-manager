@@ -80,7 +80,7 @@ def build_context(config):
         vm_service, vmi_service, dpg_service
     )
     dvportgroup_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
     dvportgroup_renamed_handler = controllers.DVPortgroupRenamedHandler(
         vm_service, vmi_service, dpg_service

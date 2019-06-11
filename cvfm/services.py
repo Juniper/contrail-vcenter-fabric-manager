@@ -43,6 +43,15 @@ class VirtualMachineService(Service):
     def get_all_vm_models(self):
         return self._database.get_all_vm_models()
 
+    def create_vm_models_for_dpg_model(self, dpg_model):
+        vm_models = []
+        for vmware_vm in self._vcenter_api_client.get_vms_by_portgroup(
+            dpg_model.key
+        ):
+            vm_model = self.create_vm_model(vmware_vm)
+            vm_models.append(vm_model)
+        return vm_models
+
     def migrate_vm_model(self, vm_uuid, target_host_model):
         logger.info("VirtualMachineService.migrate_vm_model called")
         return models.VirtualMachineModel()
@@ -132,8 +141,9 @@ class DistributedPortGroupService(Service):
     def get_all_fabric_vn_uuids(self):
         return self._vnc_api_client.read_all_vn_uuids()
 
-    def exists_vn_for_portgroup(self, dpg_model):
-        vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)
+    def exists_vn_for_portgroup(self, vmware_dpg_key):
+        vn_uuid = models.generate_uuid(vmware_dpg_key)
+        vnc_vn = self._vnc_api_client.read_vn(vn_uuid)
         return vnc_vn is not None
 
     def should_update_vlan(self, dpg_model):

@@ -248,13 +248,6 @@ class VNCAPIClient(object):
         except vnc_api.NoIdError:
             logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
 
-    def delete_vn(self, vn_uuid):
-        try:
-            self.vnc_lib.virtual_network_delete(id=vn_uuid)
-            logger.info("VN %s deleted from VNC", vn_uuid)
-        except vnc_api.NoIdError:
-            pass
-
     def delete_vmi(self, vmi_uuid):
         try:
             self.vnc_lib.virtual_machine_interface_delete(id=vmi_uuid)
