@@ -23,4 +23,4 @@ class Database(object):
         return self._vm_models.values()
 
     def clear_database(self):
-        pass
+        self._vm_models = {}

@@ -16,6 +16,7 @@ class Synchronizer(object):
         self.dpg_synchronizer.sync_create()
         self.vpg_synchronizer.sync_create()
         self.vmi_synchronizer.sync_create()
+        self.vmi_synchronizer.sync_delete()
 
 
 class VirtualMachineSynchronizer(object):
@@ -74,3 +75,18 @@ class VirtualMachineInterfaceSynchronizer(object):
         for vmi_model in set(vmi_models):
             self._vmi_service.create_vmi_in_vnc(vmi_model)
             self._vmi_service.attach_vmi_to_vpg(vmi_model)
+
+    def sync_delete(self):
+        vm_models = self._vm_service.get_all_vm_models()
+        vmi_models = []
+        for vm_model in vm_models:
+            vmi_models.extend(
+                self._vmi_service.create_vmi_models_for_vm(vm_model)
+            )
+        vmi_uuids = set(vmi_model.uuid for vmi_model in vmi_models)
+        vmi_uuids_in_vnc = set(
+            vmi.uuid for vmi in self._vmi_service.read_all_vmis()
+        )
+        vmis_to_delete = vmi_uuids_in_vnc - vmi_uuids
+        for vmi_uuid in vmis_to_delete:
+            self._vmi_service.delete_vmi(vmi_uuid)
