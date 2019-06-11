@@ -103,7 +103,7 @@ def build_context(config):
         vm_service, vmi_service, dpg_service
     )
     dvportgroup_destroyed_handler = DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
 
     handlers = [

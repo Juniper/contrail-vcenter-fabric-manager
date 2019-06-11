@@ -289,3 +289,20 @@ class VNCAPIClient(object):
         vnc_vmi = self.read_vmi(vmi_uuid)
         vmi_properties = vnc_vmi.get_virtual_machine_interface_properties()
         return vmi_properties.get_sub_interface_vlan_tag()
+
+    def get_vmi_in_vn(self, vn_fq_name):
+        try:
+            vn = self.vnc_lib.virtual_network_read(fq_name=vn_fq_name)
+            vmis = []
+            vmi_refs = vn.get_virtual_machine_interface_back_refs() or []
+            for vmi_ref in vmi_refs:
+                vmis.append(self.read_vmi(vmi_ref["uuid"]))
+            return vmis
+        except vnc_api.NoIdError:
+            logger.info("VN %s not found in VNC", vn_fq_name)
+        return []
+
+    def dettach_vmi_from_vpg(self, vmi, vpg_uuid):
+        vpg = self.read_vpg(vpg_uuid)
+        vpg.del_virtual_machine_interface(vmi)
+        self.vnc_lib.virtual_port_group_update(vpg)
