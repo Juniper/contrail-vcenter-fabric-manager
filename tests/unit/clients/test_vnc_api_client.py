@@ -46,21 +46,25 @@ def vmi_2(project):
 
 
 @pytest.fixture
-def vmi_3(project):
-    vmi = vnc_api.VirtualMachineInterface(
-        name="non-vcenter-vmi", parent_obj=project
-    )
-    vmi.set_uuid(models.generate_uuid(vmi.name))
-    id_perms = vnc_api.IdPermsType(creator="other-creator")
-    vmi.set_id_perms(id_perms)
-    return vmi
-
-
-@pytest.fixture
 def vpg_1():
     vpg = vnc_api.VirtualPortGroup(name="esxi-1_dvs-1")
     vpg.set_uuid(models.generate_uuid(vpg.name))
+    vpg.set_id_perms(constants.ID_PERMS)
     return vpg
+
+
+@pytest.fixture
+def vcenter_object():
+    obj = mock.Mock(uuid="vcenter-obj-uuid")
+    obj.get_id_perms.return_value = constants.ID_PERMS
+    return obj
+
+
+@pytest.fixture
+def non_vcenter_object(project):
+    obj = mock.Mock(uuid="non-vcenter-obj-uuid")
+    obj.get_id_perms.return_value.get_creator.return_value = "other-creator"
+    return obj
 
 
 def test_detach_last_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1, vpg_1):
@@ -91,58 +95,59 @@ def test_detach_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1, vmi_2, vpg_1):
     utils.verify_vnc_vpg(vpg_1, vmi_names=["esxi-1_dvs-1_dpg-2"])
 
 
-@pytest.mark.parametrize(
-    "tested_method_name,vnc_list_method_name,vnc_read_method_name,"
-    "vnc_list_name",
-    [
-        (
-            "read_all_vmis",
-            "virtual_machine_interfaces_list",
-            "virtual_machine_interface_read",
-            "virtual-machine-interfaces",
-        ),
-        (
-            "read_all_vpgs",
-            "virtual_port_groups_list",
-            "virtual_port_group_read",
-            "virtual-port-groups",
-        ),
-    ],
-)
-def test_read_all(
-    vnc_api_client,
-    vnc_lib,
-    tested_method_name,
-    vnc_list_method_name,
-    vnc_read_method_name,
-    vnc_list_name,
+def test_read_all_vmis(
+    vnc_api_client, vnc_lib, vcenter_object, non_vcenter_object
 ):
-    vnc_list_method = getattr(vnc_lib, vnc_list_method_name)
-    vnc_read_method = getattr(vnc_lib, vnc_read_method_name)
-    tested_method = getattr(vnc_api_client, tested_method_name)
-    vcenter_object = mock.Mock(uuid="vcenter-obj-uuid")
-    vcenter_object.get_id_perms.return_value = constants.ID_PERMS
-    non_vcenter_object = mock.Mock(uuid="non-vcenter-obj-uuid")
-    non_vcenter_object.get_id_perms.return_value.get_creator.return_value = (
-        "other-creator"
-    )
-
-    vnc_list_method.return_value = {
-        vnc_list_name: [
+    vnc_lib.virtual_machine_interfaces_list.return_value = {
+        "virtual-machine-interfaces": [
             {"uuid": vcenter_object.uuid},
             {"uuid": non_vcenter_object.uuid},
         ]
     }
+    vnc_lib.virtual_machine_interface_read.side_effect = [
+        vcenter_object,
+        non_vcenter_object,
+    ]
 
-    vnc_read_method.side_effect = [vcenter_object, non_vcenter_object]
-
-    vmis = tested_method()
+    vmis = vnc_api_client.read_all_vmis()
 
     assert vmis == [vcenter_object]
-    assert vnc_read_method.call_args_list[0][1]["id"] == vcenter_object.uuid
-    assert (
-        vnc_read_method.call_args_list[1][1]["id"] == non_vcenter_object.uuid
-    )
+
+
+def test_read_all_vpgs(
+    vnc_api_client, vnc_lib, vcenter_object, non_vcenter_object
+):
+    vnc_lib.virtual_port_groups_list.return_value = {
+        "virtual-port-groups": [
+            {"uuid": vcenter_object.uuid},
+            {"uuid": non_vcenter_object.uuid},
+        ]
+    }
+    vnc_lib.virtual_port_group_read.side_effect = [
+        vcenter_object,
+        non_vcenter_object,
+    ]
+
+    vpgs = vnc_api_client.read_all_vpgs()
+
+    assert vpgs == [vcenter_object]
+
+
+def test_read_all(vnc_api_client, vnc_lib, vcenter_object, non_vcenter_object):
+    vnc_lib.virtual_networks_list.return_value = {
+        "virtual-networks": [
+            {"uuid": vcenter_object.uuid},
+            {"uuid": non_vcenter_object.uuid},
+        ]
+    }
+    vnc_lib.virtual_network_read.side_effect = [
+        vcenter_object,
+        non_vcenter_object,
+    ]
+
+    vns = vnc_api_client.read_all_vns()
+
+    assert vns == [vcenter_object]
 
 
 def test_has_proper_creator():

@@ -18,6 +18,7 @@ class Synchronizer(object):
         self.vmi_synchronizer.sync_create()
         self.vmi_synchronizer.sync_delete()
         self.vpg_synchronizer.sync_delete()
+        self.dpg_synchronizer.sync_delete()
 
 
 class VirtualMachineSynchronizer(object):
@@ -34,7 +35,8 @@ class DistributedPortGroupSynchronizer(object):
 
     def sync_create(self):
         dpgs_in_vcenter = self._dpg_service.get_all_dpg_models()
-        fabric_vn_uuids = self._dpg_service.get_all_fabric_vn_uuids()
+        fabric_vns = self._dpg_service.get_all_fabric_vns()
+        fabric_vn_uuids = [vn.uuid for vn in fabric_vns]
 
         vns_to_create = [
             dpg_model
@@ -44,6 +46,22 @@ class DistributedPortGroupSynchronizer(object):
 
         for dpg_model in vns_to_create:
             self._dpg_service.create_fabric_vn(dpg_model)
+
+    def sync_delete(self):
+        dpgs_in_vcenter = self._dpg_service.get_all_dpg_models()
+        dpgs_in_vcenter_uuids = set(dpg.uuid for dpg in dpgs_in_vcenter)
+        fabric_vns = self._dpg_service.get_all_fabric_vns()
+
+        fabric_vns_to_delete = [
+            fabric_vn
+            for fabric_vn in fabric_vns
+            if fabric_vn.uuid not in dpgs_in_vcenter_uuids
+        ]
+
+        for fabric_vn in fabric_vns_to_delete:
+            self._dpg_service.delete_fabric_vn_by_fq_name(
+                fabric_vn.get_fq_name()
+            )
 
 
 class VirtualPortGroupSynchronizer(object):

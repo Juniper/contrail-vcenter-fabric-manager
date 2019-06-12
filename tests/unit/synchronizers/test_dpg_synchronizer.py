@@ -12,18 +12,19 @@ def dpg_service():
 def test_sync_create(dpg_synchronizer, dpg_service, vmware_dpg):
     dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
     dpg_service.get_all_dpg_models.return_value = [dpg_model]
-    dpg_service.get_all_fabric_vn_uuids.return_value = []
+    dpg_service.get_all_fabric_vns.return_value = []
 
     dpg_synchronizer.sync_create()
 
     dpg_service.create_fabric_vn.assert_called_once_with(dpg_model)
 
 
-@pytest.mark.skip
 def test_sync_delete(dpg_synchronizer, dpg_service, fabric_vn):
     dpg_service.get_all_dpg_models.return_value = []
-    dpg_service.get_all_fabric_vn_uuids.return_value = [fabric_vn.uuid]
+    dpg_service.get_all_fabric_vns.return_value = [fabric_vn]
 
     dpg_synchronizer.sync_delete()
 
-    dpg_service.delete_fabric_vn.assert_called_once_with(fabric_vn.uuid)
+    dpg_service.delete_fabric_vn_by_fq_name.assert_called_once_with(
+        fabric_vn.fq_name
+    )

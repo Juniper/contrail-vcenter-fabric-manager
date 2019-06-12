@@ -214,6 +214,13 @@ class VNCAPIClient(object):
         )["virtual-networks"]
         return [vn["uuid"] for vn in vn_list]
 
+    def read_all_vns(self):
+        vn_ref_list = self.vnc_lib.virtual_networks_list(
+            parent_id=self.get_project().get_uuid()
+        )["virtual-networks"]
+        vns_in_vnc = [self.read_vn(vn_ref["uuid"]) for vn_ref in vn_ref_list]
+        return [vn for vn in vns_in_vnc if has_proper_creator(vn)]
+
     def read_all_vpgs(self):
         vpg_ref_list = self.vnc_lib.virtual_port_groups_list()[
             "virtual-port-groups"
@@ -283,6 +290,9 @@ class VNCAPIClient(object):
             pass
 
     def delete_vn(self, vn_fq_name):
+        vnc_vn = self.vnc_lib.virtual_network_read(vn_fq_name)
+        for vnc_vmi in self.get_vmis_by_vn(vnc_vn):
+            self.delete_vmi(vnc_vmi.uuid)
         try:
             self.vnc_lib.virtual_network_delete(fq_name=vn_fq_name)
             logger.info("VN %s deleted from VNC", vn_fq_name)
