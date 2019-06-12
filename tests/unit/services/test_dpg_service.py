@@ -134,23 +134,3 @@ def test_destroy_dpg_from_vm(dpg_service, database):
     dpg_service.delete_dpg_model("dpg-1")
 
     assert vm_model.detach_dpg.call_args[0][0] == "dpg-1"
-
-
-def test_clean_fabric_vn(dpg_service, vnc_api_client, make_vmi, project):
-    dpg_vn = mock.Mock()
-    vnc_api_client.read_vn_by_fq_name.return_value = dpg_vn
-    vmi_1 = make_vmi(vmi_uuid="vmi-1", vpg_uuid="vpg-1")
-    vmi_2 = make_vmi(vmi_uuid="vmi-2", vpg_uuid="vpg-1")
-    vmi_3 = make_vmi(vmi_uuid="vmi-3", vpg_uuid="vpg-2")
-    vnc_api_client.get_vmis_by_vn.return_value = [vmi_1, vmi_2, vmi_3]
-
-    dpg_service.clean_fabric_vn("dvs-1", "dpg-1")
-
-    expected_name = project.fq_name + ["dvs-1_dpg-1"]
-    assert vnc_api_client.read_vn_by_fq_name.call_args[0][0] == expected_name
-    assert vnc_api_client.get_vmis_by_vn.call_args[0][0] == dpg_vn
-    assert vnc_api_client.delete_vmi.call_args_list == [
-        mock.call("vmi-1"),
-        mock.call("vmi-2"),
-        mock.call("vmi-3"),
-    ]

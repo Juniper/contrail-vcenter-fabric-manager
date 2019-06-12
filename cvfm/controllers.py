@@ -345,7 +345,6 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         dpg_name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         self._dpg_service.delete_dpg_model(dpg_name)
-        self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
         self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
 
     def _reconfigure_from_invalid_to_valid_vlan(self, dpg_model):
@@ -405,5 +404,4 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("Deleted DPG with name %s", dpg_name)
 
         self._dpg_service.delete_dpg_model(dpg_name)
-        self._dpg_service.clean_fabric_vn(dvs_name, dpg_name)
         self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)

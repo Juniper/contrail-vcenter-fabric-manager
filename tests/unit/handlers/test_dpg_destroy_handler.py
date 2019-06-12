@@ -33,5 +33,4 @@ def test_handle_dpg_destroyed(
     dpg_destroyed_handler.handle_change(None, vpg_destroyed_update)
 
     assert dpg_service.delete_dpg_model.call_args[0] == ("dpg-1",)
-    assert dpg_service.clean_fabric_vn.call_args[0] == ("dvs-1", "dpg-1")
     assert dpg_service.delete_fabric_vn.call_args[0] == ("dvs-1", "dpg-1")

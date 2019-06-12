@@ -147,8 +147,8 @@ class DistributedPortGroupService(Service):
                 )
         return dpg_models
 
-    def get_all_fabric_vn_uuids(self):
-        return self._vnc_api_client.read_all_vn_uuids()
+    def get_all_fabric_vns(self):
+        return self._vnc_api_client.read_all_vns()
 
     def exists_vn_for_portgroup(self, vmware_dpg_key):
         vn_uuid = models.generate_uuid(vmware_dpg_key)
@@ -211,19 +211,10 @@ class DistributedPortGroupService(Service):
         )
         dpg_fq_name = project.fq_name + [dpg_vnc_name]
 
-        self._vnc_api_client.delete_vn(dpg_fq_name)
+        self.delete_fabric_vn_by_fq_name(dpg_fq_name)
 
-    def clean_fabric_vn(self, dvs_name, dpg_name):
-        project = self._vnc_api_client.get_project()
-        dpg_vnc_name = models.DistributedPortGroupModel.get_vnc_name(
-            dvs_name, dpg_name
-        )
-        dpg_fq_name = project.fq_name + [dpg_vnc_name]
-        vnc_vn = self._vnc_api_client.read_vn_by_fq_name(dpg_fq_name)
-
-        vmis = self._vnc_api_client.get_vmis_by_vn(vnc_vn)
-        for vmi in vmis:
-            self._vnc_api_client.delete_vmi(vmi.uuid)
+    def delete_fabric_vn_by_fq_name(self, vn_fq_name):
+        self._vnc_api_client.delete_vn(vn_fq_name)
 
     def filter_out_non_empty_dpgs(self, vmi_models, host):
         return [

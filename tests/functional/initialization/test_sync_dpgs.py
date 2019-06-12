@@ -64,3 +64,26 @@ def test_dpg_sync_create(
         models.generate_uuid(vmware_dpg_1.key)
     )
     assert utils.not_touched_in_vnc(previous_vn_1, current_vn_1)
+
+
+def test_dpg_sync_delete(
+    minimalistic_topology,
+    vmware_controller,
+    vcenter_api_client,
+    vnc_test_client,
+    vmware_dpg_1,
+):
+    # User creates a DPG (dpg-1) and the event is properly handled
+    dpg_created_update = vcenter_api_client.create_dpg(vmware_dpg_1)
+    vmware_controller.handle_update(dpg_created_update)
+
+    # CVFM shuts down
+    # User deletes dpg-2 and the event is not handled
+    vcenter_api_client.destroy_dpg(vmware_dpg_1)
+
+    # CVFM starts up - sync
+    vmware_controller.sync()
+
+    # dpg-1 should be deleted in VNC
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vn(models.generate_uuid(vmware_dpg_1.key))
