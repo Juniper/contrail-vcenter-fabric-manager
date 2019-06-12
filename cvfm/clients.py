@@ -37,6 +37,7 @@ def has_proper_creator(vnc_object):
     id_perms = vnc_object.get_id_perms()
     if id_perms is not None:
         return id_perms.get_creator() == const.ID_PERMS.get_creator()
+    return False
 
 
 class VSphereAPIClient(object):
@@ -213,11 +214,14 @@ class VNCAPIClient(object):
         )["virtual-networks"]
         return [vn["uuid"] for vn in vn_list]
 
-    def read_all_vpg_uuids(self):
-        vpg_list = self.vnc_lib.virtual_port_groups_list()[
+    def read_all_vpgs(self):
+        vpg_ref_list = self.vnc_lib.virtual_port_groups_list()[
             "virtual-port-groups"
         ]
-        return [vpg["uuid"] for vpg in vpg_list]
+        vpgs_in_vnc = [
+            self.read_vpg(vpg_ref["uuid"]) for vpg_ref in vpg_ref_list
+        ]
+        return [vpg for vpg in vpgs_in_vnc if has_proper_creator(vpg)]
 
     def read_all_vmis(self):
         vmi_ref_list = self.vnc_lib.virtual_machine_interfaces_list(

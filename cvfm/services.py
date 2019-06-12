@@ -256,6 +256,12 @@ class VirtualPortGroupService(Service):
             vnc_vpg = vpg_model.to_vnc_vpg(fabric)
             self._vnc_api_client.create_vpg(vnc_vpg)
 
+    def read_all_vpgs(self):
+        return self._vnc_api_client.read_all_vpgs()
+
+    def delete_vpg(self, vpg_uuid):
+        self._vnc_api_client.delete_vpg(vpg_uuid)
+
     def attach_pis_to_vpg(self, vpg_model):
         vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
         pis = self.find_matching_physical_interfaces(

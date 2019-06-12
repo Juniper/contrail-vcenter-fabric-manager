@@ -17,6 +17,7 @@ class Synchronizer(object):
         self.vpg_synchronizer.sync_create()
         self.vmi_synchronizer.sync_create()
         self.vmi_synchronizer.sync_delete()
+        self.vpg_synchronizer.sync_delete()
 
 
 class VirtualMachineSynchronizer(object):
@@ -58,6 +59,19 @@ class VirtualPortGroupSynchronizer(object):
         for vpg_model in set(vpg_models):
             self._vpg_service.create_vpg_in_vnc(vpg_model)
             self._vpg_service.attach_pis_to_vpg(vpg_model)
+
+    def sync_delete(self):
+        vm_models = self._vm_service.get_all_vm_models()
+        vpg_models = []
+        for vm_model in vm_models:
+            vpg_models.extend(self._vpg_service.create_vpg_models(vm_model))
+        vpg_uuids = set(vpg_model.uuid for vpg_model in vpg_models)
+        vpg_uuids_in_vnc = set(
+            vpg.uuid for vpg in self._vpg_service.read_all_vpgs()
+        )
+        vpgs_to_delete = vpg_uuids_in_vnc - vpg_uuids
+        for vpg_uuid in vpgs_to_delete:
+            self._vpg_service.delete_vpg(vpg_uuid)
 
 
 class VirtualMachineInterfaceSynchronizer(object):

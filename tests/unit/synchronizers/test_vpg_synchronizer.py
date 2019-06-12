@@ -1,7 +1,7 @@
 import mock
 import pytest
 
-from cvfm import models
+from cvfm import models, constants
 
 
 @pytest.fixture
@@ -28,3 +28,20 @@ def test_sync_create(vpg_synchronizer, vm_service, vpg_service, vm_model):
 
     vpg_model = vpg_service.create_vpg_in_vnc.call_args[0][0]
     vpg_service.attach_pis_to_vpg.assert_called_once_with(vpg_model)
+
+
+def test_sync_delete(vpg_synchronizer, vm_service, vpg_service, vm_model):
+    vm_service.get_all_vm_models.return_value = [vm_model]
+    vpg_service.create_vpg_models.return_value = models.VirtualPortGroupModel.from_vm_model(
+        vm_model
+    )
+    vpg_1 = models.VirtualPortGroupModel.from_vm_model(vm_model)[0].to_vnc_vpg(
+        None
+    )
+    vpg_2 = mock.Mock(uuid="vpg-2-uuid")
+    vpg_2.get_id_perms.return_value = constants.ID_PERMS
+    vpg_service.read_all_vpgs.return_value = [vpg_1, vpg_2]
+
+    vpg_synchronizer.sync_delete()
+
+    vpg_service.delete_vpg.assert_called_once_with(vpg_2.uuid)

@@ -91,23 +91,73 @@ def test_detach_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1, vmi_2, vpg_1):
     utils.verify_vnc_vpg(vpg_1, vmi_names=["esxi-1_dvs-1_dpg-2"])
 
 
-def test_read_all_vmis(vnc_api_client, vnc_lib, vmi_1, vmi_3):
-    vnc_lib.virtual_machine_interfaces_list.return_value = {
-        "virtual-machine-interfaces": [
-            {"uuid": vmi_1.uuid},
-            {"uuid": vmi_3.uuid},
+@pytest.mark.parametrize(
+    "tested_method_name,vnc_list_method_name,vnc_read_method_name,"
+    "vnc_list_name",
+    [
+        (
+            "read_all_vmis",
+            "virtual_machine_interfaces_list",
+            "virtual_machine_interface_read",
+            "virtual-machine-interfaces",
+        ),
+        (
+            "read_all_vpgs",
+            "virtual_port_groups_list",
+            "virtual_port_group_read",
+            "virtual-port-groups",
+        ),
+    ],
+)
+def test_read_all(
+    vnc_api_client,
+    vnc_lib,
+    tested_method_name,
+    vnc_list_method_name,
+    vnc_read_method_name,
+    vnc_list_name,
+):
+    vnc_list_method = getattr(vnc_lib, vnc_list_method_name)
+    vnc_read_method = getattr(vnc_lib, vnc_read_method_name)
+    tested_method = getattr(vnc_api_client, tested_method_name)
+    vcenter_object = mock.Mock(uuid="vcenter-obj-uuid")
+    vcenter_object.get_id_perms.return_value = constants.ID_PERMS
+    non_vcenter_object = mock.Mock(uuid="non-vcenter-obj-uuid")
+    non_vcenter_object.get_id_perms.return_value.get_creator.return_value = (
+        "other-creator"
+    )
+
+    vnc_list_method.return_value = {
+        vnc_list_name: [
+            {"uuid": vcenter_object.uuid},
+            {"uuid": non_vcenter_object.uuid},
         ]
     }
-    vnc_lib.virtual_machine_interface_read.side_effect = [vmi_1, vmi_3]
 
-    vmis = vnc_api_client.read_all_vmis()
+    vnc_read_method.side_effect = [vcenter_object, non_vcenter_object]
 
-    assert vmis == [vmi_1]
+    vmis = tested_method()
+
+    assert vmis == [vcenter_object]
+    assert vnc_read_method.call_args_list[0][1]["id"] == vcenter_object.uuid
     assert (
-        vnc_lib.virtual_machine_interface_read.call_args_list[0][1]["id"]
-        == vmi_1.uuid
+        vnc_read_method.call_args_list[1][1]["id"] == non_vcenter_object.uuid
     )
-    assert (
-        vnc_lib.virtual_machine_interface_read.call_args_list[1][1]["id"]
-        == vmi_3.uuid
+
+
+def test_has_proper_creator():
+    proper_creator = mock.Mock()
+    proper_creator.get_id_perms.return_value = constants.ID_PERMS
+    other_creator = mock.Mock()
+    other_creator.get_id_perms.return_value.get_creator.return_value = (
+        "other-creator"
     )
+    no_creator = mock.Mock()
+    no_creator.get_id_perms.return_value = None
+    no_id_perms = mock.Mock()
+    no_id_perms.get_id_perms.return_value = None
+
+    assert clients.has_proper_creator(proper_creator) is True
+    assert clients.has_proper_creator(other_creator) is False
+    assert clients.has_proper_creator(no_creator) is False
+    assert clients.has_proper_creator(no_id_perms) is False

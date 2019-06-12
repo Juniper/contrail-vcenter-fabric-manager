@@ -1,8 +1,10 @@
 import pytest
 from pyVmomi import vim
+from vnc_api import vnc_api
+
 from tests import utils
 
-from cvfm import models
+from cvfm import models, constants
 
 
 @pytest.fixture
@@ -15,6 +17,14 @@ def vmware_dpg():
         "vlan": 5,
     }
     return utils.create_vmware_net(net_data)
+
+
+@pytest.fixture
+def vnc_vpg():
+    vpg = vnc_api.VirtualPortGroup(name="esxi-1_dvs-1")
+    vpg.set_uuid(models.generate_uuid(vpg.name))
+    vpg.set_id_perms(constants.ID_PERMS)
+    return vpg
 
 
 @pytest.fixture
@@ -136,3 +146,19 @@ def test_update_pis(
     # VPG should be updated in VNC with the new PI
     current_vpg = vnc_test_client.read_vpg(previous_vpg.uuid)
     utils.verify_vnc_vpg(current_vpg, pi_names=["xe-0/0/1"])
+
+
+def test_sync_delete(
+    minimalistic_topology, vmware_controller, vnc_test_client, vnc_vpg
+):
+    # CVFM shuts down
+    # Someone created VPG (esxi-1_dvs-1) in VNC
+    vnc_test_client.create_vpg(vnc_vpg)
+
+    # CVFM starts up - sync
+    vmware_controller.sync()
+
+    # Since there are no VMs or DPGs in vCenter, the VPG should be deleted
+    # from VNC
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vpg(vnc_vpg.uuid)

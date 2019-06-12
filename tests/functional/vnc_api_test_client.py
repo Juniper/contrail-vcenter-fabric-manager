@@ -209,6 +209,9 @@ class VNCAPITestClient(object):
         pi_2.add_physical_interface(pi_1)
         self.vnc_lib.physical_interface_update(pi_2)
 
+    def create_vpg(self, vnc_vpg):
+        self.vnc_lib.virtual_port_group_create(vnc_vpg)
+
     def read_vpg(self, vpg_uuid):
         return self.vnc_lib.virtual_port_group_read(id=vpg_uuid)
 
