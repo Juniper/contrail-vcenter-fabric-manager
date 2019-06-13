@@ -82,16 +82,20 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
     assert len(vnc_vpg.virtual_machine_interface_refs) == 1
 
 
-def test_find_affected_vmis(vmi_service, vmware_vm):
-    dpg_model = models.DistributedPortGroupModel(
+def test_find_affected_vmis(vmi_service, vmware_vm, dpg_model):
+    dpg_model_2 = models.DistributedPortGroupModel(
         uuid=models.generate_uuid("dvs-1_dpg-2"),
         key="dvportgroup-2",
         name="dpg-2",
         vlan_id=6,
         dvs_name="dvs-1",
     )
-    old_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
-    new_vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+    old_vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm, {dpg_model}
+    )
+    new_vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm, {dpg_model}
+    )
 
     vmis_to_delete_1, vmis_to_create_1 = vmi_service.find_affected_vmis(
         old_vm_model, new_vm_model
@@ -100,7 +104,7 @@ def test_find_affected_vmis(vmi_service, vmware_vm):
     assert len(vmis_to_delete_1) == 0
     assert len(vmis_to_create_1) == 0
 
-    new_vm_model.dpg_models = [dpg_model]
+    new_vm_model.dpg_models = [dpg_model_2]
     vmis_to_delete_2, vmis_to_create_2 = vmi_service.find_affected_vmis(
         old_vm_model, new_vm_model
     )

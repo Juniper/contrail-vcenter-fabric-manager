@@ -58,14 +58,7 @@ class VirtualMachineModel(object):
         self.dpg_models.add(dpg_model)
 
     @classmethod
-    def from_vmware_vm(cls, vmware_vm):
-        dpg_models = set()
-        for net in vmware_vm.network:
-            try:
-                dpg_model = DistributedPortGroupModel.from_vmware_dpg(net)
-            except DPGCreationException:
-                continue
-            dpg_models.add(dpg_model)
+    def from_vmware_vm(cls, vmware_vm, dpg_models):
         return cls(
             name=vmware_vm.name,
             host_name=vmware_vm.runtime.host.name,

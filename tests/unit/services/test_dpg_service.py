@@ -30,16 +30,17 @@ def make_vmi():
     return _make_vmi
 
 
-def test_create_dpg_model(dpg_service, vmware_dpg):
+def test_create_dpg_model(dpg_service, vmware_dpg, database):
     dpg_model = dpg_service.create_dpg_model(vmware_dpg)
 
     assert dpg_model.name == "dpg-1"
     assert dpg_model.uuid == "5a6bd262-1f96-3546-a762-6fa5260e9014"
     assert dpg_model.dvs_name == "dvs-1"
     assert dpg_model.vlan_id == 5
+    assert database.get_dpg_model("dpg-1") == dpg_model
 
 
-def test_create_fabric_vn(dpg_service, vnc_api_client, project):
+def test_create_fabric_vn(dpg_service, vnc_api_client, project, database):
     dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
         key="dvportgroup-1",
@@ -126,11 +127,34 @@ def test_is_vlan_changed(dpg_service, vnc_api_client):
     assert not dpg_service.should_update_vlan(dpg_model)
 
 
-def test_destroy_dpg_from_vm(dpg_service, database):
+def test_destroy_dpg_from_vm(dpg_service, database, dpg_model):
     vm_model = mock.Mock()
     vm_model.name = "vm-1"
     database.add_vm_model(vm_model)
+    database.add_dpg_model(dpg_model)
+    assert database.get_dpg_model("dpg-1") == dpg_model
 
     dpg_service.delete_dpg_model("dpg-1")
 
     assert vm_model.detach_dpg.call_args[0][0] == "dpg-1"
+    assert database.get_dpg_model("dpg-1") is None
+
+
+def test_populate_db(vcenter_api_client, dpg_service, vmware_dpg, database):
+    database.clear_database()
+    vcenter_api_client.get_all_portgroups.return_value = [vmware_dpg]
+
+    dpg_service.populate_db_with_dpgs()
+
+    assert len(database.get_all_dpg_models()) == 1
+    dpg_model = database.get_dpg_model("dpg-1")
+    assert dpg_model.name == "dpg-1"
+    assert dpg_model.key == "dvportgroup-1"
+
+
+def test_get_all_dpg_models(dpg_service, dpg_model, database):
+    database.add_dpg_model(dpg_model)
+
+    dpg_models = dpg_service.get_all_dpg_models()
+
+    assert list(dpg_models) == [dpg_model]

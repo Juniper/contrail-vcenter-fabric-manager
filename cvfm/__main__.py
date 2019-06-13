@@ -114,7 +114,11 @@ def build_context(config):
         vm_service, vmi_service
     )
     synchronizer = synchronizers.Synchronizer(
-        vm_synchronizer, dpg_synchronizer, vpg_synchronizer, vmi_synchronizer
+        database,
+        vm_synchronizer,
+        dpg_synchronizer,
+        vpg_synchronizer,
+        vmi_synchronizer,
     )
 
     vmware_controller = controllers.VmwareController(
