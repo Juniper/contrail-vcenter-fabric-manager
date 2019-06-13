@@ -26,7 +26,15 @@ class VirtualMachineService(Service):
             self.create_vm_model(vmware_vm)
 
     def create_vm_model(self, vmware_vm):
-        vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+        dpg_models = set()
+        for net in vmware_vm.network:
+            dpg_model = self._database.get_dpg_model(net.name)
+            if dpg_model:
+                dpg_models.add(dpg_model)
+
+        vm_model = models.VirtualMachineModel.from_vmware_vm(
+            vmware_vm, dpg_models
+        )
         self._database.add_vm_model(vm_model)
         return vm_model
 
@@ -126,8 +134,21 @@ class DistributedPortGroupService(Service):
             vcenter_api_client, vnc_api_client, database
         )
 
+    def populate_db_with_dpgs(self):
+        for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
+            try:
+                self.create_dpg_model(vmware_dpg)
+            except exceptions.DPGCreationException:
+                logger.exception(
+                    "Error while creating a model for DPG: %s", vmware_dpg.name
+                )
+
     def create_dpg_model(self, vmware_dpg):
-        return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
+        dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(
+            vmware_dpg
+        )
+        self._database.add_dpg_model(dpg_model)
+        return dpg_model
 
     def create_fabric_vn(self, dpg_model):
         project = self._vnc_api_client.get_project()
@@ -137,15 +158,7 @@ class DistributedPortGroupService(Service):
         logger.info("Virtual Network %s created in VNC", vnc_vn.name)
 
     def get_all_dpg_models(self):
-        dpg_models = []
-        for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
-            try:
-                dpg_models.append(self.create_dpg_model(vmware_dpg))
-            except exceptions.DPGCreationException:
-                logger.exception(
-                    "Error while creating a model for DPG: %s", vmware_dpg.name
-                )
-        return dpg_models
+        return self._database.get_all_dpg_models()
 
     def get_all_fabric_vns(self):
         return self._vnc_api_client.read_all_vns()
@@ -201,7 +214,7 @@ class DistributedPortGroupService(Service):
     def delete_dpg_model(self, dpg_name):
         for vm_model in self._database.get_all_vm_models():
             vm_model.detach_dpg(dpg_name)
-
+        self._database.remove_dpg_model(dpg_name)
         logger.info("DPG model %s deleted", dpg_name)
 
     def delete_fabric_vn(self, dvs_name, dpg_name):

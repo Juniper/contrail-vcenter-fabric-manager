@@ -17,6 +17,7 @@ def test_sync_create(dpg_synchronizer, dpg_service, vmware_dpg):
     dpg_synchronizer.sync_create()
 
     dpg_service.create_fabric_vn.assert_called_once_with(dpg_model)
+    dpg_service.populate_db_with_dpgs.assert_called_once()
 
 
 def test_sync_delete(dpg_synchronizer, dpg_service, fabric_vn):
