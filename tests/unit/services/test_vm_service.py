@@ -1,4 +1,5 @@
 import pytest
+import mock
 
 from cvfm import services, models
 
@@ -11,13 +12,25 @@ def vm_service(vcenter_api_client, vnc_api_client, database):
 
 
 def test_create_vm_model(vm_service, vmware_vm, database):
+    dpg_model = mock.Mock()
+    dpg_model.name = "dpg-1"
+    database.add_dpg_model(dpg_model)
+
     vm_model = vm_service.create_vm_model(vmware_vm)
 
     assert database.get_vm_model("vm-1") == vm_model
     assert vm_model.name == "vm-1"
     assert vm_model.host_name == "esxi-1"
     assert len(vm_model.dpg_models) == 1
-    assert list(vm_model.dpg_models)[0].name == "dpg-1"
+    assert list(vm_model.dpg_models)[0] == dpg_model
+
+
+def test_create_vm_model_when_dpg_not_exists(vm_service, vmware_vm, database):
+    database.clear_database()
+
+    vm_model = vm_service.create_vm_model(vmware_vm)
+
+    assert len(vm_model.dpg_models) == 0
 
 
 def test_delete_vm_model(vm_service, vm_model, database):
@@ -48,7 +61,11 @@ def test_update_dpg_in_vm_models(vm_service, vm_model, database):
     assert dpg_model.vlan_id == 6
 
 
-def test_populate_db(vm_service, vmware_vm, database, vcenter_api_client):
+def test_populate_db(
+    vm_service, vmware_vm, dpg_model, database, vcenter_api_client
+):
+    database.clear_database()
+    database.add_dpg_model(dpg_model)
     vcenter_api_client.get_all_vms.return_value = [vmware_vm]
 
     vm_service.populate_db_with_vms()

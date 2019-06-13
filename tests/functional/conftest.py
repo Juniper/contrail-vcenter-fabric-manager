@@ -138,10 +138,18 @@ def vmi_synchronizer(vm_service, vmi_service):
 
 @pytest.fixture
 def synchronizer(
-    vm_synchronizer, dpg_synchronizer, vpg_synchronizer, vmi_synchronizer
+    database,
+    vm_synchronizer,
+    dpg_synchronizer,
+    vpg_synchronizer,
+    vmi_synchronizer,
 ):
     return synchronizers.Synchronizer(
-        vm_synchronizer, dpg_synchronizer, vpg_synchronizer, vmi_synchronizer
+        database,
+        vm_synchronizer,
+        dpg_synchronizer,
+        vpg_synchronizer,
+        vmi_synchronizer,
     )
 
 
