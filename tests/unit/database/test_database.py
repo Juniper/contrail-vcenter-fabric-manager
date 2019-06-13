@@ -29,3 +29,49 @@ def test_get_all_vm_models(database, vm_model):
     vm_models = database.get_all_vm_models()
 
     assert list(vm_models) == [vm_model]
+
+
+def test_add_dpg_model(database, dpg_model):
+    database.add_dpg_model(dpg_model)
+
+    assert database.get_dpg_model("dpg-1") == dpg_model
+    assert database.get_dpg_model("dpg-2") is None
+
+
+def test_remove_dpg_model(database, dpg_model):
+    database.add_dpg_model(dpg_model)
+    assert database.get_dpg_model("dpg-1") == dpg_model
+
+    database.remove_dpg_model("dpg-1")
+
+    assert database.get_dpg_model("dpg-1") is None
+
+
+def test_get_dpg_model_returns_reference(database, dpg_model, vm_model):
+    database.add_dpg_model(dpg_model)
+    vm_model.dpg_models = [database.get_dpg_model("dpg-1")]
+    assert vm_model.dpg_models[0].dvs_name == "dvs-1"
+
+    dpg = database.get_dpg_model("dpg-1")
+    dpg.dvs_name = "changed-value"
+
+    assert vm_model.dpg_models[0].dvs_name == "changed-value"
+
+
+def test_get_all_dpg_models(database, dpg_model):
+    database.add_dpg_model(dpg_model)
+
+    dpg_models = database.get_all_dpg_models()
+
+    assert list(dpg_models) == [dpg_model]
+
+def test_clear_database(database, dpg_model, vm_model):
+    database.add_dpg_model(dpg_model)
+    database.add_vm_model(vm_model)
+    assert len(database.get_all_dpg_models()) == 1
+    assert len(database.get_all_vm_models()) == 1
+
+    database.clear_database()
+
+    assert len(database.get_all_dpg_models()) == 0
+    assert len(database.get_all_vm_models()) == 0

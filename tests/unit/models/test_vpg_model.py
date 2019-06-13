@@ -17,9 +17,7 @@ def test_to_vnc_vpg():
     assert vnc_vpg.get_parent_fq_name() == ["a", "b"]
 
 
-def test_from_vm_model(vmware_vm):
-    vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
-
+def test_from_vm_model(vm_model):
     vpg_models = models.VirtualPortGroupModel.from_vm_model(vm_model)
 
     assert vpg_models[0].uuid == models.generate_uuid("esxi-1_dvs-1")
@@ -27,9 +25,7 @@ def test_from_vm_model(vmware_vm):
     assert vpg_models[0].dvs_name == "dvs-1"
 
 
-def test_hash(vmware_vm):
-    vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm)
-
+def test_hash(vm_model):
     vpg_1 = models.VirtualPortGroupModel.from_vm_model(vm_model)[0]
     vpg_2 = models.VirtualPortGroupModel.from_vm_model(vm_model)[0]
 

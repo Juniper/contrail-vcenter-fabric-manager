@@ -1,19 +1,22 @@
 class Synchronizer(object):
     def __init__(
         self,
+        database,
         vm_synchronizer,
         dpg_synchronizer,
         vpg_synchronizer,
         vmi_synchronizer,
     ):
+        self.database = database
         self.vm_synchronizer = vm_synchronizer
         self.dpg_synchronizer = dpg_synchronizer
         self.vpg_synchronizer = vpg_synchronizer
         self.vmi_synchronizer = vmi_synchronizer
 
     def sync(self):
-        self.vm_synchronizer.sync()
+        self.database.clear_database()
         self.dpg_synchronizer.sync_create()
+        self.vm_synchronizer.sync()
         self.vpg_synchronizer.sync_create()
         self.vmi_synchronizer.sync_create()
         self.vmi_synchronizer.sync_delete()
@@ -34,6 +37,7 @@ class DistributedPortGroupSynchronizer(object):
         self._dpg_service = dpg_service
 
     def sync_create(self):
+        self._dpg_service.populate_db_with_dpgs()
         dpgs_in_vcenter = self._dpg_service.get_all_dpg_models()
         fabric_vns = self._dpg_service.get_all_fabric_vns()
         fabric_vn_uuids = [vn.uuid for vn in fabric_vns]

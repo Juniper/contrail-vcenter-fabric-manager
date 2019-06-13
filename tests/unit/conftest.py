@@ -35,8 +35,14 @@ def vmware_vm(vmware_dpg, vmware_network):
 
 
 @pytest.fixture
-def vm_model(vmware_vm):
-    return models.VirtualMachineModel.from_vmware_vm(vmware_vm)
+def dpg_model(vmware_dpg):
+    return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
+
+
+@pytest.fixture
+def vm_model(vmware_vm, dpg_model):
+    dpg_models = {dpg_model}
+    return models.VirtualMachineModel.from_vmware_vm(vmware_vm, dpg_models)
 
 
 @pytest.fixture
