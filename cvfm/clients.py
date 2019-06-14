@@ -246,13 +246,6 @@ class VNCAPIClient(object):
             logger.info("VN %s not found in VNC", vn_uuid)
         return None
 
-    def read_vn_by_fq_name(self, vn_fq_name):
-        try:
-            return self.vnc_lib.virtual_network_read(fq_name=vn_fq_name)
-        except vnc_api.NoIdError:
-            logger.info("VN %s not found in VNC", vn_fq_name)
-        return None
-
     def read_vpg(self, vpg_uuid):
         try:
             return self.vnc_lib.virtual_port_group_read(id=vpg_uuid)
@@ -289,15 +282,15 @@ class VNCAPIClient(object):
         except vnc_api.NoIdError:
             pass
 
-    def delete_vn(self, vn_fq_name):
-        vnc_vn = self.vnc_lib.virtual_network_read(vn_fq_name)
+    def delete_vn(self, vn_uuid):
+        vnc_vn = self.read_vn(vn_uuid)
         for vnc_vmi in self.get_vmis_by_vn(vnc_vn):
             self.delete_vmi(vnc_vmi.uuid)
         try:
-            self.vnc_lib.virtual_network_delete(fq_name=vn_fq_name)
-            logger.info("VN %s deleted from VNC", vn_fq_name)
+            self.vnc_lib.virtual_network_delete(id=vn_uuid)
+            logger.info("VN %s deleted from VNC", vn_uuid)
         except vnc_api.NoIdError:
-            logger.info("VN %s not found in VNC, unable to delete", vn_fq_name)
+            logger.info("VN %s not found in VNC, unable to delete", vn_uuid)
 
     def get_node_by_name(self, node_name):
         for node in self._read_all_nodes():

@@ -63,9 +63,7 @@ class DistributedPortGroupSynchronizer(object):
         ]
 
         for fabric_vn in fabric_vns_to_delete:
-            self._dpg_service.delete_fabric_vn_by_fq_name(
-                fabric_vn.get_fq_name()
-            )
+            self._dpg_service.delete_fabric_vn(fabric_vn.uuid)
 
 
 class VirtualPortGroupSynchronizer(object):

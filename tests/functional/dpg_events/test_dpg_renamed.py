@@ -19,7 +19,6 @@ def vmware_dpg():
     return utils.create_vmware_net(net_data)
 
 
-@pytest.mark.skip("Not implemented yet")
 def test_dpg_renamed(
     vnc_test_client, vmware_controller, vcenter_api_client, vmware_dpg
 ):
@@ -35,6 +34,7 @@ def test_dpg_renamed(
         vmware_dpg, "renamed-dpg-1"
     )
     vmware_controller.handle_update(dpg_renamed_update)
+    assert vmware_dpg.name == "renamed-dpg-1"
 
     current_vn = vnc_test_client.read_vn(models.generate_uuid(vmware_dpg.key))
     assert utils.not_touched_in_vnc(created_vn, current_vn)

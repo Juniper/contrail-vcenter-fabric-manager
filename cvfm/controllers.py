@@ -344,8 +344,8 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
             return
         dpg_name = vmware_dpg.name
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
-        self._dpg_service.delete_dpg_model(dpg_name)
-        self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
+        dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
+        self._dpg_service.delete_fabric_vn(dpg_model.uuid)
 
     def _reconfigure_from_invalid_to_valid_vlan(self, dpg_model):
         self._dpg_service.create_fabric_vn(dpg_model)
@@ -369,9 +369,7 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
 class DVPortgroupRenamedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupRenamedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
+    def __init__(self, dpg_service):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
@@ -379,7 +377,8 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
 
         vmware_dpg = event.net.network
         dpg_uuid = vmware_dpg.key
-        new_name = vmware_dpg.name
+        old_name = event.oldName
+        new_name = event.newName
         logger.info(
             "VMware DPG: %s with uuid: %s new_name: %s",
             vmware_dpg,
@@ -387,7 +386,7 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
             new_name,
         )
 
-        self._dpg_service.rename_dpg(vmware_dpg.key, vmware_dpg.name)
+        self._dpg_service.rename_dpg(old_name, new_name)
 
 
 class DVPortgroupDestroyedHandler(AbstractEventHandler):
@@ -400,8 +399,7 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("DVPortgroupDestroyedHandler: detected event: %s", event)
 
         dpg_name = event.net.name
-        dvs_name = event.dvs.name
         logger.info("Deleted DPG with name %s", dpg_name)
 
-        self._dpg_service.delete_dpg_model(dpg_name)
-        self._dpg_service.delete_fabric_vn(dvs_name, dpg_name)
+        dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
+        self._dpg_service.delete_fabric_vn(dpg_model.uuid)

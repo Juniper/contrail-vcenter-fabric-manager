@@ -58,14 +58,9 @@ def test_create_fabric_vn(dpg_service, vnc_api_client, project, database):
 
 
 def test_delete_fabric_vn(dpg_service, vnc_api_client, project):
-    dpg_name = "dpg-1"
-    dvs_name = "dvs-1"
+    dpg_service.delete_fabric_vn("dpg-uuid-1")
 
-    dpg_service.delete_fabric_vn(dvs_name, dpg_name)
-
-    delete_fq_name = vnc_api_client.delete_vn.call_args[0][0]
-    expected_fq_name = project.fq_name + ["dvs-1_dpg-1"]
-    assert delete_fq_name == expected_fq_name
+    assert vnc_api_client.delete_vn.call_args[0] == ("dpg-uuid-1",)
 
 
 # Strings are used here as a substitute for vmware_vm fixtures
@@ -134,10 +129,11 @@ def test_destroy_dpg_from_vm(dpg_service, database, dpg_model):
     database.add_dpg_model(dpg_model)
     assert database.get_dpg_model("dpg-1") == dpg_model
 
-    dpg_service.delete_dpg_model("dpg-1")
+    deleted = dpg_service.delete_dpg_model("dpg-1")
 
     assert vm_model.detach_dpg.call_args[0][0] == "dpg-1"
     assert database.get_dpg_model("dpg-1") is None
+    assert deleted == dpg_model
 
 
 def test_populate_db(vcenter_api_client, dpg_service, vmware_dpg, database):
@@ -158,3 +154,16 @@ def test_get_all_dpg_models(dpg_service, dpg_model, database):
     dpg_models = dpg_service.get_all_dpg_models()
 
     assert list(dpg_models) == [dpg_model]
+
+
+def test_dpg_rename(dpg_service, dpg_model, database):
+    database.add_dpg_model(dpg_model)
+    assert database.get_dpg_model("dpg-1") == dpg_model
+
+    dpg_service.rename_dpg("dpg-1", "dpg-new-name")
+
+    assert database.get_dpg_model("dpg-1") is None
+    dpg_from_db = database.get_dpg_model("dpg-new-name")
+    assert dpg_from_db is dpg_model
+    assert dpg_from_db.uuid == dpg_model.uuid
+    assert dpg_from_db.name == "dpg-new-name"
