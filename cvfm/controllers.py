@@ -369,9 +369,7 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
 class DVPortgroupRenamedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupRenamedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
+    def __init__(self, dpg_service):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
@@ -379,7 +377,8 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
 
         vmware_dpg = event.net.network
         dpg_uuid = vmware_dpg.key
-        new_name = vmware_dpg.name
+        old_name = event.oldName
+        new_name = event.newName
         logger.info(
             "VMware DPG: %s with uuid: %s new_name: %s",
             vmware_dpg,
@@ -387,7 +386,7 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
             new_name,
         )
 
-        self._dpg_service.rename_dpg(vmware_dpg.key, vmware_dpg.name)
+        self._dpg_service.rename_dpg(old_name, new_name)
 
 
 class DVPortgroupDestroyedHandler(AbstractEventHandler):

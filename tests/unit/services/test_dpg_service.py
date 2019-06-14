@@ -158,3 +158,16 @@ def test_get_all_dpg_models(dpg_service, dpg_model, database):
     dpg_models = dpg_service.get_all_dpg_models()
 
     assert list(dpg_models) == [dpg_model]
+
+
+def test_dpg_rename(dpg_service, dpg_model, database):
+    database.add_dpg_model(dpg_model)
+    assert database.get_dpg_model("dpg-1") == dpg_model
+
+    dpg_service.rename_dpg("dpg-1", "dpg-new-name")
+
+    assert database.get_dpg_model("dpg-1") is None
+    dpg_from_db = database.get_dpg_model("dpg-new-name")
+    assert dpg_from_db is dpg_model
+    assert dpg_from_db.uuid == dpg_model.uuid
+    assert dpg_from_db.name == "dpg-new-name"

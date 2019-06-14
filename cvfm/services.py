@@ -207,8 +207,14 @@ class DistributedPortGroupService(Service):
             "DistributedPortGroupService.handle_vm_vmi_migration called"
         )
 
-    def rename_dpg(self, dpg_uuid, new_dpg_name):
-        logger.info("DistributedPortGroupService.rename_dpg called")
+    def rename_dpg(self, old_dpg_name, new_dpg_name):
+        dpg_model = self._database.get_dpg_model(old_dpg_name)
+        dpg_model.name = new_dpg_name
+        self._database.remove_dpg_model(old_dpg_name)
+        self._database.add_dpg_model(dpg_model)
+        logger.info(
+            "DPG model renamed from %s to %s", old_dpg_name, new_dpg_name
+        )
 
     def delete_dpg_model(self, dpg_name):
         for vm_model in self._database.get_all_vm_models():

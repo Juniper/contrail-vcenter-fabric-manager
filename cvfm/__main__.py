@@ -83,7 +83,7 @@ def build_context(config):
         vm_service, vmi_service, dpg_service, vpg_service
     )
     dvportgroup_renamed_handler = controllers.DVPortgroupRenamedHandler(
-        vm_service, vmi_service, dpg_service
+        dpg_service
     )
     dvportgroup_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
         dpg_service
