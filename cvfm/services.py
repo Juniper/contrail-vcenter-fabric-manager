@@ -64,8 +64,16 @@ class VirtualMachineService(Service):
         logger.info("VirtualMachineService.migrate_vm_model called")
         return models.VirtualMachineModel()
 
-    def rename_vm_model(self, vm_uuid, new_name):
-        logger.info("VirtualMachineService.rename_vm_model called")
+    def rename_vm_model(self, old_name, new_name):
+        vm_model = self._database.remove_vm_model(old_name)
+        if vm_model is None:
+            logger.error(
+                "VM model %s could not be found in Database", old_name
+            )
+            return
+        vm_model.name = new_name
+        self._database.add_vm_model(vm_model)
+        logger.info("VM model renamed from %s to %s", old_name, new_name)
 
 
 class VirtualMachineInterfaceService(Service):

@@ -76,3 +76,24 @@ def test_populate_db(
     assert vm_model.host_name == "esxi-1"
     assert len(vm_model.dpg_models) == 1
     assert list(vm_model.dpg_models)[0].name == "dpg-1"
+
+
+def test_rename_vm(vm_service, vm_model, database):
+    database.add_vm_model(vm_model)
+    old_name = vm_model.name
+    new_name = "vm-1-renamed"
+
+    vm_service.rename_vm_model(old_name, new_name)
+
+    assert database.get_vm_model("vm-1") is None
+    assert database.get_vm_model("vm-1-renamed") is vm_model
+
+
+def test_rename_non_existent_vm(vm_service, database):
+    old_name = "vm-1"
+    new_name = "vm-1-renamed"
+
+    vm_service.rename_vm_model(old_name, new_name)
+
+    assert database.get_vm_model("vm-1") is None
+    assert database.get_vm_model("vm-1-renamed") is None

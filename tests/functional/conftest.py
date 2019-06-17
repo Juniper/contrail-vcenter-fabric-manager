@@ -100,6 +100,7 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
     vm_reconfigured_handler = controllers.VmReconfiguredHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
+    vm_renamed_handler = controllers.VmRenamedHandler(vm_service)
     vm_removed_handler = controllers.VmRemovedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
@@ -110,6 +111,7 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
         dpg_destroyed_handler,
         vm_updated_handler,
         vm_reconfigured_handler,
+        vm_renamed_handler,
         vm_removed_handler,
     ]
 

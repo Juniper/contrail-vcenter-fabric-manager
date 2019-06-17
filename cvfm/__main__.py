@@ -69,9 +69,7 @@ def build_context(config):
     vm_migrated_handler = controllers.VmMigratedHandler(
         vm_service, vmi_service, dpg_service
     )
-    vm_renamed_handler = controllers.VmRenamedHandler(
-        vm_service, vmi_service, dpg_service
-    )
+    vm_renamed_handler = controllers.VmRenamedHandler(vm_service)
     vm_powerstate_handler = controllers.VmPowerStateHandler(
         vm_service, vmi_service, dpg_service
     )

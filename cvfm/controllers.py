@@ -242,25 +242,14 @@ class VmMigratedHandler(AbstractEventHandler):
 class VmRenamedHandler(AbstractEventHandler):
     EVENTS = (vim.event.VmRenamedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service):
         self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
 
     def _handle_event(self, event):
         logger.info("VmRenamedHandler: detected event: %s", event)
-        vmware_vm = event.vm.vm
-        vm_uuid = vmware_vm.config.instanceUuid
         new_name = event.newName
         old_name = event.oldName
-        logger.info(
-            "Renamed VMware VM: %s with uuid: %s from %s to %s",
-            vmware_vm,
-            vm_uuid,
-            old_name,
-            new_name,
-        )
-        self._vm_service.rename_vm_model(vm_uuid, new_name)
+        self._vm_service.rename_vm_model(old_name, new_name)
 
 
 class VmPowerStateHandler(AbstractEventHandler):

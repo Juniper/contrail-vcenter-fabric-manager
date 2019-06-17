@@ -67,6 +67,13 @@ class VCenterAPIMockClient(VCenterAPIClient):
         event.host.host = self.hosts[host_name]
         return utils.wrap_into_update_set(event=event)
 
+    def rename_vm(self, vmware_vm, new_name):
+        event = mock.Mock(spec=vim.event.VmRenamedEvent())
+        event.oldName = vmware_vm.name
+        event.newName = new_name
+        vmware_vm.name = new_name
+        return utils.wrap_into_update_set(event=event)
+
     def get_vms_by_portgroup(self, portgroup_key):
         return self.portgroups[portgroup_key].vm
 
