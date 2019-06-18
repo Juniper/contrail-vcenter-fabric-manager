@@ -10,6 +10,7 @@ class Database(object):
 
     def add_vm_model(self, vm_model):
         self._vm_models[vm_model.name] = vm_model
+        logger.debug("Saved %s", vm_model)
 
     def get_vm_model(self, vm_name):
         return self._vm_models.get(vm_name)
@@ -26,9 +27,11 @@ class Database(object):
     def clear_database(self):
         self._vm_models = {}
         self._dpg_models = {}
+        logger.info("Cleared local database.")
 
     def add_dpg_model(self, dpg_model):
         self._dpg_models[dpg_model.name] = dpg_model
+        logger.debug("Saved %s", dpg_model)
 
     def get_dpg_model(self, dpg_name):
         return self._dpg_models.get(dpg_name)

@@ -190,23 +190,23 @@ class VNCAPIClient(object):
     def create_vn(self, vnc_vn):
         try:
             self.vnc_lib.virtual_network_create(vnc_vn)
-            logger.info("Created VN with name: %s", vnc_vn.name)
+            logger.info("Created VN with name: %s in VNC", vnc_vn.name)
         except vnc_api.RefsExistError:
             logger.info("VN %s already exists in VNC", vnc_vn.name)
 
     def create_vpg(self, vnc_vpg):
         try:
             self.vnc_lib.virtual_port_group_create(vnc_vpg)
-            logger.info("Created VPG with name: %s", vnc_vpg.name)
+            logger.info("Created VPG with name: %s in VNC", vnc_vpg.name)
         except vnc_api.RefsExistError:
-            logger.info("VPG %s already exists in VNC", vnc_vpg)
+            logger.info("VPG %s already exists in VNC", vnc_vpg.name)
 
     def create_vmi(self, vnc_vmi):
         try:
             self.vnc_lib.virtual_machine_interface_create(vnc_vmi)
-            logger.info("Created VMI with name: %s", vnc_vmi.name)
+            logger.info("Created VMI with name: %s in VNC", vnc_vmi.name)
         except vnc_api.RefsExistError:
-            logger.info("VMI %s already exists in VNC", vnc_vmi)
+            logger.info("VMI %s already exists in VNC", vnc_vmi.name)
 
     def read_all_vn_uuids(self):
         vn_list = self.vnc_lib.virtual_networks_list(
@@ -265,7 +265,9 @@ class VNCAPIClient(object):
             self.vnc_lib.virtual_port_group_update(vnc_vpg)
             logger.info("Updated VPG with name: %s", vnc_vpg.name)
         except vnc_api.NoIdError:
-            logger.info("VPG %s not found in VNC", vnc_vpg.uuid)
+            logger.info(
+                "VPG %s not found in VNC, unable to update", vnc_vpg.uuid
+            )
 
     def delete_vmi(self, vmi_uuid):
         self.detach_vmi_from_vpg(vmi_uuid)
@@ -273,14 +275,14 @@ class VNCAPIClient(object):
             self.vnc_lib.virtual_machine_interface_delete(id=vmi_uuid)
             logger.info("VMI %s deleted from VNC", vmi_uuid)
         except vnc_api.NoIdError:
-            pass
+            logger.info("VMI %s not found in VNC, unable to delete", vmi_uuid)
 
     def delete_vpg(self, vpg_uuid):
         try:
             self.vnc_lib.virtual_port_group_delete(id=vpg_uuid)
             logger.info("VPG %s deleted from VNC", vpg_uuid)
         except vnc_api.NoIdError:
-            pass
+            logger.info("VPG %s not found in VNC, unable to delete", vpg_uuid)
 
     def delete_vn(self, vn_uuid):
         vnc_vn = self.read_vn(vn_uuid)
@@ -330,6 +332,12 @@ class VNCAPIClient(object):
             return
         for pi in physical_interfaces:
             vpg.add_physical_interface(pi)
+            pi_display_name = ":".join(pi.fq_name[1:])
+            logger.info(
+                "Attached physical interface %s to VPG %s",
+                pi_display_name,
+                vpg.name,
+            )
         self.vnc_lib.virtual_port_group_update(vpg)
 
     def detach_pis_from_vpg(self, vpg, physical_interface_uuids):
@@ -338,6 +346,12 @@ class VNCAPIClient(object):
         for pi_uuid in physical_interface_uuids:
             pi = self._read_physical_interface(pi_uuid)
             vpg.del_physical_interface(pi)
+            pi_display_name = ":".join(pi.fq_name[1:])
+            logger.info(
+                "Detached physical interface %s from VPG %s",
+                pi_display_name,
+                vpg.name,
+            )
         self.vnc_lib.virtual_port_group_update(vpg)
 
     def detach_vmi_from_vpg(self, vmi_uuid):
@@ -365,6 +379,11 @@ class VNCAPIClient(object):
         return [self.read_vmi(vmi_ref["uuid"]) for vmi_ref in vmi_refs]
 
     def recreate_vmi_with_new_vlan(self, old_vnc_vmi, vnc_vn, new_vlan):
+        logger.info(
+            "Recreating VMI %s with new vlan %s in VNC",
+            old_vnc_vmi.name,
+            new_vlan,
+        )
         vpg_ref = old_vnc_vmi.get_virtual_port_group_back_refs()[0]
         vnc_vpg = self.read_vpg(vpg_ref["uuid"])
         new_vnc_vmi = self._create_vnc_vmi_obj_with_new_vlan(
@@ -372,6 +391,11 @@ class VNCAPIClient(object):
         )
         self._delete_old_vmi(old_vnc_vmi, vnc_vpg)
         self._create_new_vmi(new_vnc_vmi, vnc_vpg)
+        logger.info(
+            "Recreated VMI %s with new vlan %s in VNC",
+            old_vnc_vmi.name,
+            new_vlan,
+        )
 
     def _create_vnc_vmi_obj_with_new_vlan(self, new_vlan, old_vnc_vmi, vnc_vn):
         new_vnc_vmi = vnc_api.VirtualMachineInterface(
