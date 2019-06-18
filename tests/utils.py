@@ -90,6 +90,15 @@ def create_vm_reconfigured_update(vmware_vm, operation):
     return wrap_into_update_set(event=event)
 
 
+def create_vm_moved_update(vmware_vm, event_type):
+    event = mock.Mock(spec_set=event_type)
+    event.vm.vm = vmware_vm
+    event.vm.name = vmware_vm.name
+    event.host.host = vmware_vm.runtime.host.host
+    event.host.name = vmware_vm.runtime.host.name
+    return wrap_into_update_set(event=event)
+
+
 def create_fabric_network(vnc_test_client, vn_name, vn_key):
     project = vnc_test_client.vnc_lib.project_read(
         ["default-domain", vnc_test_client.project_name]
