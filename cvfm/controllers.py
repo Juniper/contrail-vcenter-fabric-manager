@@ -201,8 +201,12 @@ class VmRemovedHandler(AbstractEventHandler):
             self._vmi_service.delete_vmi(vmi_model.uuid)
 
 
-class VmMigratedHandler(AbstractEventHandler):
-    EVENTS = (vim.event.VmMigratedEvent, vim.event.DrsVmMigratedEvent)
+class VmMovedHandler(AbstractEventHandler):
+    EVENTS = (
+        vim.event.VmMigratedEvent,
+        vim.event.DrsVmMigratedEvent,
+        vim.event.VmRelocatedEvent,
+    )
 
     def __init__(self, vm_service, vmi_service, dpg_service):
         self._vm_service = vm_service
@@ -210,7 +214,7 @@ class VmMigratedHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        logger.info("VmMigratedHandler: detected event: %s", event)
+        logger.info("VmMovedHandler: detected event: %s", event)
 
         vmware_target_host = event.host.host
         logger.info("VMware target host %s", vmware_target_host)
@@ -222,7 +226,7 @@ class VmMigratedHandler(AbstractEventHandler):
 
         vmware_vm = event.vm.vm
         vm_uuid = vmware_vm.config.instanceUuid
-        logger.info("Migrated VMware VM: %s with uuid: %s", vmware_vm, vm_uuid)
+        logger.info("Move VMware VM: %s with uuid: %s", vmware_vm, vm_uuid)
 
         vm_model = self._vm_service.migrate_vm_model(
             vm_uuid, target_host_model

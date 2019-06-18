@@ -43,10 +43,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
             self.portgroups[network.key] = network
 
         host_name = vmware_vm.runtime.host.name
-        host = self.hosts.get(host_name)
-        if not host:
-            host = mock.Mock(vm=[])
-            host.configure_mock(name=host_name)
+        host = self._get_host(host_name)
         host.vm.append(vmware_vm)
         self.hosts[host_name] = host
 
@@ -92,6 +89,16 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
+    def change_host(self, vmware_vm, new_host_name):
+        old_host_name = vmware_vm.runtime.host.name
+        self.hosts[old_host_name].vm.remove(vmware_vm)
+
+        new_host = self._get_host(new_host_name)
+        new_host.vm.append(vmware_vm)
+        vmware_vm.runtime.host.host = new_host
+        vmware_vm.runtime.host.name = new_host_name
+        return utils.create_vm_moved_update(vmware_vm)
+
     def get_all_portgroups(self):
         return self.portgroups.values()
 
@@ -100,3 +107,11 @@ class VCenterAPIMockClient(VCenterAPIClient):
         for host in self.hosts.values():
             vms.extend(host.vm)
         return vms
+
+    def _get_host(self, host_name):
+        host = self.hosts.get(host_name)
+        if not host:
+            host = mock.Mock(vm=[])
+            host.configure_mock(name=host_name)
+        self.hosts[host_name] = host
+        return host
