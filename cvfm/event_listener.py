@@ -31,7 +31,6 @@ class EventListener(object):
                 self._update_set_queue.put(update_set)
 
     def _sync(self):
-        self._database.clear_database()
         self._controller.sync()
 
     def _safe_wait_for_update(self, to_supervisor):

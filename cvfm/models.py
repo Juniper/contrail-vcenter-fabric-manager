@@ -135,12 +135,12 @@ class VirtualPortGroupModel(object):
         self.uuid = uuid
         self.host_name = host_name
         self.dvs_name = dvs_name
-
-    def to_vnc_vpg(self, fabric):
-        vnc_name = "{host_name}_{dvs_name}".format(
+        self.name = "{host_name}_{dvs_name}".format(
             host_name=self.host_name, dvs_name=self.dvs_name
         )
-        vnc_vpg = vnc_api.VirtualPortGroup(name=vnc_name, parent_obj=fabric)
+
+    def to_vnc_vpg(self, fabric):
+        vnc_vpg = vnc_api.VirtualPortGroup(name=self.name, parent_obj=fabric)
         vnc_vpg.set_uuid(self.uuid)
         vnc_vpg.set_id_perms(const.ID_PERMS)
         return vnc_vpg
@@ -170,9 +170,10 @@ class VirtualPortGroupModel(object):
 
     def __repr__(self):
         return (
-            "VirtualPortGroupModel(uuid={uuid}, host_name={host_name}, "
+            "VirtualPortGroupModel(uuid={uuid}, name={name}, host_name={host_name}, "
             "dvs_name={dvs_name})".format(
                 uuid=self.uuid,
+                name=self.name,
                 host_name=self.host_name,
                 dvs_name=self.dvs_name,
             )
@@ -184,6 +185,11 @@ class VirtualMachineInterfaceModel(object):
         self.uuid = uuid
         self.host_name = host_name
         self.dpg_model = dpg_model
+        self.name = "{host_name}_{dvs_name}_{dpg_name}".format(
+            host_name=self.host_name,
+            dvs_name=self.dpg_model.dvs_name,
+            dpg_name=self.dpg_model.name,
+        )
 
     def to_vnc_vmi(self, project, fabric_vn):
         if fabric_vn is None:
@@ -191,13 +197,8 @@ class VirtualMachineInterfaceModel(object):
                 "Cannot create VNC VMI without a fabric VN."
             )
 
-        vnc_name = "{host_name}_{dvs_name}_{dpg_name}".format(
-            host_name=self.host_name,
-            dvs_name=self.dpg_model.dvs_name,
-            dpg_name=self.dpg_model.name,
-        )
         vnc_vmi = vnc_api.VirtualMachineInterface(
-            name=vnc_name, parent_obj=project
+            name=self.name, parent_obj=project
         )
         vnc_vmi.set_uuid(self.uuid)
         vnc_vmi.add_virtual_network(fabric_vn)
@@ -241,9 +242,10 @@ class VirtualMachineInterfaceModel(object):
 
     def __repr__(self):
         return (
-            "VirtualMachineInterfaceModel(uuid={uuid}, host_name={host_name}, "
+            "VirtualMachineInterfaceModel(uuid={uuid}, name={name}, host_name={host_name}, "
             "dpg_model={dpg_model})".format(
                 uuid=self.uuid,
+                name=self.name,
                 host_name=self.host_name,
                 dpg_model=self.dpg_model,
             )

@@ -8,6 +8,7 @@ def test_from_vm_model(vm_model):
     vmi_models = models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
     assert vmi_models[0].uuid == models.generate_uuid("esxi-1_dvs-1_dpg-1")
+    assert vmi_models[0].name == "esxi-1_dvs-1_dpg-1"
     assert vmi_models[0].host_name == "esxi-1"
     assert vmi_models[0].dpg_model.dvs_name == "dvs-1"
     assert vmi_models[0].dpg_model.name == "dpg-1"

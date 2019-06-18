@@ -21,6 +21,7 @@ def test_from_vm_model(vm_model):
     vpg_models = models.VirtualPortGroupModel.from_vm_model(vm_model)
 
     assert vpg_models[0].uuid == models.generate_uuid("esxi-1_dvs-1")
+    assert vpg_models[0].name == "esxi-1_dvs-1"
     assert vpg_models[0].host_name == "esxi-1"
     assert vpg_models[0].dvs_name == "dvs-1"
 

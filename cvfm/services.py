@@ -90,7 +90,12 @@ class VirtualMachineInterfaceService(Service):
         project = self._vnc_api_client.get_project()
         try:
             vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
-        except VNCVMICreationException:
+        except VNCVMICreationException as exc:
+            logger.error(
+                "Unable to create VMI in VNC for %s. Reason: %s",
+                vmi_model,
+                exc,
+            )
             return
         existing_vmi = self._vnc_api_client.read_vmi(vmi_model.uuid)
         if existing_vmi is None:
@@ -103,6 +108,12 @@ class VirtualMachineInterfaceService(Service):
         old_vlan = old_props.get_sub_interface_vlan_tag()
         new_vlan = vmi_model.dpg_model.vlan_id
         if old_vlan != new_vlan:
+            logger.info(
+                "Detected VLAN change for VMI %s from VLAN %s to VLAN %s",
+                vmi_model.name,
+                old_vlan,
+                new_vlan,
+            )
             self._vnc_api_client.recreate_vmi_with_new_vlan(
                 existing_vmi, fabric_vn, new_vlan
             )
@@ -116,6 +127,9 @@ class VirtualMachineInterfaceService(Service):
         vmi_uuids = [vmi_ref["uuid"] for vmi_ref in vmi_refs]
         if vnc_vmi.uuid not in vmi_uuids:
             vnc_vpg.add_virtual_machine_interface(vnc_vmi)
+            logger.info(
+                "Attached VMI %s to VPG %s", vnc_vmi.name, vnc_vpg.name
+            )
             self._vnc_api_client.update_vpg(vnc_vpg)
 
     def find_affected_vmis(self, old_vm_model, new_vm_model):
@@ -145,9 +159,11 @@ class DistributedPortGroupService(Service):
         for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
             try:
                 self.create_dpg_model(vmware_dpg)
-            except exceptions.DPGCreationException:
-                logger.exception(
-                    "Error while creating a model for DPG: %s", vmware_dpg.name
+            except exceptions.DPGCreationException as exc:
+                logger.info(
+                    "Unable to create DPG model for %s portgroup, Reason: %s",
+                    vmware_dpg.name,
+                    exc,
                 )
 
     def create_dpg_model(self, vmware_dpg):
@@ -160,7 +176,6 @@ class DistributedPortGroupService(Service):
     def create_fabric_vn(self, dpg_model):
         project = self._vnc_api_client.get_project()
         vnc_vn = dpg_model.to_vnc_vn(project)
-
         self._vnc_api_client.create_vn(vnc_vn)
         logger.info("Virtual Network %s created in VNC", vnc_vn.name)
 
@@ -261,6 +276,7 @@ class VirtualPortGroupService(Service):
 
     def create_vpg_in_vnc(self, vpg_model):
         if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:
+            logger.info("Not found VPG in VNC for %s. Creating...", vpg_model)
             fabric = self._vnc_api_client.get_fabric()
             vnc_vpg = vpg_model.to_vnc_vpg(fabric)
             self._vnc_api_client.create_vpg(vnc_vpg)
@@ -291,9 +307,19 @@ class VirtualPortGroupService(Service):
             for pi_uuid in previous_pis_uuids
             if pi_uuid not in current_pis_uuids
         ]
-
+        pis_change = len(pis_to_attach) != 0 or len(pis_to_attach) != 0
+        if not pis_change:
+            return
+        logger.info(
+            "Updating list of physical interfaces connected to VPG %s",
+            existing_vpg.name,
+        )
         self._vnc_api_client.attach_pis_to_vpg(existing_vpg, pis_to_attach)
         self._vnc_api_client.detach_pis_from_vpg(existing_vpg, pis_to_detach)
+        logger.info(
+            "Updated list of physical interfaces connected to VPG %s",
+            existing_vpg.name,
+        )
 
     def find_matching_physical_interfaces(self, host_name, dvs_name):
         vnc_node = self._vnc_api_client.get_node_by_name(host_name)
