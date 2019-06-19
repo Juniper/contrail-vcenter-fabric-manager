@@ -1,3 +1,4 @@
+host_ip:
 vcenter:
   host:
   port: 443
@@ -20,3 +21,5 @@ sandesh:
   collectors:
   logging_level:
   log_file:
+zookeeper:
+  servers:

@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import random
 import socket
 import sys
@@ -10,6 +11,7 @@ import gevent
 import yaml
 from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
 from pysandesh.connection_info import ConnectionState
+from cfgm_common.zkclient import ZookeeperClient
 from pysandesh.sandesh_base import Sandesh, SandeshConfig
 from sandesh_common.vns.constants import (
     INSTANCE_ID_DEFAULT,
@@ -134,11 +136,17 @@ def build_context(config):
         vmware_controller, update_set_queue, vcenter_api_client, database
     )
     supervisor = Supervisor(event_listener, vcenter_api_client)
+    zookeeper_client = ZookeeperClient(
+        "vcenter-fabric-manager",
+        config["zookeeper"]["servers"],
+        config["host_ip"],
+    )
     context = {
         "lock": lock,
         "database": database,
         "vmware_monitor": vmware_monitor,
         "supervisor": supervisor,
+        "zookeeper-client": zookeeper_client,
     }
     return context
 
@@ -199,6 +207,14 @@ def run_introspect(cfg, database, lock):
     )
 
 
+def run_vcenter_fabric_manager(supervisor, vmware_monitor):
+    greenlets = [
+        gevent.spawn(supervisor.supervise),
+        gevent.spawn(vmware_monitor.monitor),
+    ]
+    gevent.joinall(greenlets, raise_error=True)
+
+
 def main(args):
     cfg = load_config(args.config_file)
     context = build_context(cfg)
@@ -207,11 +223,17 @@ def main(args):
     database = context["database"]
     lock = context["lock"]
     run_introspect(cfg, database, lock)
-    greenlets = [
-        gevent.spawn(supervisor.supervise),
-        gevent.spawn(vmware_monitor.monitor),
-    ]
-    gevent.joinall(greenlets, raise_error=True)
+
+    zookeeper_client = context["zookeeper-client"]
+    logger = logging.getLogger("cvfm")
+    logger.info("Waiting to be elected as master...")
+    zookeeper_client.master_election(
+        "/vcenter-fabric-manager",
+        os.getpid(),
+        run_vcenter_fabric_manager,
+        supervisor,
+        vmware_monitor,
+    )
 
 
 if __name__ == "__main__":
