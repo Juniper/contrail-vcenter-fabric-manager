@@ -37,7 +37,6 @@ def vmware_vm_2(vmware_dpg):
     return vm
 
 
-@pytest.mark.skip
 def test_vm_moved(
     topology_with_two_nodes,
     vmware_vm_1,
@@ -75,7 +74,7 @@ def test_vm_moved(
     # and is connected to a new VPG for dvs-1 on esxi-2
     vnc_vpg_2 = vnc_test_client.read_vpg(models.generate_uuid("esxi-2_dvs-1"))
     vnc_vmi_2 = vnc_test_client.read_vmi(
-        models.generate_uuid("esxi-2_dvs-1_dpg-2")
+        models.generate_uuid("esxi-2_dvs-1_dpg-1")
     )
     assert vnc_vpg_2 is not None
     assert vnc_vmi_2 is not None
@@ -89,7 +88,7 @@ def test_vm_moved(
     assert vnc_vmi_1 is not None
 
     # The second VM (vm-2) is moved to esxi-2
-    vm_moved_update = vcenter_api_client.change_host(vmware_vm_1, "esxi-2")
+    vm_moved_update = vcenter_api_client.change_host(vmware_vm_2, "esxi-2")
     vmware_controller.handle_update(vm_moved_update)
 
     # esxi-1 is empty, so the old VMI and VPG are removed
