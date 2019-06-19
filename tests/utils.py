@@ -90,12 +90,15 @@ def create_vm_reconfigured_update(vmware_vm, operation):
     return wrap_into_update_set(event=event)
 
 
-def create_vm_moved_update(vmware_vm):
+def create_vm_moved_update(vmware_vm, source_host):
     event = mock.Mock(spec_set=vim.event.VmMigratedEvent())
     event.vm.vm = vmware_vm
     event.vm.name = vmware_vm.name
     event.host.host = vmware_vm.runtime.host.host
     event.host.name = vmware_vm.runtime.host.name
+    event.sourceHost = mock.Mock()
+    event.sourceHost.host = source_host
+    event.sourceHost.name = source_host.name
     return wrap_into_update_set(event=event)
 
 
