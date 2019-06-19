@@ -415,10 +415,15 @@ class VNCAPIClient(object):
 
     def _delete_old_vmi(self, vnc_vmi, vnc_vpg):
         vnc_vpg.del_virtual_machine_interface(vnc_vmi)
+        logger.info("Detached VMI %s from VPG %s", vnc_vmi.name, vnc_vpg.name)
         self.update_vpg(vnc_vpg)
         self.vnc_lib.virtual_machine_interface_delete(id=vnc_vmi.uuid)
+        logger.info("Deleted VMI %s from VNC", vnc_vmi.name)
 
     def _create_new_vmi(self, new_vnc_vmi, vnc_vpg):
         self.create_vmi(new_vnc_vmi)
         vnc_vpg.add_virtual_machine_interface(new_vnc_vmi)
+        logger.info(
+            "Attached VMI %s from VPG %s", new_vnc_vmi.name, vnc_vpg.name
+        )
         self.update_vpg(vnc_vpg)

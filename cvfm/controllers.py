@@ -66,6 +66,7 @@ class AbstractEventHandler(AbstractChangeHandler):
     def _handle_change(self, obj, value):
         if isinstance(value, self.EVENTS):
             try:
+                logger.debug("Detected event: %s", value)
                 self._handle_event(value)
             except Exception:
                 logger.exception(
@@ -95,11 +96,9 @@ class VmUpdatedHandler(AbstractEventHandler):
         self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        logger.info("VmUpdatedHandler: detected event: %s", event)
+        vm_name = event.vm.name
+        logger.info("Detected VM %s creation event", vm_name)
         vmware_vm = event.vm.vm
-        logger.info("VMware VM: %s", vmware_vm)
-        vmware_host = event.host.host
-        logger.info("VMware Host: %s", vmware_host)
         vm_model = self._vm_service.create_vm_model(vmware_vm)
         vpg_models = self._vpg_service.create_vpg_models(vm_model)
         for vpg_model in vpg_models:
@@ -121,14 +120,15 @@ class VmReconfiguredHandler(AbstractEventHandler):
         self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        logger.info("VmReconfiguredHandler: detected event: %s", event)
-        vmware_vm = event.vm.vm
-        vm_uuid = vmware_vm.config.instanceUuid
-        logger.info("VMware VM: %s with uuid: %s", vmware_vm, vm_uuid)
+        vm_name = event.vm.name
+        logger.info("Detected VM %s reconfiguration event", vm_name)
         if not self._should_update_vmis(event):
+            logger.info("Not detected reconfiguration of network adapters")
             return
-
-        old_vm_model = self._vm_service.delete_vm_model(event.vm.name)
+        logger.info(
+            "Detected reconfiguration of VM: %s network adapter(s)", vm_name
+        )
+        old_vm_model = self._vm_service.delete_vm_model(vm_name)
         new_vm_model = self._vm_service.create_vm_model(event.vm.vm)
         vmis_to_delete, vmis_to_create = self._vmi_service.find_affected_vmis(
             old_vm_model, new_vm_model
@@ -161,14 +161,6 @@ class VmReconfiguredHandler(AbstractEventHandler):
                 device_spec.device, vim.vm.device.VirtualEthernetCard
             )
         ]
-
-        for device_spec in reconfigured_interfaces:
-            device = device_spec.device
-            operation = device_spec.operation
-            logger.info(
-                "Reconfigured device: %s with operation: %s", device, operation
-            )
-
         return bool(reconfigured_interfaces)
 
 
@@ -182,9 +174,8 @@ class VmRemovedHandler(AbstractEventHandler):
         self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        logger.info("VmRemovedHandler: detected event: %s", event)
         vm_name = event.vm.name
-        logger.info("VmRemovedEvent regards VM: %s", vm_name)
+        logger.info("Detected VM: %s deletion", vm_name)
         vm_model = self._vm_service.delete_vm_model(vm_name)
 
         affected_vmis = self._vmi_service.create_vmi_models_for_vm(vm_model)
@@ -209,8 +200,6 @@ class VmMovedHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        logger.info("VmMovedHandler: detected event: %s", event)
-
         vmware_target_host = event.host.host
         logger.info("VMware target host %s", vmware_target_host)
         target_host_model = self._vm_service.get_host_model(vmware_target_host)
@@ -245,9 +234,9 @@ class VmRenamedHandler(AbstractEventHandler):
         self._vm_service = vm_service
 
     def _handle_event(self, event):
-        logger.info("VmRenamedHandler: detected event: %s", event)
         new_name = event.newName
         old_name = event.oldName
+        logger.info("Detected VM %s rename to %s", old_name, new_name)
         self._vm_service.rename_vm_model(old_name, new_name)
 
 
@@ -260,14 +249,8 @@ class DVPortgroupCreatedHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        logger.debug("DVPortgroupCreatedHandler: detected event: %s", event)
-        logger.info(
-            "DVPortgroupCreatedHandler: detected event: %s", type(event)
-        )
-
+        logger.info("Detected DPG %s creation", event.net.name)
         vmware_dpg = event.net.network
-        logger.info("VMware DPG: %s with key: %s", vmware_dpg, vmware_dpg.key)
-
         try:
             dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
             logger.info("DPG Model created: %s", dpg_model)
@@ -290,21 +273,23 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        logger.debug(
-            "DVPortgroupReconfiguredHandler: detected event: %s", event
-        )
         vmware_dpg = event.net.network
-        logger.info(
-            "Reconfigured DPG: %s with name: %s", vmware_dpg, vmware_dpg.name
-        )
-
+        logger.info("Detected DPG %s reconfiguration", event.net.name)
         try:
             dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
         except exceptions.DPGCreationException:
+            logger.info(
+                "Detected DPG %s reconfiguration to invalid VLAN",
+                event.net.name,
+            )
             self._reconfigure_to_invalid_vlan(vmware_dpg)
             return
 
         if not self._dpg_service.exists_vn_for_portgroup(vmware_dpg.key):
+            logger.info(
+                "Detected DPG %s reconfiguration from invalid to valid VLAN",
+                event.net.name,
+            )
             self._reconfigure_from_invalid_to_valid_vlan(dpg_model)
             return
 
@@ -315,7 +300,6 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         if not self._dpg_service.exists_vn_for_portgroup(vmware_dpg.key):
             return
         dpg_name = vmware_dpg.name
-        dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
         self._dpg_service.delete_fabric_vn(dpg_model.uuid)
 
@@ -345,10 +329,9 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        logger.info("DVPortgroupRenamedHandler: detected event: %s", event)
-
         old_name = event.oldName
         new_name = event.newName
+        logger.info("Detected DPG %s rename to %s", old_name, new_name)
         self._dpg_service.rename_dpg(old_name, new_name)
 
 
@@ -359,10 +342,7 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         self._dpg_service = dpg_service
 
     def _handle_event(self, event):
-        logger.info("DVPortgroupDestroyedHandler: detected event: %s", event)
-
         dpg_name = event.net.name
-        logger.info("Deleted DPG with name %s", dpg_name)
-
+        logger.info("Detected DPG %s deletion", dpg_name)
         dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
         self._dpg_service.delete_fabric_vn(dpg_model.uuid)

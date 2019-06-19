@@ -133,7 +133,10 @@ class VirtualMachineInterfaceService(Service):
             self._vnc_api_client.update_vpg(vnc_vpg)
 
     def find_affected_vmis(self, old_vm_model, new_vm_model):
-        old_vmi_models = set(self.create_vmi_models_for_vm(old_vm_model))
+        if old_vm_model is None:
+            old_vmi_models = set()
+        else:
+            old_vmi_models = set(self.create_vmi_models_for_vm(old_vm_model))
         new_vmi_models = set(self.create_vmi_models_for_vm(new_vm_model))
         vmis_to_delete = old_vmi_models - new_vmi_models
         vmis_to_create = new_vmi_models - old_vmi_models
@@ -199,7 +202,7 @@ class DistributedPortGroupService(Service):
         if should_update:
             logger.info(
                 "Detected VLAN change for %s from %s to %s",
-                dpg_model,
+                dpg_model.name,
                 vnc_vlan,
                 dpg_model.vlan_id,
             )
@@ -211,18 +214,8 @@ class DistributedPortGroupService(Service):
         vnc_vn = self._vnc_api_client.read_vn(dpg_model.uuid)
         vnc_vmis = self._vnc_api_client.get_vmis_by_vn(vnc_vn)
         for vnc_vmi in vnc_vmis:
-            logger.info(
-                "Recreating VMI %s with new VLAN %s in VNC...",
-                vnc_vmi.name,
-                dpg_model.vlan_id,
-            )
             self._vnc_api_client.recreate_vmi_with_new_vlan(
                 vnc_vmi, vnc_vn, dpg_model.vlan_id
-            )
-            logger.info(
-                "Recreated VMI %s with new VLAN %s in VNC",
-                vnc_vmi.name,
-                dpg_model.vlan_id,
             )
 
     def handle_vm_vmi_migration(self, vmi_model, source_host_model):
@@ -262,7 +255,20 @@ class DistributedPortGroupService(Service):
         )
         vms_on_host = set(host.vm)
         vms_in_pg_and_on_host = vms_in_pg.intersection(vms_on_host)
-        return vms_in_pg_and_on_host == set()
+        is_empty = vms_in_pg_and_on_host == set()
+        if is_empty:
+            logger.info(
+                "DPG with key %s is empty on host: %s",
+                portgroup_key,
+                host.name,
+            )
+        else:
+            logger.info(
+                "DPG with key %s is not empty on host: %s",
+                portgroup_key,
+                host.name,
+            )
+        return is_empty
 
 
 class VirtualPortGroupService(Service):
