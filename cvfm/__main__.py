@@ -70,9 +70,6 @@ def build_context(config):
         vm_service, vmi_service, dpg_service
     )
     vm_renamed_handler = controllers.VmRenamedHandler(vm_service)
-    vm_powerstate_handler = controllers.VmPowerStateHandler(
-        vm_service, vmi_service, dpg_service
-    )
 
     dvportgroup_created_handler = controllers.DVPortgroupCreatedHandler(
         vm_service, vmi_service, dpg_service
@@ -92,7 +89,6 @@ def build_context(config):
         vm_renamed_handler,
         vm_reconfigured_handler,
         vm_removed_handler,
-        vm_powerstate_handler,
         vm_moved_handler,
         dvportgroup_created_handler,
         dvportgroup_reconfigured_handler,

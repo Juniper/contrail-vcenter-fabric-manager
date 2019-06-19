@@ -86,11 +86,6 @@ class VmUpdatedHandler(AbstractEventHandler):
         vim.event.VmClonedEvent,
         vim.event.VmRegisteredEvent,
         vim.event.VmDeployedEvent,
-        # TODO: figure out what CVFM should do for below events
-        vim.event.VmSuspendedEvent,
-        vim.event.VmMessageEvent,
-        vim.event.VmMacChangedEvent,
-        vim.event.VmMacAssignedEvent,
     )
 
     def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
@@ -254,22 +249,6 @@ class VmRenamedHandler(AbstractEventHandler):
         new_name = event.newName
         old_name = event.oldName
         self._vm_service.rename_vm_model(old_name, new_name)
-
-
-class VmPowerStateHandler(AbstractEventHandler):
-    EVENTS = (
-        vim.event.VmPoweredOnEvent,
-        vim.event.VmPoweredOffEvent,
-        vim.event.DrsVmPoweredOnEvent,
-    )
-
-    def __init__(self, vm_service, vmi_service, dpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-
-    def _handle_event(self, event):
-        logger.info("VmPowerStateHandler: detected event: %s", event)
 
 
 class DVPortgroupCreatedHandler(AbstractEventHandler):

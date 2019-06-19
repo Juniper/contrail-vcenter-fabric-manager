@@ -356,7 +356,10 @@ class VNCAPIClient(object):
 
     def detach_vmi_from_vpg(self, vmi_uuid):
         vmi = self.read_vmi(vmi_uuid)
-        vpg_ref = vmi.get_virtual_port_group_back_refs()[0]
+        vpg_refs = vmi.get_virtual_port_group_back_refs()
+        if vpg_refs is None:
+            return
+        vpg_ref = vpg_refs[0]
         vpg = self.read_vpg(vpg_ref["uuid"])
         vpg.del_virtual_machine_interface(vmi)
         self.update_vpg(vpg)
