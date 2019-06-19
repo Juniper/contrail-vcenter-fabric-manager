@@ -194,37 +194,51 @@ class VmMovedHandler(AbstractEventHandler):
         vim.event.VmRelocatedEvent,
     )
 
-    def __init__(self, vm_service, vmi_service, dpg_service):
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
-        vmware_target_host = event.host.host
-        logger.info("VMware target host %s", vmware_target_host)
-        target_host_model = self._vm_service.get_host_model(vmware_target_host)
-
-        vmware_source_host = event.sourceHost.host
-        logger.info("VMware source host %s", vmware_source_host)
-        source_host_model = self._vm_service.get_host_model(vmware_source_host)
-
         vmware_vm = event.vm.vm
         vm_uuid = vmware_vm.config.instanceUuid
-        logger.info("Move VMware VM: %s with uuid: %s", vmware_vm, vm_uuid)
-
-        vm_model = self._vm_service.migrate_vm_model(
-            vm_uuid, target_host_model
+        new_host = event.host.host
+        source_host = event.sourceHost.host
+        logger.info(
+            "VMware VM %s was moved from host %s to host: %s",
+            vmware_vm.name,
+            source_host.name,
+            new_host.name,
         )
-        vmi_models = vm_model.get_all_vmis()
-        for vmi_model in vmi_models:
-            self._vmi_service.migrate_vmi(
-                vmi_model, source_host_model, target_host_model
-            )
 
-        for vmi_model in vmi_models:
-            self._dpg_service.handle_vm_vmi_migration(
-                vmi_model, source_host_model
-            )
+        old_vm_model = self._vm_service.delete_vm_model(vmware_vm.name)
+        new_vm_model = self._vm_service.create_vm_model(vmware_vm)
+        vmis_to_delete = set(
+            self._vmi_service.create_vmi_models_for_vm(old_vm_model)
+        )
+        vmis_to_create = set(
+            self._vmi_service.create_vmi_models_for_vm(new_vm_model)
+        )
+
+        vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
+            vmis_to_delete, source_host
+        )
+        self._create_vmis(new_vm_model, vmis_to_create)
+        self._delete_vmis(vmis_to_delete)
+
+    def _delete_vmis(self, vmis_to_delete):
+        for vmi_model in vmis_to_delete:
+            self._vmi_service.delete_vmi(vmi_model.uuid)
+
+    def _create_vmis(self, new_vm_model, vmis_to_create):
+        vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
+        for vpg_model in vpg_models:
+            self._vpg_service.create_vpg_in_vnc(vpg_model)
+            self._vpg_service.attach_pis_to_vpg(vpg_model)
+        for vmi_model in vmis_to_create:
+            self._vmi_service.create_vmi_in_vnc(vmi_model)
+            self._vmi_service.attach_vmi_to_vpg(vmi_model)
 
 
 class VmRenamedHandler(AbstractEventHandler):
