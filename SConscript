@@ -8,6 +8,16 @@ import fnmatch
 
 env = DefaultEnvironment()
 
+setup_sources = [
+    'setup.py',
+    'requirements.txt',
+]
+
+setup_sources_rules = []
+for file in setup_sources:
+    setup_sources_rules.append(
+        env.Install(Dir('.'), "#vcenter-fabric-manager/cvfm/" + file))
+
 cvfm_sandesh_files = [
     'vcenter_fabric_manager.sandesh',
 ]
@@ -29,7 +39,7 @@ cvfm = [
 cvfm.append(env.Install(Dir('.'), "#vcenter-fabric-manager/setup.py"))
 cvfm.append(env.Install(Dir('.'), "#vcenter-fabric-manager/requirements.txt"))
 
-env.Depends(cvfm, cvfm_sandesh)
+env.Depends(cvfm, cvfm_sandesh, setup_sources_rules)
 env.Alias('cvfm', cvfm)
 
 install_cmd = env.Command(None, 'setup.py',
