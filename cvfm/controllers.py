@@ -17,8 +17,11 @@ class VmwareController(object):
     def sync(self):
         logger.info("Synchronizing Contrail vCenter Fabric Manager...")
         with self._lock:
-            self._synchronizer.sync()
-        logger.info("Synchronization completed")
+            try:
+                self._synchronizer.sync()
+                logger.info("Synchronization completed")
+            except Exception:
+                logger.exception("Unexpected error during CVFM sync")
 
     def handle_update(self, update_set):
         with self._lock:

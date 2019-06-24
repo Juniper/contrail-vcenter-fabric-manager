@@ -22,7 +22,10 @@ class VirtualMachineService(Service):
     def populate_db_with_vms(self):
         vmware_vms = self._vcenter_api_client.get_all_vms()
         for vmware_vm in vmware_vms:
-            self.create_vm_model(vmware_vm)
+            try:
+                self.create_vm_model(vmware_vm)
+            except Exception:
+                logger.exception("Unexpected error during VM model creation")
 
     def create_vm_model(self, vmware_vm):
         dpg_models = set()
@@ -168,6 +171,8 @@ class DistributedPortGroupService(Service):
                     vmware_dpg.name,
                     exc,
                 )
+            except Exception:
+                logger.exception("Unexpected error during DPG model creation")
 
     def create_dpg_model(self, vmware_dpg):
         dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(

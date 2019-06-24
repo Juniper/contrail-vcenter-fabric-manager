@@ -63,7 +63,12 @@ class DistributedPortGroupSynchronizer(object):
 
         logger.info("Creating lacking VNs in VNC...")
         for dpg_model in vns_to_create:
-            self._dpg_service.create_fabric_vn(dpg_model)
+            try:
+                self._dpg_service.create_fabric_vn(dpg_model)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during creating VN for %s", dpg_model
+                )
         logger.info("Created lacking VNs in VNC")
 
     def sync_delete(self):
@@ -83,7 +88,13 @@ class DistributedPortGroupSynchronizer(object):
 
         logger.info("Deleting stale VNs from VNC...")
         for fabric_vn in fabric_vns_to_delete:
-            self._dpg_service.delete_fabric_vn(fabric_vn.uuid)
+            try:
+                self._dpg_service.delete_fabric_vn(fabric_vn.uuid)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during deleting VN with uuid: %s",
+                    fabric_vn.uuid,
+                )
         logger.info("Deleted stale VNs from VNC...")
 
 
@@ -100,8 +111,13 @@ class VirtualPortGroupSynchronizer(object):
             vpg_models.extend(self._vpg_service.create_vpg_models(vm_model))
         for vpg_model in set(vpg_models):
             logger.debug("Syncing VPG in VNC for %s", vpg_model)
-            self._vpg_service.create_vpg_in_vnc(vpg_model)
-            self._vpg_service.attach_pis_to_vpg(vpg_model)
+            try:
+                self._vpg_service.create_vpg_in_vnc(vpg_model)
+                self._vpg_service.attach_pis_to_vpg(vpg_model)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during syncing %s", vpg_model
+                )
         logger.info("Created lacking/Updated VPGs in VNC")
 
     def sync_delete(self):
@@ -119,7 +135,13 @@ class VirtualPortGroupSynchronizer(object):
             return
         logger.info("Deleting stale VPGs from VNC...")
         for vpg_uuid in vpgs_to_delete:
-            self._vpg_service.delete_vpg(vpg_uuid)
+            try:
+                self._vpg_service.delete_vpg(vpg_uuid)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during deleting VPG with uuid: %s",
+                    vpg_uuid,
+                )
         logger.info("Deleted stale VPGs from VNC...")
 
 
@@ -138,8 +160,13 @@ class VirtualMachineInterfaceSynchronizer(object):
         logger.info("Creating lacking/Updating VMIs in VNC...")
         for vmi_model in set(vmi_models):
             logger.debug("Syncing VMI in VNC for %s", vmi_model)
-            self._vmi_service.create_vmi_in_vnc(vmi_model)
-            self._vmi_service.attach_vmi_to_vpg(vmi_model)
+            try:
+                self._vmi_service.create_vmi_in_vnc(vmi_model)
+                self._vmi_service.attach_vmi_to_vpg(vmi_model)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during syncing %s", vmi_model
+                )
         logger.info("Created lacking/Updated VMIs in VNC")
 
     def sync_delete(self):
@@ -160,5 +187,11 @@ class VirtualMachineInterfaceSynchronizer(object):
             return
         logger.info("Deleting stale VMIs from VNC...")
         for vmi_uuid in vmis_to_delete:
-            self._vmi_service.delete_vmi(vmi_uuid)
+            try:
+                self._vmi_service.delete_vmi(vmi_uuid)
+            except Exception:
+                logger.exception(
+                    "Unexpected error during deleting VMI with uuid %s",
+                    vmi_uuid,
+                )
         logger.info("Deleted stale VMIs from VNC")
