@@ -8,7 +8,18 @@ import sys
 
 import gevent
 import yaml
+from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
+from pysandesh.connection_info import ConnectionState
 from pysandesh.sandesh_base import Sandesh, SandeshConfig
+from sandesh_common.vns.constants import (
+    INSTANCE_ID_DEFAULT,
+    Module2NodeType,
+    ModuleNames,
+    NodeTypeNames,
+    ServiceHttpPortMap,
+)
+from sandesh_common.vns.ttypes import Module
+
 
 from cvfm import controllers, services, synchronizers
 from cvfm.clients import VCenterAPIClient, VNCAPIClient
@@ -30,7 +41,7 @@ def translate_logging_level(level):
     # Default logging level during contrail deployment is SYS_NOTICE,
     # but python logging library hasn't notice level, so we have to translate
     # SYS_NOTICE to logging.INFO, because next available level is logging.WARN,
-    # what is too high for normal vcenter-manager logging.
+    # what is too high for normal vcenter-fabric-manager logging.
     if level == "SYS_NOTICE":
         return "SYS_INFO"
     return level
@@ -136,9 +147,23 @@ def run_introspect(cfg, database, lock):
     sandesh_config = cfg["sandesh"]
     sandesh_config["collectors"] = sandesh_config["collectors"].split()
     random.shuffle(sandesh_config["collectors"])
-    sandesh_config.update({"hostname": socket.gethostname()})
+    sandesh_config.update(
+        {
+            "id": Module.VCENTER_FABRIC_MANAGER,
+            "hostname": socket.gethostname(),
+            "table": "ObjectContrailvCenterFabricManagerNode",
+            "instance_id": INSTANCE_ID_DEFAULT,
+            "introspect_port": ServiceHttpPortMap[
+                "contrail-vcenter-fabric-manager"
+            ],
+        }
+    )
+    sandesh_config["name"] = ModuleNames[sandesh_config["id"]]
+    sandesh_config["node_type"] = Module2NodeType[sandesh_config["id"]]
+    sandesh_config["node_type_name"] = NodeTypeNames[
+        sandesh_config["node_type"]
+    ]
 
-    # TODO: Add UVE support
     sandesh = Sandesh()
     sandesh_handler = SandeshHandler(database, lock)
     sandesh_handler.bind_handlers()
@@ -146,8 +171,8 @@ def run_introspect(cfg, database, lock):
     sandesh.init_generator(
         module="cvfm",
         source=sandesh_config["hostname"],
-        node_type="cfvm",
-        instance_id="0",
+        node_type=sandesh_config["node_type_name"],
+        instance_id=sandesh_config["instance_id"],
         collectors=sandesh_config["collectors"],
         client_context="cvfm_context",
         http_port=sandesh_config["introspect_port"],
@@ -161,6 +186,16 @@ def run_introspect(cfg, database, lock):
         file=sandesh_config["log_file"],
         enable_syslog=False,
         syslog_facility=None,
+    )
+    ConnectionState.init(
+        sandesh=sandesh,
+        hostname=sandesh_config["hostname"],
+        module_id=sandesh_config["name"],
+        instance_id=sandesh_config["instance_id"],
+        conn_status_cb=staticmethod(ConnectionState.get_conn_state_cb),
+        uve_type_cls=NodeStatusUVE,
+        uve_data_type_cls=NodeStatus,
+        table=sandesh_config["table"],
     )
 
 
