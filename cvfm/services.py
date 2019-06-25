@@ -63,10 +63,6 @@ class VirtualMachineService(Service):
             vm_models.append(vm_model)
         return vm_models
 
-    def migrate_vm_model(self, vm_uuid, target_host_model):
-        logger.info("VirtualMachineService.migrate_vm_model called")
-        return models.VirtualMachineModel()
-
     def rename_vm_model(self, old_name, new_name):
         vm_model = self._database.remove_vm_model(old_name)
         if vm_model is None:
@@ -151,9 +147,6 @@ class VirtualMachineInterfaceService(Service):
     def read_all_vmis(self):
         return self._vnc_api_client.read_all_vmis()
 
-    def migrate_vmi(self, vmi_model, source_host_model, target_host_model):
-        logger.info("VirtualMachineInterfaceService.migrate_vmi called")
-
 
 class DistributedPortGroupService(Service):
     def __init__(self, vcenter_api_client, vnc_api_client, database):
@@ -222,11 +215,6 @@ class DistributedPortGroupService(Service):
             self._vnc_api_client.recreate_vmi_with_new_vlan(
                 vnc_vmi, vnc_vn, dpg_model.vlan_id
             )
-
-    def handle_vm_vmi_migration(self, vmi_model, source_host_model):
-        logger.info(
-            "DistributedPortGroupService.handle_vm_vmi_migration called"
-        )
 
     def rename_dpg(self, old_dpg_name, new_dpg_name):
         dpg_model = self._database.get_dpg_model(old_dpg_name)

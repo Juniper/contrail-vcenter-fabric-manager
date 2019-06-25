@@ -78,7 +78,7 @@ def build_context(config):
         vm_service, vmi_service, dpg_service, vpg_service
     )
     vm_moved_handler = controllers.VmMovedHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
     vm_renamed_handler = controllers.VmRenamedHandler(vm_service)
 
