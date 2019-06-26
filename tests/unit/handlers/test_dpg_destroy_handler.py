@@ -7,6 +7,21 @@ from cvfm import controllers
 
 
 @pytest.fixture
+def vm_service():
+    return mock.Mock()
+
+
+@pytest.fixture
+def vmi_service():
+    return mock.Mock()
+
+
+@pytest.fixture
+def vpg_service():
+    return mock.Mock()
+
+
+@pytest.fixture
 def dpg_service():
     return mock.Mock()
 
@@ -23,8 +38,10 @@ def dpg_destroyed_update():
 
 
 @pytest.fixture
-def dpg_destroyed_handler(dpg_service):
-    return controllers.DVPortgroupDestroyedHandler(dpg_service)
+def dpg_destroyed_handler(vm_service, vmi_service, dpg_service, vpg_service):
+    return controllers.DVPortgroupDestroyedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
 
 
 def test_handle_dpg_destroyed(

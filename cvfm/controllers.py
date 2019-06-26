@@ -66,6 +66,12 @@ class AbstractEventHandler(AbstractChangeHandler):
     __metaclass__ = ABCMeta
     PROPERTY_NAME = "latestPage"
 
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
+        self._vm_service = vm_service
+        self._vmi_service = vmi_service
+        self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
+
     def _handle_change(self, obj, value):
         if isinstance(value, self.EVENTS):
             try:
@@ -83,6 +89,19 @@ class AbstractEventHandler(AbstractChangeHandler):
     def _handle_event(self, event):
         pass
 
+    def _delete_vmis(self, vmis_to_delete):
+        for vmi_model in vmis_to_delete:
+            self._vmi_service.delete_vmi(vmi_model.uuid)
+
+    def _create_vmis(self, vm_model, vmis_to_create):
+        vpg_models = self._vpg_service.create_vpg_models(vm_model)
+        for vpg_model in vpg_models:
+            self._vpg_service.create_vpg_in_vnc(vpg_model)
+            self._vpg_service.attach_pis_to_vpg(vpg_model)
+        for vmi_model in vmis_to_create:
+            self._vmi_service.create_vmi_in_vnc(vmi_model)
+            self._vmi_service.attach_vmi_to_vpg(vmi_model)
+
 
 class VmUpdatedHandler(AbstractEventHandler):
     EVENTS = (
@@ -92,35 +111,17 @@ class VmUpdatedHandler(AbstractEventHandler):
         vim.event.VmDeployedEvent,
     )
 
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
-
     def _handle_event(self, event):
         vm_name = event.vm.name
         logger.info("Detected VM %s creation event", vm_name)
         vmware_vm = event.vm.vm
         vm_model = self._vm_service.create_vm_model(vmware_vm)
-        vpg_models = self._vpg_service.create_vpg_models(vm_model)
-        for vpg_model in vpg_models:
-            self._vpg_service.create_vpg_in_vnc(vpg_model)
-            self._vpg_service.attach_pis_to_vpg(vpg_model)
         vmi_models = self._vmi_service.create_vmi_models_for_vm(vm_model)
-        for vmi_model in vmi_models:
-            self._vmi_service.create_vmi_in_vnc(vmi_model)
-            self._vmi_service.attach_vmi_to_vpg(vmi_model)
+        self._create_vmis(vm_model, vmi_models)
 
 
 class VmReconfiguredHandler(AbstractEventHandler):
     EVENTS = (vim.event.VmReconfiguredEvent,)
-
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         vm_name = event.vm.name
@@ -142,19 +143,6 @@ class VmReconfiguredHandler(AbstractEventHandler):
         self._create_vmis(new_vm_model, vmis_to_create)
         self._delete_vmis(vmis_to_delete)
 
-    def _delete_vmis(self, vmis_to_delete):
-        for vmi_model in vmis_to_delete:
-            self._vmi_service.delete_vmi(vmi_model.uuid)
-
-    def _create_vmis(self, new_vm_model, vmis_to_create):
-        vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
-        for vpg_model in vpg_models:
-            self._vpg_service.create_vpg_in_vnc(vpg_model)
-            self._vpg_service.attach_pis_to_vpg(vpg_model)
-        for vmi_model in vmis_to_create:
-            self._vmi_service.create_vmi_in_vnc(vmi_model)
-            self._vmi_service.attach_vmi_to_vpg(vmi_model)
-
     @staticmethod
     def _should_update_vmis(event):
         reconfigured_interfaces = [
@@ -170,12 +158,6 @@ class VmReconfiguredHandler(AbstractEventHandler):
 class VmRemovedHandler(AbstractEventHandler):
     EVENTS = (vim.event.VmRemovedEvent,)
 
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
-
     def _handle_event(self, event):
         vm_name = event.vm.name
         logger.info("Detected VM: %s deletion", vm_name)
@@ -185,9 +167,7 @@ class VmRemovedHandler(AbstractEventHandler):
         vmis_to_delete = self._dpg_service.filter_out_non_empty_dpgs(
             affected_vmis, event.host.host
         )
-
-        for vmi_model in vmis_to_delete:
-            self._vmi_service.delete_vmi(vmi_model.uuid)
+        self._delete_vmis(vmis_to_delete)
 
 
 class VmMovedHandler(AbstractEventHandler):
@@ -196,12 +176,6 @@ class VmMovedHandler(AbstractEventHandler):
         vim.event.DrsVmMigratedEvent,
         vim.event.VmRelocatedEvent,
     )
-
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         vmware_vm = event.vm.vm
@@ -230,25 +204,9 @@ class VmMovedHandler(AbstractEventHandler):
         self._create_vmis(new_vm_model, vmis_to_create)
         self._delete_vmis(vmis_to_delete)
 
-    def _delete_vmis(self, vmis_to_delete):
-        for vmi_model in vmis_to_delete:
-            self._vmi_service.delete_vmi(vmi_model.uuid)
-
-    def _create_vmis(self, new_vm_model, vmis_to_create):
-        vpg_models = self._vpg_service.create_vpg_models(new_vm_model)
-        for vpg_model in vpg_models:
-            self._vpg_service.create_vpg_in_vnc(vpg_model)
-            self._vpg_service.attach_pis_to_vpg(vpg_model)
-        for vmi_model in vmis_to_create:
-            self._vmi_service.create_vmi_in_vnc(vmi_model)
-            self._vmi_service.attach_vmi_to_vpg(vmi_model)
-
 
 class VmRenamedHandler(AbstractEventHandler):
     EVENTS = (vim.event.VmRenamedEvent,)
-
-    def __init__(self, vm_service):
-        self._vm_service = vm_service
 
     def _handle_event(self, event):
         new_name = event.newName
@@ -259,11 +217,6 @@ class VmRenamedHandler(AbstractEventHandler):
 
 class DVPortgroupCreatedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupCreatedEvent,)
-
-    def __init__(self, vm_service, vmi_service, dpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
 
     def _handle_event(self, event):
         logger.info("Detected DPG %s creation", event.net.name)
@@ -282,12 +235,6 @@ class DVPortgroupCreatedHandler(AbstractEventHandler):
 
 class DVPortgroupReconfiguredHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupReconfiguredEvent,)
-
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
 
     def _handle_event(self, event):
         vmware_dpg = event.net.network
@@ -325,14 +272,8 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         for vm_model in self._vm_service.create_vm_models_for_dpg_model(
             dpg_model
         ):
-            vpg_models = self._vpg_service.create_vpg_models(vm_model)
-            for vpg_model in vpg_models:
-                self._vpg_service.create_vpg_in_vnc(vpg_model)
-                self._vpg_service.attach_pis_to_vpg(vpg_model)
             vmi_models = self._vmi_service.create_vmi_models_for_vm(vm_model)
-            for vmi_model in vmi_models:
-                self._vmi_service.create_vmi_in_vnc(vmi_model)
-                self._vmi_service.attach_vmi_to_vpg(vmi_model)
+            self._create_vmis(vm_model, vmi_models)
 
     def _handle_vlan_change(self, dpg_model):
         self._dpg_service.update_vmis_vlan_in_vnc(dpg_model)
@@ -341,9 +282,6 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
 
 class DVPortgroupRenamedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupRenamedEvent,)
-
-    def __init__(self, dpg_service):
-        self._dpg_service = dpg_service
 
     def _handle_event(self, event):
         old_name = event.oldName
@@ -354,9 +292,6 @@ class DVPortgroupRenamedHandler(AbstractEventHandler):
 
 class DVPortgroupDestroyedHandler(AbstractEventHandler):
     EVENTS = (vim.event.DVPortgroupDestroyedEvent,)
-
-    def __init__(self, dpg_service):
-        self._dpg_service = dpg_service
 
     def _handle_event(self, event):
         dpg_name = event.net.name

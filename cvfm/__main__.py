@@ -80,19 +80,21 @@ def build_context(config):
     vm_moved_handler = controllers.VmMovedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
-    vm_renamed_handler = controllers.VmRenamedHandler(vm_service)
+    vm_renamed_handler = controllers.VmRenamedHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
 
     dvportgroup_created_handler = controllers.DVPortgroupCreatedHandler(
-        vm_service, vmi_service, dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
     dvportgroup_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
     dvportgroup_renamed_handler = controllers.DVPortgroupRenamedHandler(
-        dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
     dvportgroup_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
-        dpg_service
+        vm_service, vmi_service, dpg_service, vpg_service
     )
 
     handlers = [
