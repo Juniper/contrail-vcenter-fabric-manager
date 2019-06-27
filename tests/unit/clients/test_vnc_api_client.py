@@ -80,6 +80,15 @@ def test_detach_last_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1, vpg_1):
     utils.verify_vnc_vpg(vpg_1, vmi_names=[])
 
 
+def test_detach_not_exist_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1):
+    vnc_lib.virtual_machine_interface_read.return_value = None
+
+    vnc_api_client.detach_vmi_from_vpg(vmi_1.uuid)
+
+    vnc_lib.virtual_port_group_update.assert_not_called()
+    vnc_lib.virtual_port_group_delete.assert_not_called()
+
+
 def test_detach_vmi_from_vpg(vnc_api_client, vnc_lib, vmi_1, vmi_2, vpg_1):
     vnc_lib.virtual_machine_interface_read.side_effect = [vmi_1, vmi_2]
     vpg_1.add_virtual_machine_interface(vmi_1)
