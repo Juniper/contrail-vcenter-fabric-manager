@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f5c4f37_8587f1b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 760
+      },
+      "writtenOn": "2019-06-27T10:51:53Z",
+      "side": 1,
+      "message": "Say here either \"never approve\" or \"do not merge\" (\"DNM\"), so other people know not to look inside.",
+      "revId": "959a88c69cdfd97c11af50acd4ffc7bcc73b8361",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5c4f37_e59c6d0f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 760
+      },
+      "writtenOn": "2019-06-27T10:51:53Z",
+      "side": 1,
+      "message": "Without empty line, it\u0027s all a title of the changeset for gerrit. Add 1 empty line after the title.",
+      "revId": "959a88c69cdfd97c11af50acd4ffc7bcc73b8361",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5c4f37_a58af5bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 760
+      },
+      "writtenOn": "2019-06-27T10:51:53Z",
+      "side": 1,
+      "message": "Depends-On header needs a Change-Id (the I123123123123 symbol) instead of a changeset number.",
+      "range": {
+        "startLine": 8,
+        "startChar": 12,
+        "endLine": 8,
+        "endChar": 17
+      },
+      "revId": "959a88c69cdfd97c11af50acd4ffc7bcc73b8361",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    }
+  ]
+}
