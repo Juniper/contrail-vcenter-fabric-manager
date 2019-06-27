@@ -1,0 +1,15 @@
+---
+
+- hosts: localhost
+  roles:
+    - role: add-fileserver
+      fileserver: "{{ site_logs }}"
+    - emit-ara-html
+
+- hosts: "{{ site_logs.fqdn }}"
+  gather_facts: false
+  roles:
+    - role: upload-logs
+      zuul_log_url: "http://logs.opencontrail.org"
+      zuul_logserver_root: "/var/www/logs"
+
