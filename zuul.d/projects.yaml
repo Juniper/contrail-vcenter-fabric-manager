@@ -1,0 +1,8 @@
+- project:
+    name: Juniper/contrail-vcenter-fabric-manager
+    check:
+      jobs:
+        - contrail-vcenter-fabric-manager
+    gate:
+      jobs:
+        - contrail-vcenter-fabric-manager
