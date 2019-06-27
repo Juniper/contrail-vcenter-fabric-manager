@@ -1,0 +1,8 @@
+- project:
+    name: contrail-vcenter-fabric-manager
+    check:
+      jobs:
+        - CVFM-ci
+    gate:
+      jobs:
+        - CVFM-ci
