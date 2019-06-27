@@ -1,0 +1,10 @@
+- job:
+    name: contrail-vcenter-fabric-manager
+    parent: contrail-src-base
+    description: |
+      Test CI
+    roles:
+      - zuul: Juniper/contrail-zuul-jobs
+    pre-run: playbooks/contrail-vcenter-fabric-manager/pre.yaml
+    run: playbooks/contrail-vcenter-fabric-manager/run.yaml
+    nodeset: builder-centos-7
