@@ -1,0 +1,19 @@
+---
+
+- hosts: localhost
+  roles:
+    - role: emit-job-header
+      zuul_log_url: "http://logs.opencontrail.org"
+
+- hosts: all
+  roles:
+    - disable-os-unattended-upgrades
+    - add-build-sshkey
+    - configure-hosts-entries
+    - configure-mirrors
+    - role: configure-maven-proxy
+      maven_repo_mirror_url: 'http://{{ nexus.fqdn }}/repository/{{ nexus.repos.maven }}/'
+    - validate-host
+    - prepare-workspace
+    - gitlog-upload
+
