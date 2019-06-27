@@ -1,0 +1,95 @@
+---
+
+- name: Prepare packaging variables
+  contrail_packaging:
+    zuul: "{{ zuul }}"
+    release_type: "{{ release_type }}"
+  delegate_to: localhost
+
+- debug:
+    var: packaging
+
+- name: 'Set executor sandbox path'
+  set_fact:
+    executor_sandbox_path: "{{ zuul.executor.work_root }}/{{ packaging.target_dir }}"
+  delegate_to: localhost
+
+- name: create sandbox root dir
+  file:
+    path: "{{ executor_sandbox_path }}"
+    state: directory
+  delegate_to: localhost
+
+- name: copy scripts
+  copy:
+    src: "{{ item }}"
+    dest: "{{ executor_sandbox_path }}"
+    mode: preserve
+  with_items:
+    - repo
+    - manifest_translator.py
+  delegate_to: localhost
+
+- name: get contrail-vnc branch
+  command: git symbolic-ref HEAD
+  args:
+    chdir: "{{ zuul.executor.src_root }}/review.opencontrail.org/Juniper/contrail-vnc"
+  register: checked_out_vnc_branch
+  delegate_to: localhost
+  tags:
+    # Ignore ANSIBLE0006: Can not use git module for this task
+    - skip_ansible_lint
+
+- name: extract contrail-vnc branch name from git output
+  set_fact:
+    checked_out_vnc_branch: "{{ checked_out_vnc_branch.stdout }}"
+
+- name: repo init
+  command: ./repo init -u {{ zuul.executor.src_root }}/review.opencontrail.org/Juniper/contrail-vnc -b {{ checked_out_vnc_branch }}
+  args:
+    chdir: "{{ executor_sandbox_path }}"
+  delegate_to: localhost
+
+- name: dump zuul variables to a file
+  copy:
+    content: "{{ zuul }}"
+    dest: "{{ executor_sandbox_path }}/zuul_var.yaml"
+  delegate_to: localhost
+
+- name: snapshot last commits SHAs into the manifest
+  command: ./manifest_translator.py snapshot ./zuul_var.yaml {{ executor_sandbox_path }}/.repo/manifest.xml {{ zuul.executor.log_root }}/zuul-info/manifest.xml
+  args:
+    chdir: "{{ executor_sandbox_path }}"
+  delegate_to: localhost
+
+- name: apply changes to the manifest.xml
+  command: ./manifest_translator.py translate ./zuul_var.yaml {{ executor_sandbox_path }}/.repo/manifest.xml
+  args:
+    chdir: "{{ executor_sandbox_path }}"
+  delegate_to: localhost
+
+- name: repo sync
+  command: ./repo sync
+  args:
+    chdir: "{{ executor_sandbox_path }}"
+  delegate_to: localhost
+
+- name: Clean-up auxiliary repo files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - repo
+    - manifest_translator.py
+    - zuul_var.yaml
+
+- name: send the sandbox to the worker node
+  synchronize:
+    src: "{{ executor_sandbox_path }}"
+    dest: "{{ ansible_env.HOME }}"
+
+- name: upload manifest to the worker node
+  copy:
+    src: "{{ zuul.executor.log_root }}/zuul-info/manifest.xml"
+    dest: "{{ ansible_env.HOME }}/manifest.xml"
+
