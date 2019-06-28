@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f4b6375_e43f5ab3",
+        "filename": "A",
+        "patchSetId": 14
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 645
+      },
+      "writtenOn": "2019-06-28T10:57:16Z",
+      "side": 1,
+      "message": "What is this file?",
+      "revId": "d7f3ea6eef2c44fa5ee3ad11e73d79af52669e60",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    }
+  ]
+}
