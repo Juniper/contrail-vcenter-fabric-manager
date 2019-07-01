@@ -45,6 +45,13 @@ class VirtualMachineModel(object):
         self.name = name
         self.host_name = host_name
         self.dpg_models = dpg_models
+        self.property_filter = None
+
+    def set_property_filter(self, property_filter):
+        self.property_filter = property_filter
+
+    def destroy_property_filter(self):
+        self.property_filter.DestroyPropertyFilter()
 
     def detach_dpg(self, dpg_name):
         dpgs = [dpg for dpg in self.dpg_models if dpg.name == dpg_name]

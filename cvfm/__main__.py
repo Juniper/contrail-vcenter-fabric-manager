@@ -83,6 +83,9 @@ def build_context(config):
     vm_renamed_handler = controllers.VmRenamedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
+    vm_host_change_handler = controllers.HostChangeHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
 
     dvportgroup_created_handler = controllers.DVPortgroupCreatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
@@ -103,6 +106,7 @@ def build_context(config):
         vm_reconfigured_handler,
         vm_removed_handler,
         vm_moved_handler,
+        vm_host_change_handler,
         dvportgroup_created_handler,
         dvportgroup_reconfigured_handler,
         dvportgroup_renamed_handler,

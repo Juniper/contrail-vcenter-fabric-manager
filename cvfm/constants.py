@@ -17,6 +17,8 @@ EVENTS_TO_OBSERVE = [
     "DVPortgroupDestroyedEvent",
 ]
 
+VM_UPDATE_FILTERS = ["runtime.host"]
+
 WAIT_FOR_UPDATE_TIMEOUT = 20
 SUPERVISOR_TIMEOUT = 25
 
