@@ -45,6 +45,12 @@ class UpdateHandler(object):
 class AbstractChangeHandler(object):
     __metaclass__ = ABCMeta
 
+    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
+        self._vm_service = vm_service
+        self._vmi_service = vmi_service
+        self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
+
     def handle_change(self, obj, property_change):
         name = getattr(property_change, "name", None)
         value = getattr(property_change, "val", None)
@@ -65,12 +71,6 @@ class AbstractChangeHandler(object):
 class AbstractEventHandler(AbstractChangeHandler):
     __metaclass__ = ABCMeta
     PROPERTY_NAME = "latestPage"
-
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-        self._dpg_service = dpg_service
-        self._vpg_service = vpg_service
 
     def _handle_change(self, obj, value):
         if isinstance(value, self.EVENTS):
@@ -298,3 +298,10 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         logger.info("Detected DPG %s deletion", dpg_name)
         dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
         self._dpg_service.delete_fabric_vn(dpg_model.uuid)
+
+
+class HostChangeHandler(AbstractChangeHandler):
+    PROPERTY_NAME = "runtime.host"
+
+    def _handle_change(self, obj, value):
+        logger.info("HostChangeHandler VM %s Host %s", obj.name, value.name)

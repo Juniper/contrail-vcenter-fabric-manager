@@ -21,6 +21,7 @@ def test_create_vm_model(vm_service, vmware_vm, database):
     assert database.get_vm_model("vm-1") == vm_model
     assert vm_model.name == "vm-1"
     assert vm_model.host_name == "esxi-1"
+    assert vm_model.property_filter is not None
     assert len(vm_model.dpg_models) == 1
     assert list(vm_model.dpg_models)[0] == dpg_model
 
@@ -40,6 +41,7 @@ def test_delete_vm_model(vm_service, vm_model, database):
 
     assert database.get_vm_model("vm-1") is None
     assert result_vm_model == vm_model
+    vm_model.property_filter.DestroyPropertyFilter.assert_called_once()
 
 
 def test_update_dpg_in_vm_models(vm_service, vm_model, database):

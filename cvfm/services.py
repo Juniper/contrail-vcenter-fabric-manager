@@ -1,6 +1,6 @@
 import logging
 
-from cvfm import models, exceptions
+from cvfm import models, exceptions, constants
 from cvfm.exceptions import VNCVMICreationException
 
 logger = logging.getLogger(__name__)
@@ -38,11 +38,16 @@ class VirtualMachineService(Service):
             vmware_vm, dpg_models
         )
         self._database.add_vm_model(vm_model)
+        property_filter = self._vcenter_api_client.add_filter(
+            vmware_vm, constants.VM_UPDATE_FILTERS
+        )
+        vm_model.set_property_filter(property_filter)
         return vm_model
 
     def delete_vm_model(self, vm_name):
         vm_model = self._database.get_vm_model(vm_name)
         self._database.remove_vm_model(vm_name)
+        vm_model.destroy_property_filter()
         return vm_model
 
     def update_dpg_in_vm_models(self, dpg_model):

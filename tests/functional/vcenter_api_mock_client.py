@@ -116,3 +116,6 @@ class VCenterAPIMockClient(VCenterAPIClient):
             host.configure_mock(name=host_name)
         self.hosts[host_name] = host
         return host
+
+    def add_filter(self, obj, filters):
+        return mock.Mock()

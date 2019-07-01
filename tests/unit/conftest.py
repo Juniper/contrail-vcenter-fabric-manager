@@ -42,7 +42,10 @@ def dpg_model(vmware_dpg):
 @pytest.fixture
 def vm_model(vmware_vm, dpg_model):
     dpg_models = {dpg_model}
-    return models.VirtualMachineModel.from_vmware_vm(vmware_vm, dpg_models)
+    vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm, dpg_models)
+    property_filter = mock.Mock(spec=vim.PropertyFilter)
+    vm_model.set_property_filter(property_filter)
+    return vm_model
 
 
 @pytest.fixture
