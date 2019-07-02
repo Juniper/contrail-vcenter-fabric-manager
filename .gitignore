@@ -101,8 +101,9 @@ ENV/
 # mypy
 .mypy_cache/
 
-# configuration file
+# configuration files
 config.yaml
+cvfm.conf
 
 # idea files
 .idea/
