@@ -2,9 +2,8 @@ import os
 
 import mock
 import pytest
-import yaml
 
-from cvfm import services, controllers, clients, synchronizers
+from cvfm import services, controllers, clients, synchronizers, parser
 from cvfm import database as db
 
 # imports fixtures from sample_topologies.py file
@@ -17,9 +16,9 @@ from tests.functional.vnc_api_test_client import VNCAPITestClient
 def config():
     current_path = os.path.realpath(__file__)
     current_dir = os.path.dirname(current_path)
-    config_path = os.path.join(current_dir, "config.yaml")
-    with open(config_path, "r") as ymlfile:
-        return yaml.load(ymlfile)["vnc"]
+    config_path = os.path.join(current_dir, "cvfm.conf")
+    config_parser = parser.CVFMArgumentParser()
+    return config_parser.parse_args(["-c", config_path])["vnc_config"]
 
 
 @pytest.fixture

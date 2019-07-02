@@ -66,17 +66,17 @@ class VCenterAPIClient(VSphereAPIClient):
 
     def _create_connection(self):
         self._si = SmartConnectNoSSL(
-            host=self._vcenter_cfg.get("host"),
-            user=self._vcenter_cfg.get("username"),
-            pwd=self._vcenter_cfg.get("password"),
-            port=self._vcenter_cfg.get("port"),
+            host=self._vcenter_cfg.get("vc_host"),
+            user=self._vcenter_cfg.get("vc_username"),
+            pwd=self._vcenter_cfg.get("vc_password"),
+            port=self._vcenter_cfg.get("vc_port"),
             preferredApiVersions=self._vcenter_cfg.get(
-                "preferred_api_versions"
+                "vc_preferred_api_versions"
             ),
         )
         atexit.register(Disconnect, self._si)
         self._datacenter = self._get_datacenter(
-            self._vcenter_cfg.get("datacenter")
+            self._vcenter_cfg.get("vc_datacenter")
         )
         self._property_collector = self._si.content.propertyCollector
         self._wait_options = vmodl.query.PropertyCollector.WaitOptions()
@@ -155,19 +155,21 @@ class VCenterAPIClient(VSphereAPIClient):
 
 
 class VNCAPIClient(object):
-    def __init__(self, vnc_cfg):
-        vnc_cfg["api_server_host"] = vnc_cfg["api_server_host"].split(",")
-        random.shuffle(vnc_cfg["api_server_host"])
-        vnc_cfg["auth_host"] = vnc_cfg["auth_host"].split(",")
-        random.shuffle(vnc_cfg["auth_host"])
+    def __init__(self, vnc_cfg, auth_cfg=None):
+        if auth_cfg is None:
+            auth_cfg = {}
         self.vnc_lib = vnc_api.VncApi(
-            username=vnc_cfg.get("username"),
-            password=vnc_cfg.get("password"),
-            tenant_name=vnc_cfg.get("tenant_name"),
             api_server_host=vnc_cfg.get("api_server_host"),
             api_server_port=vnc_cfg.get("api_server_port"),
-            auth_host=vnc_cfg.get("auth_host"),
-            auth_port=vnc_cfg.get("auth_port"),
+            api_server_use_ssl=vnc_cfg.get("api_server_use_ssl"),
+            apicertfile=vnc_cfg.get("api_certfile"),
+            apikeyfile=vnc_cfg.get("api_keyfile"),
+            apicafile=vnc_cfg.get("api_cafile"),
+            apiinsecure=vnc_cfg.get("api_server_insecure"),
+            username=auth_cfg.get("auth_user"),
+            password=auth_cfg.get("auth_password"),
+            tenant_name=auth_cfg.get("auth_tenant"),
+            auth_token_url=auth_cfg.get("auth_token_url"),
         )
         self.project_name = vnc_cfg.get("project_name", const.VNC_PROJECT_NAME)
         self.fabric_name = vnc_cfg.get("fabric_name", "default-fabric")
