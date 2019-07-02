@@ -2,15 +2,21 @@ from vnc_api import vnc_api
 
 
 class VNCAPITestClient(object):
-    def __init__(self, vnc_cfg):
+    def __init__(self, vnc_cfg, auth_cfg=None):
+        if auth_cfg is None:
+            auth_cfg = {}
         self.vnc_lib = vnc_api.VncApi(
-            username=vnc_cfg.get("username"),
-            password=vnc_cfg.get("password"),
-            tenant_name=vnc_cfg.get("tenant_name"),
             api_server_host=vnc_cfg.get("api_server_host"),
             api_server_port=vnc_cfg.get("api_server_port"),
-            auth_host=vnc_cfg.get("auth_host"),
-            auth_port=vnc_cfg.get("auth_port"),
+            api_server_use_ssl=vnc_cfg.get("api_server_use_ssl"),
+            apicertfile=vnc_cfg.get("api_certfile"),
+            apikeyfile=vnc_cfg.get("api_keyfile"),
+            apicafile=vnc_cfg.get("api_cafile"),
+            apiinsecure=vnc_cfg.get("api_server_insecure"),
+            username=auth_cfg.get("auth_user"),
+            password=auth_cfg.get("auth_password"),
+            tenant_name=auth_cfg.get("auth_tenant"),
+            auth_token_url=auth_cfg.get("auth_token_url"),
         )
         self.project_name = vnc_cfg.get("project_name", "test-vcenter-fabric")
         try:
