@@ -90,6 +90,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
     def change_host(self, vmware_vm, new_host_name):
+        # TODO: removed with VmMovedHandler
         old_host_name = vmware_vm.runtime.host.name
         old_host = self.hosts[old_host_name]
         old_host.vm.remove(vmware_vm)
@@ -99,6 +100,16 @@ class VCenterAPIMockClient(VCenterAPIClient):
         vmware_vm.runtime.host.host = new_host
         vmware_vm.runtime.host.name = new_host_name
         return utils.create_vm_moved_update(vmware_vm, old_host)
+
+    def trigger_host_change(self, vmware_vm, new_host_name):
+        old_host_name = vmware_vm.runtime.host.name
+        old_host = self.hosts[old_host_name]
+        old_host.vm.remove(vmware_vm)
+        new_host = self._get_host(new_host_name)
+        new_host.vm.append(vmware_vm)
+        vmware_vm.runtime.host.host = new_host
+        vmware_vm.runtime.host.name = new_host_name
+        return utils.create_host_change_update(vmware_vm, new_host)
 
     def get_all_portgroups(self):
         return self.portgroups.values()

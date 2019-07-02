@@ -111,6 +111,9 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
     vm_moved_handler = controllers.VmMovedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
     )
+    host_change_handler = controllers.HostChangeHandler(
+        vm_service, vmi_service, dpg_service, vpg_service
+    )
     handlers = [
         dpg_created_handler,
         dpg_reconfigured_handler,
@@ -121,8 +124,8 @@ def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
         vm_renamed_handler,
         vm_removed_handler,
         vm_moved_handler,
+        host_change_handler,
     ]
-
     return controllers.UpdateHandler(handlers)
 
 

@@ -12,7 +12,9 @@ def wrap_into_update_set(event=None, change=None, obj=None):
         change = vmodl.query.PropertyCollector.Change()
         change.name = "latestPage"
         change.val = event
-    object_update = vmodl.query.PropertyCollector.ObjectUpdate()
+    object_update = mock.Mock(
+        spec=vmodl.query.PropertyCollector.ObjectUpdate()
+    )
     object_update.changeSet = [change]
     if obj is not None:
         object_update.obj = obj
@@ -99,6 +101,13 @@ def create_vm_moved_update(vmware_vm, source_host):
     event.sourceHost.host = source_host
     event.sourceHost.name = source_host.name
     return wrap_into_update_set(event=event)
+
+
+def create_host_change_update(vmware_vm, vmware_host):
+    change = mock.Mock(spec=vmodl.query.PropertyCollector.Change())
+    change.name = "runtime.host"
+    change.val = vmware_host
+    return wrap_into_update_set(change=change, obj=vmware_vm)
 
 
 def create_fabric_network(vnc_test_client, vn_name, vn_key):
