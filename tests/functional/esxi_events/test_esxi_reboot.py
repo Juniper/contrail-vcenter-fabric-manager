@@ -60,7 +60,6 @@ def vmware_vm_5(vmware_dpg_2):
     return utils.create_vmware_vm("local-storage-vm-2", "esxi-1", networks)
 
 
-@pytest.mark.skip("Not implemented yet")
 def test_esxi_reboot(
     topology_with_two_nodes,
     vmware_dpg_1,

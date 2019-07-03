@@ -226,9 +226,9 @@ class VNCAPITestClient(object):
         return self.vnc_lib.virtual_machine_interface_read(id=vmi_uuid)
 
     def read_all_vmis(self):
-        vmi_refs = self.vnc_lib.virtual_machine_interfaces_list()[
-            "virtual-machine-interfaces"
-        ]
+        vmi_refs = self.vnc_lib.virtual_machine_interfaces_list(
+            parent_id=self._project.get_uuid()
+        )["virtual-machine-interfaces"]
         vmi_list = [self.read_vmi(vmi_ref["uuid"]) for vmi_ref in vmi_refs]
         return {vmi.name: vmi for vmi in vmi_list}
 

@@ -38,8 +38,8 @@ def vmi_model():
 
 @pytest.fixture
 def abstract_handler(vm_service, vmi_service, vpg_service, dpg_service):
-    class TestHandler(controllers.AbstractEventHandler):
-        def _handle_event(self, event):
+    class TestHandler(controllers.AbstractChangeHandler):
+        def _handle_change(self, obj, property_change):
             pass
 
     return TestHandler(vm_service, vmi_service, dpg_service, vpg_service)
