@@ -43,7 +43,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
             self.portgroups[network.key] = network
 
         host_name = vmware_vm.runtime.host.name
-        host = self._get_host(host_name)
+        host = self._get_or_create_host(host_name)
         host.vm.append(vmware_vm)
         self.hosts[host_name] = host
 
@@ -89,23 +89,11 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
-    def change_host(self, vmware_vm, new_host_name):
-        # TODO: removed with VmMovedHandler
-        old_host_name = vmware_vm.runtime.host.name
-        old_host = self.hosts[old_host_name]
-        old_host.vm.remove(vmware_vm)
-
-        new_host = self._get_host(new_host_name)
-        new_host.vm.append(vmware_vm)
-        vmware_vm.runtime.host.host = new_host
-        vmware_vm.runtime.host.name = new_host_name
-        return utils.create_vm_moved_update(vmware_vm, old_host)
-
     def trigger_host_change(self, vmware_vm, new_host_name):
         old_host_name = vmware_vm.runtime.host.name
         old_host = self.hosts[old_host_name]
         old_host.vm.remove(vmware_vm)
-        new_host = self._get_host(new_host_name)
+        new_host = self._get_or_create_host(new_host_name)
         new_host.vm.append(vmware_vm)
         vmware_vm.runtime.host.host = new_host
         vmware_vm.runtime.host.name = new_host_name
@@ -120,7 +108,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
             vms.extend(host.vm)
         return vms
 
-    def _get_host(self, host_name):
+    def _get_or_create_host(self, host_name):
         host = self.hosts.get(host_name)
         if not host:
             host = mock.Mock(vm=[])
@@ -130,3 +118,6 @@ class VCenterAPIMockClient(VCenterAPIClient):
 
     def add_filter(self, obj, filters):
         return mock.Mock()
+
+    def get_host(self, host_name):
+        return self.hosts.get(host_name)

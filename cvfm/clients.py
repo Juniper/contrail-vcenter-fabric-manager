@@ -150,6 +150,9 @@ class VCenterAPIClient(VSphereAPIClient):
         except StopIteration:
             return None
 
+    def get_host(self, hostname):
+        return self._get_object([vim.HostSystem], hostname)
+
 
 class VNCAPIClient(object):
     def __init__(self, vnc_cfg):

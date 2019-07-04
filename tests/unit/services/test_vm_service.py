@@ -11,6 +11,13 @@ def vm_service(vcenter_api_client, vnc_api_client, database):
     )
 
 
+@pytest.fixture
+def host():
+    host = mock.Mock()
+    host.configure_mock(name="esxi-1")
+    return host
+
+
 def test_create_vm_model(vm_service, vmware_vm, database):
     dpg_model = mock.Mock()
     dpg_model.name = "dpg-1"
@@ -99,3 +106,26 @@ def test_rename_non_existent_vm(vm_service, database):
 
     assert database.get_vm_model("vm-1") is None
     assert database.get_vm_model("vm-1-renamed") is None
+
+
+def test_check_vm_moved(vm_service, database, vmware_vm, vm_model, host):
+    database.add_vm_model(vm_model)
+
+    before_change = vm_service.check_vm_moved("vm-1", host)
+    assert before_change is False
+
+    host.name = "new-host"
+    after_change = vm_service.check_vm_moved("vm-1", host)
+    assert after_change is True
+
+
+def test_get_host_from_vm(
+    vm_service, database, vm_model, host, vcenter_api_client
+):
+    database.add_vm_model(vm_model)
+    vcenter_api_client.get_host.return_value = host
+
+    vm_host = vm_service.get_host_from_vm("vm-1")
+
+    assert vm_host == host
+    vcenter_api_client.get_host.assert_called_with(vm_model.host_name)

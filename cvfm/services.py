@@ -14,11 +14,6 @@ class Service(object):
 
 
 class VirtualMachineService(Service):
-    def __init__(self, vcenter_api_client, vnc_api_client, database):
-        super(VirtualMachineService, self).__init__(
-            vcenter_api_client, vnc_api_client, database
-        )
-
     def populate_db_with_vms(self):
         vmware_vms = self._vcenter_api_client.get_all_vms()
         for vmware_vm in vmware_vms:
@@ -79,13 +74,16 @@ class VirtualMachineService(Service):
         self._database.add_vm_model(vm_model)
         logger.info("VM model renamed from %s to %s", old_name, new_name)
 
+    def check_vm_moved(self, vm_name, host):
+        vm_model = self._database.get_vm_model(vm_name)
+        return vm_model.host_name != host.name
+
+    def get_host_from_vm(self, vm_name):
+        vm_model = self._database.get_vm_model(vm_name)
+        return self._vcenter_api_client.get_host(vm_model.host_name)
+
 
 class VirtualMachineInterfaceService(Service):
-    def __init__(self, vcenter_api_client, vnc_api_client, database):
-        super(VirtualMachineInterfaceService, self).__init__(
-            vcenter_api_client, vnc_api_client, database
-        )
-
     def create_vmi_models_for_vm(self, vm_model):
         return models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
@@ -154,11 +152,6 @@ class VirtualMachineInterfaceService(Service):
 
 
 class DistributedPortGroupService(Service):
-    def __init__(self, vcenter_api_client, vnc_api_client, database):
-        super(DistributedPortGroupService, self).__init__(
-            vcenter_api_client, vnc_api_client, database
-        )
-
     def populate_db_with_dpgs(self):
         for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
             try:
@@ -270,11 +263,6 @@ class DistributedPortGroupService(Service):
 
 
 class VirtualPortGroupService(Service):
-    def __init__(self, vcenter_api_client, vnc_api_client, database):
-        super(VirtualPortGroupService, self).__init__(
-            vcenter_api_client, vnc_api_client, database
-        )
-
     def create_vpg_models(self, vm_model):
         return models.VirtualPortGroupModel.from_vm_model(vm_model)
 
