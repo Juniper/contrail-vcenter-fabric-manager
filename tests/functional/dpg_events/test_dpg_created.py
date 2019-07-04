@@ -18,7 +18,11 @@ def vmware_dpg():
 
 
 def test_dpg_created(
-    vnc_test_client, vmware_controller, vcenter_api_client, vmware_dpg
+    minimalistic_topology,
+    vnc_test_client,
+    vmware_controller,
+    vcenter_api_client,
+    vmware_dpg,
 ):
     dpg_created_update = vcenter_api_client.create_dpg(vmware_dpg)
 

@@ -1,7 +1,6 @@
 import pytest
 from pyVmomi import vim
 from tests import utils
-
 from vnc_api import vnc_api
 
 from cvfm import models
@@ -32,7 +31,11 @@ def vmware_vm(vmware_dpg, vmware_net):
 
 
 def test_empty_dpg_destroyed(
-    vnc_test_client, vmware_controller, vcenter_api_client, vmware_dpg
+    minimalistic_topology,
+    vnc_test_client,
+    vmware_controller,
+    vcenter_api_client,
+    vmware_dpg,
 ):
     dpg_created_update = vcenter_api_client.create_dpg(vmware_dpg)
     vmware_controller.handle_update(dpg_created_update)
@@ -47,6 +50,7 @@ def test_empty_dpg_destroyed(
 
 
 def test_not_empty_dpg_destroyed(
+    minimalistic_topology,
     vnc_test_client,
     vmware_controller,
     vcenter_api_client,

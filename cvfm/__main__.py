@@ -69,6 +69,9 @@ def build_context(config):
     vpg_service = services.VirtualPortGroupService(
         vcenter_api_client, vnc_api_client, database
     )
+    dvs_service = services.DistributedVirtualSwitchService(
+        vcenter_api_client, vnc_api_client, database
+    )
 
     vm_updated_handler = controllers.VmUpdatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
@@ -122,12 +125,16 @@ def build_context(config):
     vmi_synchronizer = synchronizers.VirtualMachineInterfaceSynchronizer(
         vm_service, vmi_service
     )
+    dvs_synchronizer = synchronizers.DistributedVirtualSwitchSynchronizer(
+        dvs_service
+    )
     synchronizer = synchronizers.Synchronizer(
         database,
         vm_synchronizer,
         dpg_synchronizer,
         vpg_synchronizer,
         vmi_synchronizer,
+        dvs_synchronizer,
     )
 
     vmware_controller = controllers.VmwareController(

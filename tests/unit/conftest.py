@@ -74,7 +74,9 @@ def vcenter_api_client():
 
 @pytest.fixture
 def database():
-    return db.Database()
+    dbase = db.Database()
+    dbase.add_supported_dvs("dvs-1")
+    return dbase
 
 
 @pytest.fixture
@@ -97,3 +99,8 @@ def vmi_synchronizer(vm_service, vmi_service):
 @pytest.fixture
 def vm_synchronizer(vm_service):
     return synchronizers.VirtualMachineSynchronizer(vm_service)
+
+
+@pytest.fixture
+def dvs_synchronizer(dvs_service):
+    return synchronizers.DistributedVirtualSwitchSynchronizer(dvs_service)

@@ -1,7 +1,9 @@
 import logging
 
+from pyVmomi import vim
+
 from cvfm import models, exceptions, constants
-from cvfm.exceptions import VNCVMICreationException
+from cvfm.exceptions import VNCVMICreationException, DPGCreationException
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +168,7 @@ class DistributedPortGroupService(Service):
                 logger.exception("Unexpected error during DPG model creation")
 
     def create_dpg_model(self, vmware_dpg):
+        self._validate_dpg(vmware_dpg)
         dpg_model = models.DistributedPortGroupModel.from_vmware_dpg(
             vmware_dpg
         )
@@ -261,6 +264,34 @@ class DistributedPortGroupService(Service):
             )
         return is_empty
 
+    def _validate_dpg(self, vmware_dpg):
+        self._validate_vlan_id(vmware_dpg)
+        self._validate_type(vmware_dpg)
+        self._validate_dvs(vmware_dpg)
+
+    def _validate_dvs(self, vmware_dpg):
+        dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
+        if not self._database.is_dvs_supported(dvs_name):
+            raise DPGCreationException(
+                "DVS {} is not supported.".format(dvs_name)
+            )
+
+    @staticmethod
+    def _validate_vlan_id(vmware_dpg):
+        try:
+            vlan_id = int(vmware_dpg.config.defaultPortConfig.vlan.vlanId)
+        except (TypeError, AttributeError):
+            raise DPGCreationException("VLAN ID must be a number.")
+        if vlan_id == 0:
+            raise DPGCreationException("VLAN ID cannot be 0.")
+
+    @staticmethod
+    def _validate_type(vmware_dpg):
+        if not isinstance(vmware_dpg, vim.DistributedVirtualPortgroup):
+            raise DPGCreationException(
+                "{} is not a Distributed Portgroup".format(vmware_dpg.name)
+            )
+
 
 class VirtualPortGroupService(Service):
     def create_vpg_models(self, vm_model):
@@ -341,3 +372,15 @@ class VirtualPortGroupService(Service):
         if esxi_port_info is None:
             return False
         return esxi_port_info.get_dvs_name() == dvs_name
+
+
+class DistributedVirtualSwitchService(Service):
+    def populate_db_with_supported_dvses(self):
+        ports = self._vnc_api_client.read_all_ports()
+        for port in ports:
+            esxi_props = port.get_esxi_port_info()
+            if not esxi_props:
+                continue
+            dvs_name = esxi_props.get_dvs_name()
+            if dvs_name:
+                self._database.add_supported_dvs(dvs_name)
