@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d0adcc9_2037b980",
+        "filename": "cvfm/__main__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-04T14:40:08Z",
+      "side": 1,
+      "message": "Please move it to CVFMConfigParser",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 153,
+        "endChar": 5
+      },
+      "revId": "88ac0cf83387758cddc9a21eaec5accc1f24d627",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
