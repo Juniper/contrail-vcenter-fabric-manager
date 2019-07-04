@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edd55edb_5d3375d9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 24
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 760
+      },
+      "writtenOn": "2019-07-04T11:07:51Z",
+      "side": 1,
+      "message": "empty line here please",
+      "revId": "4fe7a49013fc1a2a5ffd6f340d3ed03aa688eba1",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d91d833c_c1a574d3",
+        "filename": "zuul.d/jobs.yaml",
+        "patchSetId": 24
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 760
+      },
+      "writtenOn": "2019-07-04T11:07:51Z",
+      "side": 1,
+      "message": "Nice way :)",
+      "revId": "4fe7a49013fc1a2a5ffd6f340d3ed03aa688eba1",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
