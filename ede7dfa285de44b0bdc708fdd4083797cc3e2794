@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf90e7c7_175745d5",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 645
+      },
+      "writtenOn": "2019-07-04T10:14:43Z",
+      "side": 1,
+      "message": "Is \"None\" valid value? Maybe add default value as False?",
+      "range": {
+        "startLine": 161,
+        "startChar": 31,
+        "endLine": 161,
+        "endChar": 64
+      },
+      "revId": "ede7dfa285de44b0bdc708fdd4083797cc3e2794",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a86dd24c_f0890c08",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 645
+      },
+      "writtenOn": "2019-07-04T10:14:43Z",
+      "side": 1,
+      "message": "The same as L161",
+      "range": {
+        "startLine": 165,
+        "startChar": 24,
+        "endLine": 165,
+        "endChar": 58
+      },
+      "revId": "ede7dfa285de44b0bdc708fdd4083797cc3e2794",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eaa97df_fe2e7770",
+        "filename": "cvfm/parser.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 645
+      },
+      "writtenOn": "2019-07-04T10:14:43Z",
+      "side": 1,
+      "message": "Why we need to shuffle collectors?",
+      "range": {
+        "startLine": 83,
+        "startChar": 16,
+        "endLine": 83,
+        "endChar": 63
+      },
+      "revId": "ede7dfa285de44b0bdc708fdd4083797cc3e2794",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
