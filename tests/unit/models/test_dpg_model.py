@@ -33,13 +33,6 @@ def test_from_vmware_dpg(vmware_dpg):
     assert dpg_model.dvs_name == "dvs-1"
 
 
-def test_invalid_vlan_id(vmware_dpg):
-    vmware_dpg.config.defaultPortConfig.vlan.vlanId = mock.Mock()
-
-    with pytest.raises(exceptions.DPGCreationException):
-        models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
-
-
 def test_to_vnc_vn(project):
     dpg_model = models.DistributedPortGroupModel(
         uuid=models.generate_uuid("dvportgroup-1"),

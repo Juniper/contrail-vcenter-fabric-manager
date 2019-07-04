@@ -1,8 +1,8 @@
 import mock
 import pytest
-import copy
 
 from cvfm import models
+from cvfm.exceptions import DPGCreationException
 from cvfm.services import DistributedPortGroupService
 
 
@@ -137,7 +137,6 @@ def test_destroy_dpg_from_vm(dpg_service, database, dpg_model):
 
 
 def test_populate_db(vcenter_api_client, dpg_service, vmware_dpg, database):
-    database.clear_database()
     vcenter_api_client.get_all_portgroups.return_value = [vmware_dpg]
 
     dpg_service.populate_db_with_dpgs()
@@ -167,3 +166,23 @@ def test_dpg_rename(dpg_service, dpg_model, database):
     assert dpg_from_db is dpg_model
     assert dpg_from_db.uuid == dpg_model.uuid
     assert dpg_from_db.name == "dpg-new-name"
+
+
+@pytest.mark.parametrize("vlan_id", [0, None])
+def test_validate_dpg_vlan_id(dpg_service, vmware_dpg, vlan_id):
+    vmware_dpg.config.defaultPortConfig.vlan.vlanId = vlan_id
+
+    with pytest.raises(DPGCreationException):
+        dpg_service.create_dpg_model(vmware_dpg)
+
+
+def test_validate_dpg_type(dpg_service, vmware_network):
+    with pytest.raises(DPGCreationException):
+        dpg_service.create_dpg_model(vmware_network)
+
+
+def test_validate_dpg_dvs(dpg_service, vmware_dpg):
+    vmware_dpg.config.distributedVirtualSwitch.name = "dvs-2"
+
+    with pytest.raises(DPGCreationException):
+        dpg_service.create_dpg_model(vmware_dpg)

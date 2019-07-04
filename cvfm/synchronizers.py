@@ -11,15 +11,18 @@ class Synchronizer(object):
         dpg_synchronizer,
         vpg_synchronizer,
         vmi_synchronizer,
+        dvs_synchronizer,
     ):
         self.database = database
         self.vm_synchronizer = vm_synchronizer
         self.dpg_synchronizer = dpg_synchronizer
         self.vpg_synchronizer = vpg_synchronizer
         self.vmi_synchronizer = vmi_synchronizer
+        self.dvs_synchronizer = dvs_synchronizer
 
     def sync(self):
         self.database.clear_database()
+        self.dvs_synchronizer.sync()
         self.dpg_synchronizer.sync_create()
         self.vm_synchronizer.sync()
         self.vpg_synchronizer.sync_create()
@@ -195,3 +198,11 @@ class VirtualMachineInterfaceSynchronizer(object):
                     vmi_uuid,
                 )
         logger.info("Deleted stale VMIs from VNC")
+
+
+class DistributedVirtualSwitchSynchronizer(object):
+    def __init__(self, dvs_service):
+        self._dvs_service = dvs_service
+
+    def sync(self):
+        self._dvs_service.populate_db_with_supported_dvses()

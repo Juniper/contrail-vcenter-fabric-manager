@@ -318,6 +318,10 @@ class VNCAPIClient(object):
         port_refs = node.get_ports()
         return [self._read_port(port_ref["uuid"]) for port_ref in port_refs]
 
+    def read_all_ports(self):
+        port_refs = self.vnc_lib.ports_list()["ports"]
+        return [self._read_port(port_ref["uuid"]) for port_ref in port_refs]
+
     def _read_port(self, port_uuid):
         return self.vnc_lib.port_read(id=port_uuid)
 

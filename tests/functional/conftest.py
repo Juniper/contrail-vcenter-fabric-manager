@@ -83,6 +83,13 @@ def vm_service(vcenter_api_client, vnc_api_client, database):
 
 
 @pytest.fixture
+def dvs_service(vcenter_api_client, vnc_api_client, database):
+    return services.DistributedVirtualSwitchService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+
+@pytest.fixture
 def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
     dpg_created_handler = controllers.DVPortgroupCreatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
@@ -148,12 +155,18 @@ def vmi_synchronizer(vm_service, vmi_service):
 
 
 @pytest.fixture
+def dvs_synchronizer(dvs_service):
+    return synchronizers.DistributedVirtualSwitchSynchronizer(dvs_service)
+
+
+@pytest.fixture
 def synchronizer(
     database,
     vm_synchronizer,
     dpg_synchronizer,
     vpg_synchronizer,
     vmi_synchronizer,
+    dvs_synchronizer,
 ):
     return synchronizers.Synchronizer(
         database,
@@ -161,11 +174,14 @@ def synchronizer(
         dpg_synchronizer,
         vpg_synchronizer,
         vmi_synchronizer,
+        dvs_synchronizer,
     )
 
 
 @pytest.fixture
 def vmware_controller(synchronizer, update_handler, lock):
-    return controllers.VmwareController(
+    controller = controllers.VmwareController(
         synchronizer=synchronizer, update_handler=update_handler, lock=lock
     )
+    controller.sync()
+    return controller
