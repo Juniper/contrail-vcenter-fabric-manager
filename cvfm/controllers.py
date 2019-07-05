@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 
-from cvfm import exceptions
+from cvfm import exceptions, constants
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,16 @@ class AbstractEventHandler(AbstractChangeHandler):
     def _handle_event(self, event):
         pass
 
+    @classmethod
+    def _is_tmp_vm_name(cls, vm_name):
+        return all(
+            phrase in vm_name for phrase in constants.TEMP_VM_RENAME_PHRASES
+        )
+
+    @classmethod
+    def _get_vm_name_from_tmp_name(cls, tmp_name):
+        return tmp_name.split("/")[-2]
+
 
 class VmUpdatedHandler(AbstractEventHandler):
     EVENTS = (
@@ -160,7 +170,24 @@ class VmRemovedHandler(AbstractEventHandler):
 
     def _handle_event(self, event):
         vm_name = event.vm.name
-        logger.info("Detected VM: %s deletion", vm_name)
+        host_name = event.host.name
+        logger.info("Detected VM: %s deletion from %s", vm_name, host_name)
+
+        if self._is_tmp_vm_name(vm_name):
+            tmp_name = vm_name
+            logger.info("Detected VM remove with temporary name %s", tmp_name)
+            vm_name = self._get_vm_name_from_tmp_name(vm_name)
+            logger.info(
+                "Extracted standard VM name %s from temporary name %s",
+                vm_name,
+                tmp_name,
+            )
+
+        if not self._vm_service.is_vm_removed_from_vcenter(vm_name, host_name):
+            logger.info("VM %s still exists in vCenter", vm_name)
+            return
+        logger.info("VM %s removed from vCenter", vm_name)
+
         vm_model = self._vm_service.delete_vm_model(vm_name)
 
         affected_vmis = self._vmi_service.create_vmi_models_for_vm(vm_model)
@@ -176,6 +203,13 @@ class VmRenamedHandler(AbstractEventHandler):
     def _handle_event(self, event):
         new_name = event.newName
         old_name = event.oldName
+        if self._is_tmp_vm_name(new_name):
+            logger.info(
+                "Detected temporary VM rename from %s to %s",
+                old_name,
+                new_name,
+            )
+            return
         logger.info("Detected VM %s rename to %s", old_name, new_name)
         self._vm_service.rename_vm_model(old_name, new_name)
 
@@ -268,13 +302,23 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
 class HostChangeHandler(AbstractChangeHandler):
     PROPERTY_NAME = "runtime.host"
 
-    def _handle_change(self, vmware_vm, host):
-        if not self._vm_service.check_vm_moved(vmware_vm.name, host):
+    def _handle_change(self, vmware_vm, vmware_host):
+        try:
+            self._handle_host_change(vmware_vm, vmware_host)
+        except vmodl.fault.ManagedObjectNotFound:
+            logger.info(
+                "HostChangeHandler: VM was deleted from vCenter before/during its host update"
+            )
+
+    def _handle_host_change(self, vmware_vm, vmware_host):
+        if not self._vm_service.check_vm_moved(vmware_vm.name, vmware_host):
             logger.info("VMware VM %s not moved", vmware_vm.name)
             return
 
         logger.info(
-            "VMware VM %s was moved to host: %s", vmware_vm.name, host.name
+            "VMware VM %s was moved to host: %s",
+            vmware_vm.name,
+            vmware_host.name,
         )
 
         source_host = self._vm_service.get_host_from_vm(vmware_vm.name)

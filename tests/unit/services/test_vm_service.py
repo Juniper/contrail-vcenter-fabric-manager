@@ -108,7 +108,7 @@ def test_rename_non_existent_vm(vm_service, database):
     assert database.get_vm_model("vm-1-renamed") is None
 
 
-def test_check_vm_moved(vm_service, database, vmware_vm, vm_model, host):
+def test_check_vm_moved(vm_service, database, vm_model, host):
     database.add_vm_model(vm_model)
 
     before_change = vm_service.check_vm_moved("vm-1", host)
@@ -117,6 +117,9 @@ def test_check_vm_moved(vm_service, database, vmware_vm, vm_model, host):
     host.name = "new-host"
     after_change = vm_service.check_vm_moved("vm-1", host)
     assert after_change is True
+
+    database.remove_vm_model(vm_model.name)
+    assert not vm_service.check_vm_moved("vm-1", host)
 
 
 def test_get_host_from_vm(
@@ -129,3 +132,9 @@ def test_get_host_from_vm(
 
     assert vm_host == host
     vcenter_api_client.get_host.assert_called_with(vm_model.host_name)
+
+
+def test_is_vm_removed(vm_service, vcenter_api_client):
+    vcenter_api_client.is_vm_removed.return_value = True
+    assert vm_service.is_vm_removed_from_vcenter("vm-1", "esxi-1")
+    vcenter_api_client.is_vm_removed.assert_called_once_with("vm-1", "esxi-1")
