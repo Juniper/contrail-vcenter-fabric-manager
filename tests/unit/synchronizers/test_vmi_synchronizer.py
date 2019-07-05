@@ -16,7 +16,7 @@ def vm_service():
 
 def test_sync_create(vmi_synchronizer, vm_service, vmi_service, vm_model):
     vm_model_2 = models.VirtualMachineModel(
-        "vm-2", "esxi-1", vm_model.dpg_models
+        "vm-2", "uuid-2", "esxi-1", vm_model.dpg_models
     )
     vm_service.get_all_vm_models.return_value = [vm_model, vm_model_2]
     vmi_service.create_vmi_models_for_vm.side_effect = [

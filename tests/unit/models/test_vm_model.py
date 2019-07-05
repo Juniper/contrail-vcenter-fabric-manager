@@ -8,6 +8,7 @@ def test_from_vmware_vm(vmware_vm):
     vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm, dpg_models)
 
     assert vm_model.name == "vm-1"
+    assert vm_model.vcenter_uuid == "uuid-1"
     assert vm_model.host_name == "esxi-1"
     assert len(vm_model.dpg_models) == 1
     assert list(vm_model.dpg_models) == dpg_models
