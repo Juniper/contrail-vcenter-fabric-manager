@@ -51,12 +51,16 @@ class VCenterAPIMockClient(VCenterAPIClient):
         event.vm.vm = vmware_vm
         return utils.wrap_into_update_set(event=event)
 
-    def remove_vm(self, vmware_vm):
-        for network in vmware_vm.network:
-            self.portgroups[network.key].vm.remove(vmware_vm)
-
-        host_name = vmware_vm.runtime.host.name
-        self.hosts[host_name].vm.remove(vmware_vm)
+    def remove_vm(
+        self, vmware_vm, removed_from_vcenter=True, source_host_name=None
+    ):
+        if removed_from_vcenter:
+            for network in vmware_vm.network:
+                self.portgroups[network.key].vm.remove(vmware_vm)
+            host_name = vmware_vm.runtime.host.name
+            self.hosts[host_name].vm.remove(vmware_vm)
+        else:
+            host_name = source_host_name
 
         event = mock.Mock(spec=vim.event.VmRemovedEvent())
         event.vm.name = vmware_vm.name
@@ -89,10 +93,10 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
-    def is_vm_removed(self, vm_name, host_name):
+    def is_vm_removed(self, vm_uuid, host_name):
         for host in self.hosts.values():
             for vm in host.vm:
-                if vm.name == vm_name:
+                if vm.config.instanceUuid == vm_uuid:
                     return False
         return True
 
