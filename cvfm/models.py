@@ -4,7 +4,7 @@ import uuid as uid
 from vnc_api import vnc_api
 
 from cvfm import constants as const
-from cvfm.exceptions import DPGCreationException, VNCVMICreationException
+from cvfm.exceptions import VNCVMICreationException
 
 logger = logging.getLogger(__name__)
 
@@ -227,5 +227,22 @@ class VirtualMachineInterfaceModel(object):
                 name=self.name,
                 host_name=self.host_name,
                 dpg_model=self.dpg_model,
+            )
+        )
+
+
+class PhysicalInterfaceModel(object):
+    def __init__(self, uuid, host_name, dvs_name):
+        self.uuid = uuid
+        self.host_name = host_name
+        self.dvs_name = dvs_name
+
+    def __repr__(self):
+        return (
+            "PhysicalInterfaceModel(uuid={uuid}, host_name={host_name}, "
+            "dvs_name={dvs_name})".format(
+                uuid=self.uuid,
+                host_name=self.host_name,
+                dvs_name=self.dvs_name,
             )
         )

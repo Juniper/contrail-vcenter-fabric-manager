@@ -43,6 +43,7 @@ class VSphereAPIClient(object):
     def __init__(self):
         self._si = None
         self._pg_view = None
+        self._datacenter = None
 
     def _get_object(self, vimtype, name):
         container = self._create_view(vimtype)
@@ -53,7 +54,7 @@ class VSphereAPIClient(object):
 
     def _create_view(self, vimtype):
         return self._si.content.viewManager.CreateContainerView(
-            self._si.content.rootFolder, vimtype, True
+            self._datacenter, vimtype, True
         )
 
 
@@ -84,6 +85,7 @@ class VCenterAPIClient(VSphereAPIClient):
             [vim.dvs.DistributedVirtualPortgroup]
         )
         self._vm_view = self._create_view([vim.VirtualMachine])
+        self._host_view = self._create_view([vim.HostSystem])
 
     def _get_datacenter(self, name):
         return self._get_object([vim.Datacenter], name)
@@ -150,7 +152,14 @@ class VCenterAPIClient(VSphereAPIClient):
             return None
 
     def get_host(self, hostname):
-        return self._get_object([vim.HostSystem], hostname)
+        all_hosts = self.get_all_hosts()
+        try:
+            return (host for host in all_hosts if host.name == hostname).next()
+        except StopIteration:
+            return None
+
+    def get_all_hosts(self):
+        return self._host_view.view
 
 
 class VNCAPIClient(object):
