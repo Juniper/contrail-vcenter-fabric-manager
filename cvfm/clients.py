@@ -1,10 +1,11 @@
 import atexit
 import logging
+import time
 
 from pyVim.connect import Disconnect, SmartConnectNoSSL
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 from vnc_api import vnc_api
-
+    
 from cvfm import constants as const
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class VSphereAPIClient(object):
         container = self._create_view(vimtype)
         try:
             return [obj for obj in container.view if obj.name == name][0]
-        except IndexError:
+        except (IndexError, vmodl.fault.ManagedObjectNotFound):
             return None
 
     def _create_view(self, vimtype):
@@ -151,6 +152,32 @@ class VCenterAPIClient(VSphereAPIClient):
 
     def get_host(self, hostname):
         return self._get_object([vim.HostSystem], hostname)
+
+    def is_vm_removed(self, vm_name, host_name):
+        for _ in range(const.WAIT_FOR_VM_RETRY):
+            vm = self._get_vm_by_name(vm_name)
+            if vm is None:
+                return True
+
+            host = vm.runtime.host
+            if host is None:
+                logger.info(
+                    "Host for VM %s is None. Waiting for update...", vm_name
+                )
+                time.sleep(1)
+                continue
+
+            if host_name != host.name:
+                return False
+            time.sleep(1)
+
+        logger.error(
+            "Unable to confirm that VM %s was removed or not...", vm_name
+        )
+        return False
+
+    def _get_vm_by_name(self, vm_name):
+        return self._get_object([vim.VirtualMachine], vm_name)
 
 
 class VNCAPIClient(object):

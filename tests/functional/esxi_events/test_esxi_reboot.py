@@ -112,17 +112,11 @@ def test_esxi_reboot(
 
     # At this point there is no VMs on esxi-2
     # esxi-1 was rebooted, VMs with nfs storage were migrated to esxi-2, VMs with local storage left on esxi-1
-    host_change_update = vcenter_api_client.trigger_host_change(
-        vmware_vm_1, "esxi-2"
-    )
+    host_change_update = vcenter_api_client.change_host(vmware_vm_1, "esxi-2")
     vmware_controller.handle_update(host_change_update)
-    host_change_update = vcenter_api_client.trigger_host_change(
-        vmware_vm_2, "esxi-2"
-    )
+    host_change_update = vcenter_api_client.change_host(vmware_vm_2, "esxi-2")
     vmware_controller.handle_update(host_change_update)
-    host_change_update = vcenter_api_client.trigger_host_change(
-        vmware_vm_3, "esxi-2"
-    )
+    host_change_update = vcenter_api_client.change_host(vmware_vm_3, "esxi-2")
     vmware_controller.handle_update(host_change_update)
 
     # VPG was created in VNC for pair: esxi-2, dvs-1

@@ -89,7 +89,14 @@ class VCenterAPIMockClient(VCenterAPIClient):
         self.portgroups[vmware_dpg.key].vm.remove(vmware_vm)
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
-    def trigger_host_change(self, vmware_vm, new_host_name):
+    def is_vm_removed(self, vm_name, host_name):
+        for host in self.hosts.values():
+            for vm in host.vm:
+                if vm.name == vm_name:
+                    return False
+        return True
+
+    def change_host(self, vmware_vm, new_host_name):
         old_host_name = vmware_vm.runtime.host.name
         old_host = self.hosts[old_host_name]
         old_host.vm.remove(vmware_vm)
