@@ -88,7 +88,12 @@ class VirtualMachineService(Service):
         return self._vcenter_api_client.get_host(vm_model.host_name)
 
     def is_vm_removed_from_vcenter(self, vm_name, host_name):
-        return self._vcenter_api_client.is_vm_removed(vm_name, host_name)
+        vm_model = self._database.get_vm_model(vm_name)
+        if vm_model is None:
+            return True
+        return self._vcenter_api_client.is_vm_removed(
+            vm_model.vcenter_uuid, host_name
+        )
 
 
 class VirtualMachineInterfaceService(Service):
