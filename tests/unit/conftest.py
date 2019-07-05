@@ -29,6 +29,7 @@ def vmware_network():
 def vmware_vm(vmware_dpg, vmware_network):
     vm = mock.Mock()
     vm.configure_mock(name="vm-1")
+    vm.config.instanceUuid = "uuid-1"
     vm.network = [vmware_dpg, vmware_network]
     vm.runtime.host.name = "esxi-1"
     return vm

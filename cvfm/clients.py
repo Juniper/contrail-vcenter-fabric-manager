@@ -154,16 +154,16 @@ class VCenterAPIClient(VSphereAPIClient):
     def get_host(self, hostname):
         return self._get_object([vim.HostSystem], hostname)
 
-    def is_vm_removed(self, vm_name, host_name):
+    def is_vm_removed(self, vm_uuid, host_name):
         for _ in range(const.WAIT_FOR_VM_RETRY):
-            vm = self._get_vm_by_name(vm_name)
+            vm = self._get_vm_by_uuid(vm_uuid)
             if vm is None:
                 return True
 
             host = vm.runtime.host
             if host is None:
                 logger.info(
-                    "Host for VM %s is None. Waiting for update...", vm_name
+                    "Host for VM %s is None. Waiting for update...", vm_uuid
                 )
                 time.sleep(1)
                 continue
@@ -173,12 +173,14 @@ class VCenterAPIClient(VSphereAPIClient):
             time.sleep(1)
 
         logger.error(
-            "Unable to confirm that VM %s was removed or not...", vm_name
+            "Unable to confirm that VM %s was removed or not...", vm_uuid
         )
         return False
 
-    def _get_vm_by_name(self, vm_name):
-        return self._get_object([vim.VirtualMachine], vm_name)
+    def _get_vm_by_uuid(self, vm_uuid):
+        return self._si.content.searchIndex.FindByUuid(
+            datacenter=self._datacenter, uuid=vm_uuid, vmSearch=True
+        )
 
 
 class VNCAPIClient(object):

@@ -118,6 +118,11 @@ def test_esxi_reboot(
     vmware_controller.handle_update(host_change_update)
     host_change_update = vcenter_api_client.change_host(vmware_vm_3, "esxi-2")
     vmware_controller.handle_update(host_change_update)
+    # sometimes vCenter triggers VmRemovedEvent with source host attached for migrated VM
+    vm_removed_update = vcenter_api_client.remove_vm(
+        vmware_vm_3, removed_from_vcenter=False, source_host_name="esxi-1"
+    )
+    vmware_controller.handle_update(vm_removed_update)
 
     # VPG was created in VNC for pair: esxi-2, dvs-1
     vnc_vpg = vnc_test_client.read_vpg(models.generate_uuid("esxi-2_dvs-1"))

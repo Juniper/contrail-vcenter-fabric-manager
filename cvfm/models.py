@@ -41,8 +41,9 @@ def validate_vlan_id(vmware_dpg):
 
 
 class VirtualMachineModel(object):
-    def __init__(self, name, host_name, dpg_models):
+    def __init__(self, name, vcenter_uuid, host_name, dpg_models):
         self.name = name
+        self.vcenter_uuid = vcenter_uuid
         self.host_name = host_name
         self.dpg_models = dpg_models
         self.property_filter = None
@@ -68,15 +69,17 @@ class VirtualMachineModel(object):
     def from_vmware_vm(cls, vmware_vm, dpg_models):
         return cls(
             name=vmware_vm.name,
+            vcenter_uuid=vmware_vm.config.instanceUuid,
             host_name=vmware_vm.runtime.host.name,
             dpg_models=dpg_models,
         )
 
     def __repr__(self):
         return (
-            "VirtualMachineModel(name={name}, host_name={host_name}, "
+            "VirtualMachineModel(name={name}, vcenter_uuid={vcenter_uuid}, host_name={host_name}, "
             "dpg_models={dpg_models})".format(
                 name=self.name,
+                vcenter_uuid=self.vcenter_uuid,
                 host_name=self.host_name,
                 dpg_models=self.dpg_models,
             )

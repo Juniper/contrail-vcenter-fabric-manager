@@ -60,6 +60,7 @@ def create_vm_created_update(vm_name, vm_host_name, vm_networks):
 
 def create_vmware_vm(name, host_name, networks):
     vm = mock.Mock()
+    vm.config.instanceUuid = "uuid-{}".format(name)
     vm.configure_mock(name=name)
     vm.network = networks
     vm.runtime.host.name = host_name

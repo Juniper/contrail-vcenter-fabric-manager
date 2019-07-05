@@ -134,7 +134,11 @@ def test_get_host_from_vm(
     vcenter_api_client.get_host.assert_called_with(vm_model.host_name)
 
 
-def test_is_vm_removed(vm_service, vcenter_api_client):
+def test_is_vm_removed(vm_service, database, vm_model, vcenter_api_client):
+    database.add_vm_model(vm_model)
+
     vcenter_api_client.is_vm_removed.return_value = True
-    assert vm_service.is_vm_removed_from_vcenter("vm-1", "esxi-1")
-    vcenter_api_client.is_vm_removed.assert_called_once_with("vm-1", "esxi-1")
+    assert vm_service.is_vm_removed_from_vcenter(vm_model.name, "esxi-1")
+    vcenter_api_client.is_vm_removed.assert_called_once_with(
+        vm_model.vcenter_uuid, "esxi-1"
+    )
