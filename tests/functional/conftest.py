@@ -89,6 +89,13 @@ def dvs_service(vcenter_api_client, vnc_api_client, database):
 
 
 @pytest.fixture
+def pi_service(vcenter_api_client, vnc_api_client, database):
+    return services.PhysicalInterfaceService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+
+@pytest.fixture
 def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
     dpg_created_handler = controllers.DVPortgroupCreatedHandler(
         vm_service, vmi_service, dpg_service, vpg_service
@@ -159,6 +166,11 @@ def dvs_synchronizer(dvs_service):
 
 
 @pytest.fixture
+def pi_synchronizer(pi_service):
+    return synchronizers.PhysicalInterfaceSynchronizer(pi_service)
+
+
+@pytest.fixture
 def synchronizer(
     database,
     vm_synchronizer,
@@ -166,6 +178,7 @@ def synchronizer(
     vpg_synchronizer,
     vmi_synchronizer,
     dvs_synchronizer,
+    pi_synchronizer,
 ):
     return synchronizers.Synchronizer(
         database,
@@ -174,6 +187,7 @@ def synchronizer(
         vpg_synchronizer,
         vmi_synchronizer,
         dvs_synchronizer,
+        pi_synchronizer,
     )
 
 

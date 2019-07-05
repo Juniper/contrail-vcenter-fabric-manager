@@ -3,7 +3,12 @@ import logging
 from pyVmomi import vim
 
 from cvfm import models, exceptions, constants
-from cvfm.exceptions import VNCVMICreationException, DPGCreationException
+from cvfm.exceptions import (
+    VNCVMICreationException,
+    DPGCreationException,
+    VNCPortValidationException,
+    VNCNodeValidationException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -390,3 +395,60 @@ class DistributedVirtualSwitchService(Service):
             dvs_name = esxi_props.get_dvs_name()
             if dvs_name:
                 self._database.add_supported_dvs(dvs_name)
+                logger.debug("DVS %s added as a supported DVS", dvs_name)
+
+
+def validate_vnc_port(vnc_port):
+    esxi_port_info = vnc_port.get_esxi_port_info()
+    if not esxi_port_info:
+        raise VNCPortValidationException(
+            "No ESXi info could be read from port %s", vnc_port.name
+        )
+    dvs_name = esxi_port_info.get_dvs_name()
+    if not dvs_name:
+        raise VNCPortValidationException(
+            "No DVS name could be read from port %s", vnc_port.name
+        )
+
+
+class PhysicalInterfaceService(Service):
+    def populate_db_with_pi_models(self):
+        vnc_nodes = self._get_vnc_nodes()
+        for vnc_node in vnc_nodes:
+            try:
+                self._create_pis_for_node(vnc_node)
+            except VNCNodeValidationException:
+                continue
+
+    def _get_vnc_nodes(self):
+        host_names_in_vcenter = [
+            host.name for host in self._vcenter_api_client.get_all_hosts()
+        ]
+        vnc_nodes = self._vnc_api_client.get_nodes_by_host_names(
+            host_names_in_vcenter
+        )
+        return vnc_nodes
+
+    def _create_pis_for_node(self, vnc_node):
+        node_ports = self._vnc_api_client.get_node_ports(vnc_node)
+        for vnc_port in node_ports:
+            try:
+                self._create_pis_for_port(vnc_node, vnc_port)
+            except VNCPortValidationException:
+                continue
+
+    def _create_pis_for_port(self, vnc_node, vnc_port):
+        validate_vnc_port(vnc_port)
+        host_name = vnc_node.get_esxi_info().get_esxi_name()
+        dvs_name = vnc_port.get_esxi_port_info().get_dvs_name()
+        vnc_pis = self._vnc_api_client.get_pis_by_port(vnc_port)
+        self._create_pi_models_in_db(vnc_pis, host_name, dvs_name)
+
+    def _create_pi_models_in_db(self, vnc_pis, host_name, dvs_name):
+        pi_models = [
+            models.PhysicalInterfaceModel(pi.uuid, host_name, dvs_name)
+            for pi in vnc_pis
+        ]
+        for pi_model in pi_models:
+            self._database.add_pi_model(pi_model)
+            logger.debug("Physical Interface %s added", pi_model)

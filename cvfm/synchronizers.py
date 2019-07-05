@@ -12,6 +12,7 @@ class Synchronizer(object):
         vpg_synchronizer,
         vmi_synchronizer,
         dvs_synchronizer,
+        pi_synchronizer,
     ):
         self.database = database
         self.vm_synchronizer = vm_synchronizer
@@ -19,10 +20,12 @@ class Synchronizer(object):
         self.vpg_synchronizer = vpg_synchronizer
         self.vmi_synchronizer = vmi_synchronizer
         self.dvs_synchronizer = dvs_synchronizer
+        self.pi_synchronizer = pi_synchronizer
 
     def sync(self):
         self.database.clear_database()
         self.dvs_synchronizer.sync()
+        self.pi_synchronizer.sync()
         self.dpg_synchronizer.sync_create()
         self.vm_synchronizer.sync()
         self.vpg_synchronizer.sync_create()
@@ -205,4 +208,16 @@ class DistributedVirtualSwitchSynchronizer(object):
         self._dvs_service = dvs_service
 
     def sync(self):
+        logger.info("Populating list of supported DVSes...")
         self._dvs_service.populate_db_with_supported_dvses()
+        logger.info("List of supported DVSes populated")
+
+
+class PhysicalInterfaceSynchronizer(object):
+    def __init__(self, pi_service):
+        self._pi_service = pi_service
+
+    def sync(self):
+        logger.info("Populating list of Physical Interfaces...")
+        self._pi_service.populate_db_with_pi_models()
+        logger.info("List of Physical Interfaces populated")

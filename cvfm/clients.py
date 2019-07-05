@@ -40,25 +40,7 @@ def has_proper_creator(vnc_object):
     return False
 
 
-class VSphereAPIClient(object):
-    def __init__(self):
-        self._si = None
-        self._pg_view = None
-
-    def _get_object(self, vimtype, name):
-        container = self._create_view(vimtype)
-        try:
-            return [obj for obj in container.view if obj.name == name][0]
-        except (IndexError, vmodl.fault.ManagedObjectNotFound):
-            return None
-
-    def _create_view(self, vimtype):
-        return self._si.content.viewManager.CreateContainerView(
-            self._si.content.rootFolder, vimtype, True
-        )
-
-
-class VCenterAPIClient(VSphereAPIClient):
+class VCenterAPIClient(object):
     def __init__(self, vcenter_cfg):
         super(VCenterAPIClient, self).__init__()
         self._vcenter_cfg = vcenter_cfg
@@ -85,9 +67,21 @@ class VCenterAPIClient(VSphereAPIClient):
             [vim.dvs.DistributedVirtualPortgroup]
         )
         self._vm_view = self._create_view([vim.VirtualMachine])
+        self._host_view = self._create_view([vim.HostSystem])
+
+    def _create_view(self, vimtype):
+        return self._si.content.viewManager.CreateContainerView(
+            self._datacenter, vimtype, True
+        )
 
     def _get_datacenter(self, name):
-        return self._get_object([vim.Datacenter], name)
+        container = self._si.content.viewManager.CreateContainerView(
+            self._si.content.rootFolder, [vim.Datacenter], True
+        )
+        try:
+            return (obj for obj in container.view if obj.name == name).next()
+        except StopIteration:
+            return None
 
     def renew_connection(self):
         self._create_connection()
@@ -151,7 +145,14 @@ class VCenterAPIClient(VSphereAPIClient):
             return None
 
     def get_host(self, hostname):
-        return self._get_object([vim.HostSystem], hostname)
+        all_hosts = self.get_all_hosts()
+        try:
+            return (host for host in all_hosts if host.name == hostname).next()
+        except StopIteration:
+            return None
+
+    def get_all_hosts(self):
+        return self._host_view.view
 
     def is_vm_removed(self, vm_name, host_name):
         for _ in range(const.WAIT_FOR_VM_RETRY):
@@ -341,6 +342,20 @@ class VNCAPIClient(object):
     def _read_all_nodes(self):
         node_refs = self.vnc_lib.nodes_list()["nodes"]
         return [self._read_node(node_ref["uuid"]) for node_ref in node_refs]
+
+    def get_nodes_by_host_names(self, esxi_names):
+        vnc_nodes = self._read_all_nodes()
+
+        for vnc_node in list(vnc_nodes):
+            esxi_info = vnc_node.get_esxi_info()
+            if not esxi_info:
+                vnc_nodes.remove(vnc_node)
+                continue
+            esxi_name = esxi_info.get_esxi_name()
+            if not esxi_name:
+                vnc_nodes.remove(vnc_node)
+
+        return vnc_nodes
 
     def get_node_ports(self, node):
         port_refs = node.get_ports()
