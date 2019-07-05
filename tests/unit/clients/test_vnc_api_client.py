@@ -175,3 +175,20 @@ def test_has_proper_creator():
     assert clients.has_proper_creator(other_creator) is False
     assert clients.has_proper_creator(no_creator) is False
     assert clients.has_proper_creator(no_id_perms) is False
+
+
+def test_read_nodes_by_host_names(vnc_api_client):
+    node_1 = vnc_api.Node(name="esxi-1")
+    node_2 = vnc_api.Node(name="esxi-2")
+    node_3 = vnc_api.Node(name="esxi-3")
+    nodes = [node_1, node_2, node_3]
+
+    with mock.patch(
+        "cvfm.clients.VNCAPIClient._read_all_nodes"
+    ) as read_all_nodes_mock:
+        read_all_nodes_mock.return_value = nodes
+        result = vnc_api_client.get_nodes_by_host_names(["esxi-1", "esxi-2"])
+
+    assert len(result) == 2
+    assert node_1 in result
+    assert node_2 in result
