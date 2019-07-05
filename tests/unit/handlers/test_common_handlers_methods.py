@@ -38,8 +38,11 @@ def vmi_model():
 
 @pytest.fixture
 def abstract_handler(vm_service, vmi_service, vpg_service, dpg_service):
-    class TestHandler(controllers.AbstractChangeHandler):
+    class TestHandler(controllers.AbstractEventHandler):
         def _handle_change(self, obj, property_change):
+            pass
+
+        def _handle_event(self, event):
             pass
 
     return TestHandler(vm_service, vmi_service, dpg_service, vpg_service)
@@ -69,3 +72,19 @@ def test_create_vmis(
 
     vmi_service.create_vmi_in_vnc.assert_called_once_with(vmi_model)
     vmi_service.attach_vmi_to_vpg.assert_called_once_with(vmi_model)
+
+
+def test_is_tmp_vm_name(abstract_handler):
+    tmp_vm_name = "/vmfs/volumes/5326168a-6dd1d607/yellow-133/yellow-133.vmx"
+    assert abstract_handler._is_tmp_vm_name(tmp_vm_name)
+
+    not_tmp_vm_name = "yellow-133"
+    assert not abstract_handler._is_tmp_vm_name(not_tmp_vm_name)
+
+
+def test_get_vm_name_from_tmp_name(abstract_handler):
+    tmp_vm_name = "/vmfs/volumes/5326168a-6dd1d607/yellow-133/yellow-133.vmx"
+    assert (
+        abstract_handler._get_vm_name_from_tmp_name(tmp_vm_name)
+        == "yellow-133"
+    )
