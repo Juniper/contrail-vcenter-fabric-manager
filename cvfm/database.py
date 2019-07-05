@@ -1,3 +1,4 @@
+import collections
 import logging
 
 logger = logging.getLogger(__name__)
@@ -8,6 +9,7 @@ class Database(object):
         self._vm_models = {}
         self._dpg_models = {}
         self._supported_dvses = set()
+        self._physical_interfaces = collections.defaultdict(list)
 
     def add_vm_model(self, vm_model):
         self._vm_models[vm_model.name] = vm_model
@@ -29,6 +31,7 @@ class Database(object):
         self._vm_models = {}
         self._dpg_models = {}
         self._supported_dvses = set()
+        self._physical_interfaces = collections.defaultdict(list)
         logger.info("Cleared local database.")
 
     def add_dpg_model(self, dpg_model):
@@ -49,3 +52,11 @@ class Database(object):
 
     def is_dvs_supported(self, dvs_name):
         return dvs_name in self._supported_dvses
+
+    def add_pi_model(self, pi_model):
+        key = (pi_model.host_name, pi_model.dvs_name)
+        self._physical_interfaces[key].append(pi_model)
+
+    def get_pi_models_for_vpg(self, vpg_model):
+        key = (vpg_model.host_name, vpg_model.dvs_name)
+        return self._physical_interfaces[key]
