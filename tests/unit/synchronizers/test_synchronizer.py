@@ -30,12 +30,18 @@ def vmi_synchronizer():
 
 
 @pytest.fixture
+def dvs_synchronizer():
+    return mock.Mock()
+
+
+@pytest.fixture
 def synchronizer(
     database,
     vm_synchronizer,
     dpg_synchronizer,
     vpg_synchronizer,
     vmi_synchronizer,
+    dvs_synchronizer,
 ):
     return synchronizers.Synchronizer(
         database,
@@ -43,6 +49,7 @@ def synchronizer(
         dpg_synchronizer,
         vpg_synchronizer,
         vmi_synchronizer,
+        dvs_synchronizer,
     )
 
 
@@ -53,9 +60,11 @@ def test_sync_order(
     dpg_synchronizer,
     vpg_synchronizer,
     vmi_synchronizer,
+    dvs_synchronizer,
 ):
     order_checker = mock.Mock()
     order_checker.attach_mock(database, "database")
+    order_checker.attach_mock(dvs_synchronizer, "dvs_synchronizer")
     order_checker.attach_mock(vm_synchronizer, "vm_synchronizer")
     order_checker.attach_mock(dpg_synchronizer, "dpg_synchronizer")
     order_checker.attach_mock(vpg_synchronizer, "vpg_synchronizer")
@@ -65,6 +74,7 @@ def test_sync_order(
 
     expected_order_calls = [
         mock.call.database.clear_database(),
+        mock.call.dvs_synchronizer.sync(),
         mock.call.dpg_synchronizer.sync_create(),
         mock.call.vm_synchronizer.sync(),
         mock.call.vpg_synchronizer.sync_create(),

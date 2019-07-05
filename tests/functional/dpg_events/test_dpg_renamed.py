@@ -1,9 +1,8 @@
 import pytest
-
 from pyVmomi import vim
+from tests import utils
 from vnc_api import vnc_api
 
-from tests import utils
 from cvfm import models
 
 
@@ -20,7 +19,11 @@ def vmware_dpg():
 
 
 def test_dpg_renamed(
-    vnc_test_client, vmware_controller, vcenter_api_client, vmware_dpg
+    minimalistic_topology,
+    vnc_test_client,
+    vmware_controller,
+    vcenter_api_client,
+    vmware_dpg,
 ):
     # dpg-1 created in dvs-1
     dpg_created_update = vcenter_api_client.create_dpg(vmware_dpg)

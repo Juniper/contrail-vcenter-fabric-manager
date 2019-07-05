@@ -7,6 +7,7 @@ class Database(object):
     def __init__(self):
         self._vm_models = {}
         self._dpg_models = {}
+        self._supported_dvses = set()
 
     def add_vm_model(self, vm_model):
         self._vm_models[vm_model.name] = vm_model
@@ -27,6 +28,7 @@ class Database(object):
     def clear_database(self):
         self._vm_models = {}
         self._dpg_models = {}
+        self._supported_dvses = set()
         logger.info("Cleared local database.")
 
     def add_dpg_model(self, dpg_model):
@@ -41,3 +43,9 @@ class Database(object):
 
     def get_all_dpg_models(self):
         return self._dpg_models.values()
+
+    def add_supported_dvs(self, dvs_name):
+        self._supported_dvses.add(dvs_name)
+
+    def is_dvs_supported(self, dvs_name):
+        return dvs_name in self._supported_dvses

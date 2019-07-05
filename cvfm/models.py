@@ -1,7 +1,6 @@
 import logging
 import uuid as uid
 
-from pyVmomi import vim
 from vnc_api import vnc_api
 
 from cvfm import constants as const
@@ -12,32 +11,6 @@ logger = logging.getLogger(__name__)
 
 def generate_uuid(key):
     return str(uid.uuid3(uid.NAMESPACE_DNS, key))
-
-
-def validate_dpg(vmware_dpg):
-    validate_type(vmware_dpg)
-    validate_dvs(vmware_dpg)
-    validate_vlan_id(vmware_dpg)
-
-
-def validate_type(vmware_dpg):
-    if not isinstance(vmware_dpg, vim.DistributedVirtualPortgroup):
-        raise DPGCreationException(
-            "{} is not a Distributed Portgroup".format(vmware_dpg.name)
-        )
-
-
-def validate_dvs(vmware_dpg):
-    pass
-
-
-def validate_vlan_id(vmware_dpg):
-    try:
-        vlan_id = int(vmware_dpg.config.defaultPortConfig.vlan.vlanId)
-    except (TypeError, AttributeError):
-        raise DPGCreationException("VLAN ID must be a number.")
-    if vlan_id == 0:
-        raise DPGCreationException("VLAN ID cannot be 0.")
 
 
 class VirtualMachineModel(object):
@@ -100,7 +73,6 @@ class DistributedPortGroupModel(object):
 
     @classmethod
     def from_vmware_dpg(cls, vmware_dpg):
-        validate_dpg(vmware_dpg)
         vlan_id = vmware_dpg.config.defaultPortConfig.vlan.vlanId
         uuid = generate_uuid(vmware_dpg.key)
         key = vmware_dpg.key

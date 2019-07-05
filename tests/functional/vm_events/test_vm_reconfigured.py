@@ -53,7 +53,7 @@ def vmware_vm(vmware_dpg_1):
 
 
 def test_vm_reconfigured(
-    minimalistic_topology,
+    topology_with_spine_switch,
     vmware_vm,
     vmware_dpg_1,
     vmware_dpg_2,

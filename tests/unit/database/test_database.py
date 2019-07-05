@@ -72,10 +72,21 @@ def test_get_all_dpg_models(database, dpg_model):
 def test_clear_database(database, dpg_model, vm_model):
     database.add_dpg_model(dpg_model)
     database.add_vm_model(vm_model)
+    database.add_supported_dvs("dvs-1")
     assert len(database.get_all_dpg_models()) == 1
     assert len(database.get_all_vm_models()) == 1
+    assert database.is_dvs_supported("dvs-1") is True
 
     database.clear_database()
 
     assert len(database.get_all_dpg_models()) == 0
     assert len(database.get_all_vm_models()) == 0
+    assert database.is_dvs_supported("dvs-1") is False
+
+
+def test_dvses(database):
+    database.add_supported_dvs("dvs-2")
+
+    assert database.is_dvs_supported("dvs-1") is True
+    assert database.is_dvs_supported("dvs-2") is True
+    assert database.is_dvs_supported("dvs-3") is False
