@@ -57,6 +57,18 @@ def vm_model(vmware_vm, dpg_model):
 
 
 @pytest.fixture
+def vpg_model(vm_model):
+    return models.VirtualPortGroupModel.from_vm_model(vm_model)[0]
+
+
+@pytest.fixture
+def pi_model():
+    return models.PhysicalInterfaceModel(
+        uuid="pi-1-uuid", host_name="esxi-1", dvs_name="dvs-1"
+    )
+
+
+@pytest.fixture
 def project():
     return vnc_api.Project()
 
@@ -112,3 +124,8 @@ def vm_synchronizer(vm_service):
 @pytest.fixture
 def dvs_synchronizer(dvs_service):
     return synchronizers.DistributedVirtualSwitchSynchronizer(dvs_service)
+
+
+@pytest.fixture
+def pi_synchronizer(pi_service):
+    return synchronizers.PhysicalInterfaceSynchronizer(pi_service)
