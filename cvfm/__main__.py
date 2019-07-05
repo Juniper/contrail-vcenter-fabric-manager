@@ -30,49 +30,42 @@ def build_context(cfg):
     vcenter_api_client = VCenterAPIClient(cfg["vcenter_config"])
     vnc_api_client = VNCAPIClient(cfg["vnc_config"], cfg.get("auth_config"))
 
-    vm_service = services.VirtualMachineService(
-        vcenter_api_client, vnc_api_client, database
-    )
-    vmi_service = services.VirtualMachineInterfaceService(
-        vcenter_api_client, vnc_api_client, database
-    )
-    dpg_service = services.DistributedPortGroupService(
-        vcenter_api_client, vnc_api_client, database
-    )
-    vpg_service = services.VirtualPortGroupService(
-        vcenter_api_client, vnc_api_client, database
-    )
-    dvs_service = services.DistributedVirtualSwitchService(
-        vcenter_api_client, vnc_api_client, database
-    )
+    service_kwargs = {
+        "vcenter_api_client": vcenter_api_client,
+        "vnc_api_client": vnc_api_client,
+        "database": database,
+    }
+    vm_service = services.VirtualMachineService(**service_kwargs)
+    vmi_service = services.VirtualMachineInterfaceService(**service_kwargs)
+    dpg_service = services.DistributedPortGroupService(**service_kwargs)
+    vpg_service = services.VirtualPortGroupService(**service_kwargs)
+    dvs_service = services.DistributedVirtualSwitchService(**service_kwargs)
+    pi_service = services.PhysicalInterfaceService(**service_kwargs)
 
-    vm_updated_handler = controllers.VmUpdatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
+    handler_kwargs = {
+        "vm_service": vm_service,
+        "vmi_service": vmi_service,
+        "dpg_service": dpg_service,
+        "vpg_service": vpg_service,
+    }
+    vm_updated_handler = controllers.VmUpdatedHandler(**handler_kwargs)
     vm_reconfigured_handler = controllers.VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        **handler_kwargs
     )
-    vm_removed_handler = controllers.VmRemovedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
-    vm_renamed_handler = controllers.VmRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
-    vm_host_change_handler = controllers.HostChangeHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
-    )
-
+    vm_removed_handler = controllers.VmRemovedHandler(**handler_kwargs)
+    vm_renamed_handler = controllers.VmRenamedHandler(**handler_kwargs)
+    vm_host_change_handler = controllers.HostChangeHandler(**handler_kwargs)
     dvportgroup_created_handler = controllers.DVPortgroupCreatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        **handler_kwargs
     )
     dvportgroup_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        **handler_kwargs
     )
     dvportgroup_renamed_handler = controllers.DVPortgroupRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        **handler_kwargs
     )
     dvportgroup_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        **handler_kwargs
     )
 
     handlers = [
@@ -101,6 +94,7 @@ def build_context(cfg):
     dvs_synchronizer = synchronizers.DistributedVirtualSwitchSynchronizer(
         dvs_service
     )
+    pi_synchronizer = synchronizers.PhysicalInterfaceSynchronizer(pi_service)
     synchronizer = synchronizers.Synchronizer(
         database,
         vm_synchronizer,
@@ -108,6 +102,7 @@ def build_context(cfg):
         vpg_synchronizer,
         vmi_synchronizer,
         dvs_synchronizer,
+        pi_synchronizer,
     )
 
     vmware_controller = controllers.VmwareController(
