@@ -4,3 +4,11 @@ class DPGCreationException(Exception):
 
 class VNCVMICreationException(Exception):
     pass
+
+
+class VNCPortValidationException(Exception):
+    pass
+
+
+class VNCNodeValidationException(Exception):
+    pass
