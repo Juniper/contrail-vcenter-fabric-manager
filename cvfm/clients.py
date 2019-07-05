@@ -39,25 +39,7 @@ def has_proper_creator(vnc_object):
     return False
 
 
-class VSphereAPIClient(object):
-    def __init__(self):
-        self._si = None
-        self._pg_view = None
-
-    def _get_object(self, vimtype, name):
-        container = self._create_view(vimtype)
-        try:
-            return [obj for obj in container.view if obj.name == name][0]
-        except IndexError:
-            return None
-
-    def _create_view(self, vimtype):
-        return self._si.content.viewManager.CreateContainerView(
-            self._si.content.rootFolder, vimtype, True
-        )
-
-
-class VCenterAPIClient(VSphereAPIClient):
+class VCenterAPIClient(object):
     def __init__(self, vcenter_cfg):
         super(VCenterAPIClient, self).__init__()
         self._vcenter_cfg = vcenter_cfg
@@ -84,9 +66,21 @@ class VCenterAPIClient(VSphereAPIClient):
             [vim.dvs.DistributedVirtualPortgroup]
         )
         self._vm_view = self._create_view([vim.VirtualMachine])
+        self._host_view = self._create_view([vim.HostSystem])
+
+    def _create_view(self, vimtype):
+        return self._si.content.viewManager.CreateContainerView(
+            self._datacenter, vimtype, True
+        )
 
     def _get_datacenter(self, name):
-        return self._get_object([vim.Datacenter], name)
+        container = self._si.content.viewManager.CreateContainerView(
+            self._si.content.rootFolder, [vim.Datacenter], True
+        )
+        try:
+            return (obj for obj in container.view if obj.name == name).next()
+        except StopIteration:
+            return None
 
     def renew_connection(self):
         self._create_connection()
@@ -150,7 +144,14 @@ class VCenterAPIClient(VSphereAPIClient):
             return None
 
     def get_host(self, hostname):
-        return self._get_object([vim.HostSystem], hostname)
+        all_hosts = self.get_all_hosts()
+        try:
+            return (host for host in all_hosts if host.name == hostname).next()
+        except StopIteration:
+            return None
+
+    def get_all_hosts(self):
+        return self._host_view.view
 
 
 class VNCAPIClient(object):

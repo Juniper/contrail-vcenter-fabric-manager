@@ -384,3 +384,30 @@ class DistributedVirtualSwitchService(Service):
             dvs_name = esxi_props.get_dvs_name()
             if dvs_name:
                 self._database.add_supported_dvs(dvs_name)
+                logger.debug("DVS %s added as a supported DVS", dvs_name)
+
+
+class PhysicalInterfaceService(Service):
+    def populate_db_with_pi_models(self):
+        host_names_in_vcenter = [
+            host.name for host in self._vcenter_api_client.get_all_hosts()
+        ]
+        for host_name in host_names_in_vcenter:
+            vnc_node = self._vnc_api_client.get_node_by_name(host_name)
+            node_ports = self._vnc_api_client.get_node_ports(vnc_node)
+            for vnc_port in node_ports:
+                vnc_pis = self._vnc_api_client.get_pis_by_port(vnc_port)
+                esxi_port_info = vnc_port.get_esxi_port_info()
+                if not esxi_port_info:
+                    continue
+                dvs_name = esxi_port_info.get_dvs_name()
+                if not dvs_name:
+                    continue
+
+                pi_models = [
+                    models.PhysicalInterfaceModel(pi.uuid, host_name, dvs_name)
+                    for pi in vnc_pis
+                ]
+                for pi_model in pi_models:
+                    self._database.add_pi_model(pi_model)
+                    logger.debug("Physical Interface %s added", pi_model)

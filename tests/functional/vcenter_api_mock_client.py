@@ -121,3 +121,6 @@ class VCenterAPIMockClient(VCenterAPIClient):
 
     def get_host(self, host_name):
         return self.hosts.get(host_name)
+
+    def get_all_hosts(self):
+        return self.hosts.values()
