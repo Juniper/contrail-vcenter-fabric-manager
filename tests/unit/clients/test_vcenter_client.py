@@ -21,3 +21,16 @@ def test_get_vms_for_portgroup(vcenter_api_client, vmware_vm):
 
     assert result == [vmware_vm]
     assert not_found == []
+
+
+@mock.patch("cvfm.clients.time.sleep")
+def test_is_vm_removed(_, vcenter_api_client, vmware_vm):
+    vcenter_api_client._get_vm_by_name = mock.Mock()
+
+    vcenter_api_client._get_vm_by_name.return_value = vmware_vm
+    # VM vm-1 still exists on esxi-1
+    assert not vcenter_api_client.is_vm_removed(vmware_vm, "esxi-2")
+
+    vcenter_api_client._get_vm_by_name.return_value = None
+    # VM vm-1 was removed from host esxi-1 and whole vCenter
+    assert vcenter_api_client.is_vm_removed(vmware_vm, "esxi-1")

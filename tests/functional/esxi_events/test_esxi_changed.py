@@ -67,9 +67,7 @@ def test_esxi_changed(
     vmware_controller.handle_update(vm_created_update_2)
 
     # The first VM (vm-1) is moved to esxi-2, where no other VM exists
-    vm_moved_update = vcenter_api_client.trigger_host_change(
-        vmware_vm_1, "esxi-2"
-    )
+    vm_moved_update = vcenter_api_client.change_host(vmware_vm_1, "esxi-2")
     vmware_controller.handle_update(vm_moved_update)
 
     # A VMI is created in VNC for dpg-1 on dvs-1 on esxi-2
@@ -90,9 +88,7 @@ def test_esxi_changed(
     assert vnc_vmi_1 is not None
 
     # The second VM (vm-2) is moved to esxi-2
-    vm_moved_update = vcenter_api_client.trigger_host_change(
-        vmware_vm_2, "esxi-2"
-    )
+    vm_moved_update = vcenter_api_client.change_host(vmware_vm_2, "esxi-2")
     vmware_controller.handle_update(vm_moved_update)
 
     # esxi-1 is empty, so the old VMI and VPG are removed

@@ -42,7 +42,8 @@ class VirtualMachineService(Service):
     def delete_vm_model(self, vm_name):
         vm_model = self._database.get_vm_model(vm_name)
         self._database.remove_vm_model(vm_name)
-        vm_model.destroy_property_filter()
+        if vm_model is not None:
+            vm_model.destroy_property_filter()
         return vm_model
 
     def update_dpg_in_vm_models(self, dpg_model):
@@ -76,11 +77,16 @@ class VirtualMachineService(Service):
 
     def check_vm_moved(self, vm_name, host):
         vm_model = self._database.get_vm_model(vm_name)
+        if vm_model is None:
+            return False
         return vm_model.host_name != host.name
 
     def get_host_from_vm(self, vm_name):
         vm_model = self._database.get_vm_model(vm_name)
         return self._vcenter_api_client.get_host(vm_model.host_name)
+
+    def is_vm_removed_from_vcenter(self, vm_name, host_name):
+        return self._vcenter_api_client.is_vm_removed(vm_name, host_name)
 
 
 class VirtualMachineInterfaceService(Service):
