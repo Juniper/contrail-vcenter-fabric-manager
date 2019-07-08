@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "23f82b69_f7506f9d",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-08T17:14:40Z",
+      "side": 1,
+      "message": "I didn\u0027t observe single usage of above method. If this method is stale please remove it",
+      "range": {
+        "startLine": 146,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 23
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c98140e6_d3d26d71",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-08T17:14:40Z",
+      "side": 1,
+      "message": "I think we can optimize it by writing in VNCAPIClient method which takes list of host names and returns list of nodes objects corresponding to passed list.",
+      "range": {
+        "startLine": 396,
+        "startChar": 12,
+        "endLine": 396,
+        "endChar": 71
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "889e6c72_4d5a7501",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-08T17:14:40Z",
+      "side": 1,
+      "message": "Move this line after vnc_port validation",
+      "range": {
+        "startLine": 399,
+        "startChar": 16,
+        "endLine": 399,
+        "endChar": 72
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c3fd739_d31d8d8e",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-08T17:14:40Z",
+      "side": 1,
+      "message": "Please move to separate method: validate_vnc_port?",
+      "range": {
+        "startLine": 400,
+        "startChar": 15,
+        "endLine": 405,
+        "endChar": 28
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db83b7fe_2059b50b",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-08T17:14:40Z",
+      "side": 1,
+      "message": "Please move to separate method",
+      "range": {
+        "startLine": 407,
+        "startChar": 15,
+        "endLine": 413,
+        "endChar": 73
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
