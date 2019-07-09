@@ -7,26 +7,6 @@ from cvfm import controllers
 
 
 @pytest.fixture
-def vm_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vmi_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def dpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
 def dpg_renamed_update():
     event = mock.Mock(spec=vim.event.DVPortgroupRenamedEvent())
     event.net.name = "dpg-1"
@@ -40,9 +20,11 @@ def dpg_renamed_update():
 
 
 @pytest.fixture
-def dpg_renamed_handler(vm_service, vmi_service, dpg_service, vpg_service):
+def dpg_renamed_handler(
+    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+):
     return controllers.DVPortgroupRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
 
 

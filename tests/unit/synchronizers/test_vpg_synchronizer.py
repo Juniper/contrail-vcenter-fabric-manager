@@ -14,7 +14,14 @@ def vm_service():
     return mock.Mock()
 
 
-def test_sync_create(vpg_synchronizer, vm_service, vpg_service, vm_model):
+@pytest.fixture
+def pi_service():
+    return mock.Mock()
+
+
+def test_sync_create(
+    vpg_synchronizer, vm_service, vpg_service, vm_model, pi_service
+):
     vm_model_2 = models.VirtualMachineModel(
         "vm-2", "esxi-1", vm_model.dpg_models
     )
@@ -23,11 +30,12 @@ def test_sync_create(vpg_synchronizer, vm_service, vpg_service, vm_model):
         models.VirtualPortGroupModel.from_vm_model(vm_model),
         models.VirtualPortGroupModel.from_vm_model(vm_model_2),
     ]
+    pi_service.get_pi_models_for_vpg.return_value = [mock.Mock()]
 
     vpg_synchronizer.sync_create()
 
     vpg_model = vpg_service.create_vpg_in_vnc.call_args[0][0]
-    vpg_service.attach_pis_to_vpg.assert_called_once_with(vpg_model)
+    pi_service.get_pi_models_for_vpg.assert_called_once_with(vpg_model)
 
 
 def test_sync_delete(vpg_synchronizer, vm_service, vpg_service, vm_model):
