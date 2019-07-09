@@ -64,7 +64,10 @@ def vpg_model(vm_model):
 @pytest.fixture
 def pi_model():
     return models.PhysicalInterfaceModel(
-        uuid="pi-1-uuid", host_name="esxi-1", dvs_name="dvs-1"
+        uuid="pi-1-uuid",
+        fabric_uuid="fabric-uuid-1",
+        host_name="esxi-1",
+        dvs_name="dvs-1",
     )
 
 

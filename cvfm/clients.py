@@ -204,7 +204,6 @@ class VNCAPIClient(object):
             auth_token_url=auth_cfg.get("auth_token_url"),
         )
         self.project_name = vnc_cfg.get("project_name", const.VNC_PROJECT_NAME)
-        self.fabric_name = vnc_cfg.get("fabric_name", "default-fabric")
 
     def get_project(self):
         try:
@@ -219,10 +218,8 @@ class VNCAPIClient(object):
 
         return self.vnc_lib.project_read(["default-domain", self.project_name])
 
-    def get_fabric(self):
-        return self.vnc_lib.fabric_read(
-            ["default-global-system-config", self.fabric_name]
-        )
+    def read_fabric(self, fabric_uuid):
+        return self.vnc_lib.fabric_read(id=fabric_uuid)
 
     def create_vn(self, vnc_vn):
         try:
@@ -324,6 +321,18 @@ class VNCAPIClient(object):
             logger.info("VN %s deleted from VNC", vn_uuid)
         except vnc_api.NoIdError:
             logger.info("VN %s not found in VNC, unable to delete", vn_uuid)
+
+    def _read_physical_router(self, pr_uuid):
+        try:
+            return self.vnc_lib.physical_router_read(id=pr_uuid)
+        except vnc_api.RefsExistError:
+            logger.info("Physical router %s not found in VNC", pr_uuid)
+
+    def read_all_physical_routers(self):
+        pr_refs = self.vnc_lib.physical_routers_list()["physical-routers"]
+        return [
+            self._read_physical_router(pr_ref["uuid"]) for pr_ref in pr_refs
+        ]
 
     def _read_node(self, node_uuid):
         try:

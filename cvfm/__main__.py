@@ -142,7 +142,7 @@ def run_introspect(cfg, database, lock):
         instance_id=introspect_config["instance_id"],
         collectors=introspect_config["collectors"],
         client_context="cvfm_context",
-        http_port=introspect_config["introspect_port"],
+        http_port=9098,
         sandesh_req_uve_pkg_list=["cfgm_common", "cvfm"],
         config=cfg["sandesh_config"],
     )
