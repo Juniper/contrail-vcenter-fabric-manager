@@ -105,9 +105,10 @@ class DistributedPortGroupSynchronizer(object):
 
 
 class VirtualPortGroupSynchronizer(object):
-    def __init__(self, vm_service, vpg_service):
+    def __init__(self, vm_service, vpg_service, pi_service):
         self._vm_service = vm_service
         self._vpg_service = vpg_service
+        self._pi_service = pi_service
 
     def sync_create(self):
         logger.info("Creating lacking/Updating VPGs in VNC...")
@@ -118,8 +119,8 @@ class VirtualPortGroupSynchronizer(object):
         for vpg_model in set(vpg_models):
             logger.debug("Syncing VPG in VNC for %s", vpg_model)
             try:
-                self._vpg_service.create_vpg_in_vnc(vpg_model)
-                self._vpg_service.attach_pis_to_vpg(vpg_model)
+                pi_models = self._pi_service.get_pi_models_for_vpg(vpg_model)
+                self._vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
             except Exception:
                 logger.exception(
                     "Unexpected error during syncing %s", vpg_model

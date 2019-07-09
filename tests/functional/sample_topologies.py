@@ -6,11 +6,12 @@ __all__ = [
     "minimalistic_topology",
     "topology_with_two_nodes",
     "topology_with_spine_switch",
+    "dvs_per_esxi_topology",
 ]
 
 
 @pytest.fixture
-def minimalistic_topology(vnc_test_client):
+def minimalistic_topology(vnc_test_client, vcenter_api_client):
     """
     Topology:
         esxi-1:port-1:dvs-1:pi-1:pr-1
@@ -39,9 +40,11 @@ def minimalistic_topology(vnc_test_client):
     )
     vnc_test_client.add_port_to_physical_interface(pi, port)
 
+    vcenter_api_client.add_host("esxi-1")
+
 
 @pytest.fixture
-def topology_with_two_nodes(vnc_test_client):
+def topology_with_two_nodes(vnc_test_client, vcenter_api_client):
     """
     Topology:
         esxi-1:port-1:dvs-1:pi-1:pr-1
@@ -88,20 +91,23 @@ def topology_with_two_nodes(vnc_test_client):
     vnc_test_client.add_port_to_physical_interface(pi_1, port_1)
     vnc_test_client.add_port_to_physical_interface(pi_2, port_2)
 
+    vcenter_api_client.add_host("esxi-1")
+    vcenter_api_client.add_host("esxi-2")
+
 
 @pytest.fixture
-def topology_with_spine_switch(vnc_test_client):
+def topology_with_spine_switch(vnc_test_client, vcenter_api_client):
     """
     Topology:
-        esxi-1:port-1:dvs-1:pi-1:pr1
-        esxi-1:port-2:dvs-2:pi-2:pr1
-        esxi-1:port-3:dvs-1:pi-5:pr2
-        esxi-1:port-4:dvs-2:pi-6:pr2
+        esxi-1:port-1:dvs-1:pi-1:pr-1
+        esxi-1:port-2:dvs-2:pi-2:pr-1
+        esxi-1:port-3:dvs-1:pi-5:pr-2
+        esxi-1:port-4:dvs-2:pi-6:pr-2
 
-        esxi-2:port-5:dvs-1:pi-3:pr1
-        esxi-2:port-6:dvs-2:pi-4:pr1
-        esxi-2:port-7:dvs-1:pi-7:pr2
-        esxi-2:port-8:dvs-2:pi-8:pr2
+        esxi-2:port-5:dvs-1:pi-3:pr-1
+        esxi-2:port-6:dvs-2:pi-4:pr-1
+        esxi-2:port-7:dvs-1:pi-7:pr-2
+        esxi-2:port-8:dvs-2:pi-8:pr-2
 
         pr-1:pi-9:pi-11:pr-3
         pr-2:pi-10:pi-12:pr-3
@@ -162,3 +168,50 @@ def topology_with_spine_switch(vnc_test_client):
     ports = dict(esxi_1_ports.items() + esxi_2_ports.items())
     port_to_pi = {1: 1, 2: 2, 3: 5, 4: 6, 5: 3, 6: 4, 7: 7, 8: 8}
     utils.connect_ports_with_pis(vnc_test_client, pis, ports, port_to_pi)
+
+    vcenter_api_client.add_host("esxi-1")
+    vcenter_api_client.add_host("esxi-2")
+
+
+@pytest.fixture
+def dvs_per_esxi_topology(vnc_test_client, vcenter_api_client):
+    """
+    Topology:
+        esxi-1:port-1:dvs-1:pi-1:pr-1
+        esxi-2:port-2:dvs-2:pi-2:pr-1
+
+        esxi-1:
+            name: esxi-1
+            ip: 10.10.10.11
+        esxi-2:
+            name: esxi-2
+            ip: 10.10.10.12
+        port-*:
+            name: eth*
+            mac_address: 11:22:33:44:55:*
+        pi-*:;
+            max: xe-0/0/*
+            mac_address: 11:22:33:44:66:*
+        pr-1:
+            name: qfx-1
+    """
+    pr = vnc_test_client.create_physical_router("qfx-1")
+    pi_1 = vnc_test_client.create_physical_interface(
+        "xe-0/0/1", "11:22:33:44:55:68", pr
+    )
+    pi_2 = vnc_test_client.create_physical_interface(
+        "xe-0/0/2", "11:22:33:44:55:69", pr
+    )
+    esxi_1 = vnc_test_client.create_node("esxi-1", "10.10.10.11")
+    esxi_2 = vnc_test_client.create_node("esxi-2", "10.10.10.12")
+    port_1 = vnc_test_client.create_port(
+        "eth1", "11:22:33:44:55:01", esxi_1, "dvs-1"
+    )
+    port_2 = vnc_test_client.create_port(
+        "eth2", "11:22:33:44:55:02", esxi_2, "dvs-2"
+    )
+    vnc_test_client.add_port_to_physical_interface(pi_1, port_1)
+    vnc_test_client.add_port_to_physical_interface(pi_2, port_2)
+
+    vcenter_api_client.add_host("esxi-1")
+    vcenter_api_client.add_host("esxi-2")
