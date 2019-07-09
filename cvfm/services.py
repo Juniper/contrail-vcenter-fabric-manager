@@ -321,14 +321,15 @@ class VirtualPortGroupService(Service):
         ]
         vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
         if vnc_vpg is None:
+            pi_model = pi_models[0]
+            vnc_fabric = self._vnc_api_client.read_fabric(pi_model.fabric_uuid)
             logger.info("Not found VPG in VNC for %s. Creating...", vpg_model)
-            vnc_vpg = self._create_vpg(vpg_model)
+            vnc_vpg = self._create_vpg(vpg_model, vnc_fabric)
 
         self.update_pis_for_vpg(vnc_vpg, vnc_pis)
 
-    def _create_vpg(self, vpg_model):
-        fabric = self._vnc_api_client.get_fabric()
-        vnc_vpg = vpg_model.to_vnc_vpg(fabric)
+    def _create_vpg(self, vpg_model, vnc_fabric):
+        vnc_vpg = vpg_model.to_vnc_vpg(vnc_fabric)
         self._vnc_api_client.create_vpg(vnc_vpg)
         return vnc_vpg
 
@@ -393,10 +394,28 @@ def validate_vnc_port(vnc_port):
 
 
 class PhysicalInterfaceService(Service):
+    def __init__(self, vcenter_api_client, vnc_api_client, database):
+        super(PhysicalInterfaceService, self).__init__(
+            vcenter_api_client, vnc_api_client, database
+        )
+        self._pr_to_fabric = None
+
     def get_pi_models_for_vpg(self, vpg_model):
         return self._database.get_pi_models_for_vpg(vpg_model)
 
+    def _populate_pr_to_fabric(self):
+        result = {}
+        pr_list = self._vnc_api_client.read_all_physical_routers()
+        for pr in pr_list:
+            fabric_refs = pr.get_fabric_refs()
+            if fabric_refs is None:
+                continue
+            fabric_uuid = fabric_refs[0]["uuid"]
+            result[pr.uuid] = fabric_uuid
+        return result
+
     def populate_db_with_pi_models(self):
+        self._pr_to_fabric = self._populate_pr_to_fabric()
         vnc_nodes = self._get_vnc_nodes()
         for vnc_node in vnc_nodes:
             self._create_pis_for_node(vnc_node)
@@ -426,10 +445,13 @@ class PhysicalInterfaceService(Service):
         self._create_pi_models_in_db(vnc_pis, host_name, dvs_name)
 
     def _create_pi_models_in_db(self, vnc_pis, host_name, dvs_name):
-        pi_models = [
-            models.PhysicalInterfaceModel(pi.uuid, host_name, dvs_name)
-            for pi in vnc_pis
-        ]
+        pi_models = []
+        for vnc_pi in vnc_pis:
+            fabric_uuid = self._pr_to_fabric[vnc_pi.parent_uuid]
+            pi_model = models.PhysicalInterfaceModel(
+                vnc_pi.uuid, fabric_uuid, host_name, dvs_name
+            )
+            pi_models.append(pi_model)
         for pi_model in pi_models:
             self._database.add_pi_model(pi_model)
-            logger.debug("Physical Interface %s added", pi_model)
+            logger.debug("%s saved into database", pi_model)
