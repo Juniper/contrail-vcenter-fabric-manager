@@ -312,25 +312,31 @@ class VirtualPortGroupService(Service):
     def create_vpg_models(self, vm_model):
         return models.VirtualPortGroupModel.from_vm_model(vm_model)
 
-    def create_vpg_in_vnc(self, vpg_model):
-        if self._vnc_api_client.read_vpg(vpg_model.uuid) is None:
+    def create_vpg_in_vnc(self, vpg_model, pi_models):
+        if not pi_models:
+            return
+        vnc_pis = [
+            self._vnc_api_client.read_pi(pi_model.uuid)
+            for pi_model in pi_models
+        ]
+        vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
+        if vnc_vpg is None:
             logger.info("Not found VPG in VNC for %s. Creating...", vpg_model)
-            fabric = self._vnc_api_client.get_fabric()
-            vnc_vpg = vpg_model.to_vnc_vpg(fabric)
-            self._vnc_api_client.create_vpg(vnc_vpg)
+            vnc_vpg = self._create_vpg(vpg_model)
+
+        self.update_pis_for_vpg(vnc_vpg, vnc_pis)
+
+    def _create_vpg(self, vpg_model):
+        fabric = self._vnc_api_client.get_fabric()
+        vnc_vpg = vpg_model.to_vnc_vpg(fabric)
+        self._vnc_api_client.create_vpg(vnc_vpg)
+        return vnc_vpg
 
     def read_all_vpgs(self):
         return self._vnc_api_client.read_all_vpgs()
 
     def delete_vpg(self, vpg_uuid):
         self._vnc_api_client.delete_vpg(vpg_uuid)
-
-    def attach_pis_to_vpg(self, vpg_model):
-        vnc_vpg = self._vnc_api_client.read_vpg(vpg_model.uuid)
-        pis = self.find_matching_physical_interfaces(
-            vpg_model.host_name, vpg_model.dvs_name
-        )
-        self.update_pis_for_vpg(vnc_vpg, pis)
 
     def update_pis_for_vpg(self, existing_vpg, pis):
         previous_pis_uuids = [
@@ -358,35 +364,6 @@ class VirtualPortGroupService(Service):
             "Updated list of physical interfaces connected to VPG %s",
             existing_vpg.name,
         )
-
-    def find_matching_physical_interfaces(self, host_name, dvs_name):
-        vnc_node = self._vnc_api_client.get_node_by_name(host_name)
-        if vnc_node is None:
-            return []
-        vnc_ports = self._vnc_api_client.get_node_ports(vnc_node)
-        vnc_ports = self.filter_node_ports_by_dvs_name(vnc_ports, dvs_name)
-        return self.collect_pis_from_ports(vnc_ports)
-
-    def collect_pis_from_ports(self, vnc_ports):
-        pis = []
-        for port in vnc_ports:
-            port_pis = self._vnc_api_client.get_pis_by_port(port)
-            pis.extend(port_pis)
-        return pis
-
-    def filter_node_ports_by_dvs_name(self, ports, dvs_name):
-        return [
-            port
-            for port in ports
-            if self.is_dvs_name_in_port_info(port, dvs_name)
-        ]
-
-    @staticmethod
-    def is_dvs_name_in_port_info(port, dvs_name):
-        esxi_port_info = port.get_esxi_port_info()
-        if esxi_port_info is None:
-            return False
-        return esxi_port_info.get_dvs_name() == dvs_name
 
 
 class DistributedVirtualSwitchService(Service):
@@ -416,6 +393,9 @@ def validate_vnc_port(vnc_port):
 
 
 class PhysicalInterfaceService(Service):
+    def get_pi_models_for_vpg(self, vpg_model):
+        return self._database.get_pi_models_for_vpg(vpg_model)
+
     def populate_db_with_pi_models(self):
         vnc_nodes = self._get_vnc_nodes()
         for vnc_node in vnc_nodes:
