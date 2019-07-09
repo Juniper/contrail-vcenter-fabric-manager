@@ -30,7 +30,8 @@ def minimalistic_topology(vnc_test_client, vcenter_api_client):
         pr-1:
             name: qfx-1
     """
-    pr = vnc_test_client.create_physical_router("qfx-1")
+    fabric = vnc_test_client.fabric
+    pr = vnc_test_client.create_physical_router("qfx-1", fabric)
     pi = vnc_test_client.create_physical_interface(
         "xe-0/0/0", "11:22:33:44:55:02", pr
     )
@@ -73,7 +74,8 @@ def topology_with_two_nodes(vnc_test_client, vcenter_api_client):
         pr-1:
             name: qfx-1
     """
-    pr = vnc_test_client.create_physical_router("qfx-1")
+    fabric = vnc_test_client.fabric
+    pr = vnc_test_client.create_physical_router("qfx-1", fabric)
     pi_1 = vnc_test_client.create_physical_interface(
         "xe-0/0/1", "11:22:33:44:55:68", pr
     )
@@ -131,9 +133,10 @@ def topology_with_spine_switch(vnc_test_client, vcenter_api_client):
         pr-3:
             name: qfx-spine
     """
-    pr_spine = vnc_test_client.create_physical_router("qfx-spine")
-    pr_leaf_1 = vnc_test_client.create_physical_router("qfx-leaf-1")
-    pr_leaf_2 = vnc_test_client.create_physical_router("qfx-leaf-2")
+    fabric = vnc_test_client.fabric
+    pr_spine = vnc_test_client.create_physical_router("qfx-spine", fabric)
+    pr_leaf_1 = vnc_test_client.create_physical_router("qfx-leaf-1", fabric)
+    pr_leaf_2 = vnc_test_client.create_physical_router("qfx-leaf-2", fabric)
 
     leaf_1_pi_nums = [1, 2, 3, 4, 9]
     leaf_1_pis = utils.create_pis_for_pr(
@@ -195,7 +198,8 @@ def dvs_per_esxi_topology(vnc_test_client, vcenter_api_client):
         pr-1:
             name: qfx-1
     """
-    pr = vnc_test_client.create_physical_router("qfx-1")
+    fabric = vnc_test_client.fabric
+    pr = vnc_test_client.create_physical_router("qfx-1", fabric)
     pi_1 = vnc_test_client.create_physical_interface(
         "xe-0/0/1", "11:22:33:44:55:68", pr
     )
