@@ -25,6 +25,8 @@ class VNCAPITestClient(object):
             )
         except vnc_api.RefsExistError:
             pass
+        self.fabric_name = vnc_cfg.get("fabric_name", "test-fabric")
+        self.create_fabric()
 
     def tear_down(self):
         self._delete_vpgs()
@@ -35,6 +37,7 @@ class VNCAPITestClient(object):
         self._delete_physical_routers()
         self._delete_nodes()
         self._delete_project()
+        self._delete_fabric()
 
     def _delete_ports(self):
         port_uuids = [
@@ -131,12 +134,34 @@ class VNCAPITestClient(object):
         except vnc_api.NoIdError:
             pass
 
+    def _delete_fabric(self):
+        fabric_uuid = self.fabric.uuid
+        try:
+            self.vnc_lib.fabric_delete(id=fabric_uuid)
+        except vnc_api.NoIdError:
+            pass
+
     @property
     def _project(self):
         return self.vnc_lib.project_read(["default-domain", self.project_name])
 
-    def create_physical_router(self, pr_name):
+    @property
+    def fabric(self):
+        return self.vnc_lib.fabric_read(
+            ["default-global-system-config", self.fabric_name]
+        )
+
+    def create_fabric(self):
+        try:
+            fabric = vnc_api.Fabric(self.fabric_name)
+            uuid = self.vnc_lib.fabric_create(fabric)
+            return self.vnc_lib.fabric_read(id=uuid)
+        except vnc_api.RefsExistError:
+            pass
+
+    def create_physical_router(self, pr_name, fabric):
         physical_router = vnc_api.PhysicalRouter(pr_name)
+        physical_router.add_fabric(fabric)
         uuid = self.vnc_lib.physical_router_create(physical_router)
         return self.read_physical_router(uuid)
 

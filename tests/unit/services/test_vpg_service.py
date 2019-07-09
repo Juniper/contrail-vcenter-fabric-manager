@@ -19,12 +19,17 @@ def port():
 
 @pytest.fixture
 def fabric():
-    return mock.Mock(fq_name=["a", "b"])
+    fabric_mock = mock.Mock()
+    fabric_mock.fq_name = ["global-config", "fabric_name"]
+    fabric_mock.uuid = "fabric-uuid"
+    return fabric_mock
 
 
 @pytest.fixture
 def pi_model():
-    return models.PhysicalInterfaceModel("pi-1-uuid", "esxi-1", "dvs-1")
+    return models.PhysicalInterfaceModel(
+        "pi-1-uuid", "fabric-uuid", "esxi-1", "dvs-1"
+    )
 
 
 def test_create_vpg_models(vpg_service, vm_model):
@@ -37,12 +42,10 @@ def test_create_vpg_models(vpg_service, vm_model):
 
 
 def test_create_dpg_model_with_vpg_creation_in_vnc(
-    vpg_service, vnc_api_client, pi_model
+    vpg_service, vnc_api_client, pi_model, fabric
 ):
     vnc_api_client.read_vpg.return_value = None
-    fabric_mock = mock.Mock()
-    fabric_mock.fq_name = ["a", "b"]
-    vnc_api_client.get_fabric.return_value = fabric_mock
+    vnc_api_client.read_fabric.return_value = fabric
 
     vpg_model = models.VirtualPortGroupModel(
         models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
@@ -50,6 +53,7 @@ def test_create_dpg_model_with_vpg_creation_in_vnc(
     vpg_service.create_vpg_in_vnc(vpg_model, [pi_model])
 
     vnc_api_client.read_vpg.assert_called_once()
+    vnc_api_client.read_fabric.assert_called_once_with(pi_model.fabric_uuid)
     vnc_api_client.create_vpg.assert_called_once()
 
 
@@ -125,12 +129,15 @@ def test_create_vpg_in_vnc(
     pi.set_uuid("pi-1-uuid")
     vnc_api_client.read_pi.return_value = pi
     vnc_api_client.read_vpg.return_value = None
-    vnc_api_client.get_fabric.return_value = fabric
-    pi_model = models.PhysicalInterfaceModel("pi-1-uuid", "esxi-1", "dvs-1")
+    vnc_api_client.read_fabric.return_value = fabric
+    pi_model = models.PhysicalInterfaceModel(
+        "pi-1-uuid", "fabric-uuid", "esxi-1", "dvs-1"
+    )
     database.add_pi_model(pi_model)
     pi_models = [pi_model]
 
     vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
 
     vnc_api_client.create_vpg.assert_called_once()
+    vnc_api_client.read_fabric.assert_called_once_with(pi_model.fabric_uuid)
     vnc_api_client.read_pi.assert_called_once_with("pi-1-uuid")
