@@ -7,27 +7,12 @@ from cvfm import controllers
 
 
 @pytest.fixture
-def vm_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vmi_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def dpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
 def vpg_model():
+    return mock.Mock()
+
+
+@pytest.fixture
+def pi_model():
     return mock.Mock()
 
 
@@ -47,9 +32,11 @@ def host_change(vmware_vm, host):
 
 
 @pytest.fixture
-def host_change_handler(vm_service, vmi_service, dpg_service, vpg_service):
+def host_change_handler(
+    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+):
     return controllers.HostChangeHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
 
 
@@ -80,7 +67,6 @@ def test_host_change_handler_no_change(
 
 
 def test_host_change_handler(
-    database,
     dpg_service,
     host,
     host_change,
@@ -91,6 +77,8 @@ def test_host_change_handler(
     vmware_vm,
     vpg_model,
     vpg_service,
+    pi_service,
+    pi_model,
 ):
     vm_service.check_vm_moved.return_value = True
     source_host = mock.Mock()
@@ -98,6 +86,9 @@ def test_host_change_handler(
     vm_service.delete_vm_model.return_value = vm_model
     new_vm_model = mock.Mock()
     vm_service.create_vm_model.return_value = new_vm_model
+
+    pi_models = [pi_model]
+    pi_service.get_pi_models_for_vpg.return_value = pi_models
 
     old_vmis = [mock.Mock(uuid="vmi-1"), mock.Mock(uuid="vmi-to-delete")]
     new_vmi = mock.Mock(uuid="vmi-3")
@@ -130,8 +121,7 @@ def test_host_change_handler(
 
     # Create VPG based on new VM model and attach PIs to them
     vpg_service.create_vpg_models.assert_called_once_with(new_vm_model)
-    vpg_service.create_vpg_in_vnc.assert_called_once_with(vpg_model)
-    vpg_service.attach_pis_to_vpg.assert_called_once_with(vpg_model)
+    vpg_service.create_vpg_in_vnc.assert_called_once_with(vpg_model, pi_models)
 
     # Create new VMI and attach to VPG
     vmi_service.create_vmi_in_vnc.assert_called_once_with(new_vmi)
@@ -139,7 +129,6 @@ def test_host_change_handler(
 
 
 def test_host_change_handler_source_host_not_exist(
-    database,
     dpg_service,
     host,
     host_change,
@@ -150,12 +139,17 @@ def test_host_change_handler_source_host_not_exist(
     vmware_vm,
     vpg_model,
     vpg_service,
+    pi_service,
+    pi_model,
 ):
     vm_service.check_vm_moved.return_value = True
     vm_service.get_host_from_vm.return_value = None
     vm_service.delete_vm_model.return_value = vm_model
     new_vm_model = mock.Mock()
     vm_service.create_vm_model.return_value = new_vm_model
+
+    pi_models = [pi_model]
+    pi_service.get_pi_models_for_vpg.return_value = pi_models
 
     old_vmi = mock.Mock(uuid="vmi-to-delete")
     new_vmi = mock.Mock(uuid="vmi-2")
@@ -185,8 +179,7 @@ def test_host_change_handler_source_host_not_exist(
 
     # Create VPG based on new VM model and attach PIs to them
     vpg_service.create_vpg_models.assert_called_once_with(new_vm_model)
-    vpg_service.create_vpg_in_vnc.assert_called_once_with(vpg_model)
-    vpg_service.attach_pis_to_vpg.assert_called_once_with(vpg_model)
+    vpg_service.create_vpg_in_vnc.assert_called_once_with(vpg_model, pi_models)
 
     # Create new VMI and attach to VPG
     vmi_service.create_vmi_in_vnc.assert_called_once_with(new_vmi)

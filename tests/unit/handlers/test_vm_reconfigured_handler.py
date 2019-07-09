@@ -7,26 +7,6 @@ from cvfm import controllers
 
 
 @pytest.fixture
-def vm_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vmi_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def dpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
 def vm_reconfigured_change():
     event = mock.Mock(spec=vim.event.VmReconfiguredEvent())
     device = mock.Mock(spec=vim.vm.device.VirtualPCNet32())
@@ -42,9 +22,11 @@ def vm_reconfigured_change():
 
 
 @pytest.fixture
-def vm_reconfigured_handler(vm_service, vmi_service, dpg_service, vpg_service):
+def vm_reconfigured_handler(
+    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+):
     return controllers.VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
 
 

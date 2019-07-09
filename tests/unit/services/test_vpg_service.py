@@ -17,6 +17,16 @@ def port():
     return vnc_api.Port(esxi_port_info=esxi_port_info)
 
 
+@pytest.fixture
+def fabric():
+    return mock.Mock(fq_name=["a", "b"])
+
+
+@pytest.fixture
+def pi_model():
+    return models.PhysicalInterfaceModel("pi-1-uuid", "esxi-1", "dvs-1")
+
+
 def test_create_vpg_models(vpg_service, vm_model):
     vpg_models = vpg_service.create_vpg_models(vm_model)
 
@@ -27,7 +37,7 @@ def test_create_vpg_models(vpg_service, vm_model):
 
 
 def test_create_dpg_model_with_vpg_creation_in_vnc(
-    vpg_service, vnc_api_client
+    vpg_service, vnc_api_client, pi_model
 ):
     vnc_api_client.read_vpg.return_value = None
     fabric_mock = mock.Mock()
@@ -37,45 +47,26 @@ def test_create_dpg_model_with_vpg_creation_in_vnc(
     vpg_model = models.VirtualPortGroupModel(
         models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
     )
-    vpg_service.create_vpg_in_vnc(vpg_model)
+    vpg_service.create_vpg_in_vnc(vpg_model, [pi_model])
 
     vnc_api_client.read_vpg.assert_called_once()
     vnc_api_client.create_vpg.assert_called_once()
 
 
 def test_create_dpg_model_without_vpg_creation_in_vnc(
-    vpg_service, vnc_api_client
+    vpg_service, vnc_api_client, pi_model
 ):
-    vnc_api_client.read_vpg.return_value = mock.Mock()
+    vpg_mock = mock.Mock()
+    vpg_mock.get_physical_interface_refs.return_value = []
+    vnc_api_client.read_vpg.return_value = vpg_mock
 
     vpg_model = models.VirtualPortGroupModel(
         models.generate_uuid("esxi-1_dvs-1"), "esxi-1", "dvs-1"
     )
-    vpg_service.create_vpg_in_vnc(vpg_model)
+    vpg_service.create_vpg_in_vnc(vpg_model, [pi_model])
 
     vnc_api_client.read_vpg.assert_called_once()
     vnc_api_client.create_vpg.assert_not_called()
-
-
-def test_filter_node_ports_by_dvs_name(vpg_service):
-    port_1 = vnc_api.Port(name="eth1")
-    port_1.esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-1")
-
-    port_2 = vnc_api.Port(name="eth2")
-    port_2.esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-1")
-
-    port_3 = vnc_api.Port(name="eth3")
-    port_3.esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-2")
-
-    ports = [port_1, port_2, port_3]
-
-    assert vpg_service.filter_node_ports_by_dvs_name(ports, "dvs-1") == [
-        port_1,
-        port_2,
-    ]
-    assert vpg_service.filter_node_ports_by_dvs_name(ports, "dvs-2") == [
-        port_3
-    ]
 
 
 def test_update_pis(vpg_service, vnc_api_client):
@@ -116,3 +107,30 @@ def test_update_pis_empty_refs(vpg_service, vnc_api_client):
     vnc_api_client.attach_pis_to_vpg.assert_called_once_with(
         previous_vpg, [pi]
     )
+
+
+def test_create_vpg_no_pis(vpg_model, vpg_service, vnc_api_client):
+    pi_models = []
+
+    vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
+
+    vnc_api_client.create_vpg.assert_not_called()
+
+
+def test_create_vpg_in_vnc(
+    vpg_model, vpg_service, vnc_api_client, database, fabric
+):
+    pr = vnc_api.PhysicalRouter("qfx-1")
+    pi = vnc_api.PhysicalInterface(name="pi-1", parent_obj=pr)
+    pi.set_uuid("pi-1-uuid")
+    vnc_api_client.read_pi.return_value = pi
+    vnc_api_client.read_vpg.return_value = None
+    vnc_api_client.get_fabric.return_value = fabric
+    pi_model = models.PhysicalInterfaceModel("pi-1-uuid", "esxi-1", "dvs-1")
+    database.add_pi_model(pi_model)
+    pi_models = [pi_model]
+
+    vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
+
+    vnc_api_client.create_vpg.assert_called_once()
+    vnc_api_client.read_pi.assert_called_once_with("pi-1-uuid")

@@ -45,11 +45,14 @@ class UpdateHandler(object):
 class AbstractChangeHandler(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, vm_service, vmi_service, dpg_service, vpg_service):
+    def __init__(
+        self, vm_service, vmi_service, dpg_service, vpg_service, pi_service
+    ):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
         self._vpg_service = vpg_service
+        self._pi_service = pi_service
 
     def handle_change(self, obj, property_change):
         name = getattr(property_change, "name", None)
@@ -74,8 +77,8 @@ class AbstractChangeHandler(object):
     def _create_vmis(self, vm_model, vmis_to_create):
         vpg_models = self._vpg_service.create_vpg_models(vm_model)
         for vpg_model in vpg_models:
-            self._vpg_service.create_vpg_in_vnc(vpg_model)
-            self._vpg_service.attach_pis_to_vpg(vpg_model)
+            pi_models = self._pi_service.get_pi_models_for_vpg(vpg_model)
+            self._vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
         for vmi_model in vmis_to_create:
             self._vmi_service.create_vmi_in_vnc(vmi_model)
             self._vmi_service.attach_vmi_to_vpg(vmi_model)

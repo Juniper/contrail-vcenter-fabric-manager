@@ -120,12 +120,9 @@ class VCenterAPIMockClient(VCenterAPIClient):
         return vms
 
     def _get_or_create_host(self, host_name):
-        host = self.hosts.get(host_name)
-        if not host:
-            host = mock.Mock(vm=[])
-            host.configure_mock(name=host_name)
-        self.hosts[host_name] = host
-        return host
+        if not self.hosts.get(host_name):
+            self.add_host(host_name)
+        return self.hosts.get(host_name)
 
     def add_filter(self, obj, filters):
         return mock.Mock()
@@ -135,3 +132,8 @@ class VCenterAPIMockClient(VCenterAPIClient):
 
     def get_all_hosts(self):
         return self.hosts.values()
+
+    def add_host(self, host_name):
+        host = mock.Mock(vm=[])
+        host.configure_mock(name=host_name)
+        self.hosts[host_name] = host
