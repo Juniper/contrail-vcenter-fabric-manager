@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0938f1ce_0415b99c",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-07-09T09:56:56Z",
+      "side": 1,
+      "message": "It is used in VM Service in get_host_from_vm which is then used by HostChangeHandler.",
+      "parentUuid": "23f82b69_f7506f9d",
+      "range": {
+        "startLine": 146,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 23
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c98140e6_d3d26d71",
         "filename": "cvfm/services.py",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
       "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f5624f_e61d3875",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-07-09T09:56:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c98140e6_d3d26d71",
+      "range": {
+        "startLine": 396,
+        "startChar": 12,
+        "endLine": 396,
+        "endChar": 71
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "185b12e8_5a1e8c99",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-07-09T09:56:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "889e6c72_4d5a7501",
+      "range": {
+        "startLine": 399,
+        "startChar": 16,
+        "endLine": 399,
+        "endChar": 72
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c3fd739_d31d8d8e",
         "filename": "cvfm/services.py",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7d323f47_f039cecc",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-07-09T09:56:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c3fd739_d31d8d8e",
+      "range": {
+        "startLine": 400,
+        "startChar": 15,
+        "endLine": 405,
+        "endChar": 28
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db83b7fe_2059b50b",
         "filename": "cvfm/services.py",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
       "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b041bb_6cbd2060",
+        "filename": "cvfm/services.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-07-09T09:56:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db83b7fe_2059b50b",
+      "range": {
+        "startLine": 407,
+        "startChar": 15,
+        "endLine": 413,
+        "endChar": 73
+      },
+      "revId": "fa87b4b87b782a51c1f9df32c86f8f035f3830ae",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": false
     }
   ]
 }
