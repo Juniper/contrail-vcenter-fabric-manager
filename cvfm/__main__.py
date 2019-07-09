@@ -47,6 +47,7 @@ def build_context(cfg):
         "vmi_service": vmi_service,
         "dpg_service": dpg_service,
         "vpg_service": vpg_service,
+        "pi_service": pi_service,
     }
     vm_updated_handler = controllers.VmUpdatedHandler(**handler_kwargs)
     vm_reconfigured_handler = controllers.VmReconfiguredHandler(
@@ -86,7 +87,7 @@ def build_context(cfg):
         dpg_service
     )
     vpg_synchronizer = synchronizers.VirtualPortGroupSynchronizer(
-        vm_service, vpg_service
+        vm_service, vpg_service, pi_service
     )
     vmi_synchronizer = synchronizers.VirtualMachineInterfaceSynchronizer(
         vm_service, vmi_service

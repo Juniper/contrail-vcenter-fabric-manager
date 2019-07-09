@@ -22,7 +22,7 @@ def vmware_vm(vmware_dpg):
     return utils.create_vmware_vm("vm-1", "esxi-1", [vmware_dpg])
 
 
-def test_vm_created(
+def test_vm_renamed(
     minimalistic_topology,
     vnc_test_client,
     vmware_controller,

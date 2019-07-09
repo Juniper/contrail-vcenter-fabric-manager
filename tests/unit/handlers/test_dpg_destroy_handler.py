@@ -7,26 +7,6 @@ from cvfm import controllers
 
 
 @pytest.fixture
-def vm_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vmi_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def vpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
-def dpg_service():
-    return mock.Mock()
-
-
-@pytest.fixture
 def dpg_destroyed_update():
     event = mock.Mock(spec=vim.event.DVPortgroupDestroyedEvent())
     event.net.name = "dpg-1"
@@ -38,9 +18,11 @@ def dpg_destroyed_update():
 
 
 @pytest.fixture
-def dpg_destroyed_handler(vm_service, vmi_service, dpg_service, vpg_service):
+def dpg_destroyed_handler(
+    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+):
     return controllers.DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
 
 
