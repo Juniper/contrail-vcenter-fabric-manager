@@ -96,33 +96,35 @@ def pi_service(vcenter_api_client, vnc_api_client, database):
 
 
 @pytest.fixture
-def update_handler(vm_service, vmi_service, dpg_service, vpg_service):
+def update_handler(
+    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+):
     dpg_created_handler = controllers.DVPortgroupCreatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     dpg_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     dpg_renamed_handler = controllers.DVPortgroupRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     dpg_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     vm_updated_handler = controllers.VmUpdatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     vm_reconfigured_handler = controllers.VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     vm_renamed_handler = controllers.VmRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     vm_removed_handler = controllers.VmRemovedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     host_change_handler = controllers.HostChangeHandler(
-        vm_service, vmi_service, dpg_service, vpg_service
+        vm_service, vmi_service, dpg_service, vpg_service, pi_service
     )
     handlers = [
         dpg_created_handler,
@@ -144,8 +146,10 @@ def dpg_synchronizer(dpg_service):
 
 
 @pytest.fixture
-def vpg_synchronizer(vm_service, vpg_service):
-    return synchronizers.VirtualPortGroupSynchronizer(vm_service, vpg_service)
+def vpg_synchronizer(vm_service, vpg_service, pi_service):
+    return synchronizers.VirtualPortGroupSynchronizer(
+        vm_service, vpg_service, pi_service
+    )
 
 
 @pytest.fixture

@@ -245,12 +245,6 @@ class VNCAPIClient(object):
         except vnc_api.RefsExistError:
             logger.info("VMI %s already exists in VNC", vnc_vmi.name)
 
-    def read_all_vn_uuids(self):
-        vn_list = self.vnc_lib.virtual_networks_list(
-            parent_id=self.get_project().get_uuid()
-        )["virtual-networks"]
-        return [vn["uuid"] for vn in vn_list]
-
     def read_all_vns(self):
         vn_ref_list = self.vnc_lib.virtual_networks_list(
             parent_id=self.get_project().get_uuid()
@@ -331,17 +325,10 @@ class VNCAPIClient(object):
         except vnc_api.NoIdError:
             logger.info("VN %s not found in VNC, unable to delete", vn_uuid)
 
-    def get_node_by_name(self, node_name):
-        for node in self._read_all_nodes():
-            if node.name == node_name:
-                return node
-        logger.info("Node %s not found in VNC", node_name)
-        return None
-
     def _read_node(self, node_uuid):
         try:
             return self.vnc_lib.node_read(id=node_uuid)
-        except vnc_api.RefsExistError:
+        except vnc_api.NoIdError:
             logger.info("Node %s not found in VNC", node_uuid)
 
     def _read_all_nodes(self):
@@ -365,14 +352,15 @@ class VNCAPIClient(object):
     def _read_port(self, port_uuid):
         return self.vnc_lib.port_read(id=port_uuid)
 
+    def read_pi(self, pi_uuid):
+        try:
+            return self.vnc_lib.physical_interface_read(id=pi_uuid)
+        except vnc_api.NoIdError:
+            logger.info("Physical Interface %s not found in VNC", pi_uuid)
+
     def get_pis_by_port(self, port):
         pi_refs = port.get_physical_interface_back_refs()
-        return [
-            self._read_physical_interface(pi_ref["uuid"]) for pi_ref in pi_refs
-        ]
-
-    def _read_physical_interface(self, pi_uuid):
-        return self.vnc_lib.physical_interface_read(id=pi_uuid)
+        return [self.read_pi(pi_ref["uuid"]) for pi_ref in pi_refs]
 
     def attach_pis_to_vpg(self, vpg, physical_interfaces):
         if not physical_interfaces:
@@ -391,7 +379,7 @@ class VNCAPIClient(object):
         if not physical_interface_uuids:
             return
         for pi_uuid in physical_interface_uuids:
-            pi = self._read_physical_interface(pi_uuid)
+            pi = self.read_pi(pi_uuid)
             vpg.del_physical_interface(pi)
             pi_display_name = ":".join(pi.fq_name[1:])
             logger.info(
