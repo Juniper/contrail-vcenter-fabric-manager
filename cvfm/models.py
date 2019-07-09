@@ -235,16 +235,18 @@ class VirtualMachineInterfaceModel(object):
 
 
 class PhysicalInterfaceModel(object):
-    def __init__(self, uuid, host_name, dvs_name):
+    def __init__(self, uuid, fabric_uuid, host_name, dvs_name):
         self.uuid = uuid
+        self.fabric_uuid = fabric_uuid
         self.host_name = host_name
         self.dvs_name = dvs_name
 
     def __repr__(self):
         return (
-            "PhysicalInterfaceModel(uuid={uuid}, host_name={host_name}, "
+            "PhysicalInterfaceModel(uuid={uuid}, fabric_uuid={fabric_uuid}, host_name={host_name}, "
             "dvs_name={dvs_name})".format(
                 uuid=self.uuid,
+                fabric_uuid=self.fabric_uuid,
                 host_name=self.host_name,
                 dvs_name=self.dvs_name,
             )
