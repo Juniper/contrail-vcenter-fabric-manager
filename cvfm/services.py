@@ -105,6 +105,9 @@ class VirtualMachineInterfaceService(Service):
         return models.VirtualMachineInterfaceModel.from_vm_model(vm_model)
 
     def create_vmi_in_vnc(self, vmi_model):
+        vnc_vpg = self._vnc_api_client.read_vpg(vmi_model.vpg_uuid)
+        if vnc_vpg is None:
+            return
         fabric_vn = self._vnc_api_client.read_vn(vmi_model.dpg_model.uuid)
         project = self._vnc_api_client.get_project()
         try:
