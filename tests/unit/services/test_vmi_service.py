@@ -4,7 +4,26 @@ from vnc_api import vnc_api
 
 from cvfm import models
 from cvfm.services import VirtualMachineInterfaceService
-from tests import utils
+
+
+@pytest.fixture
+def dpg_model():
+    return models.DistributedPortGroupModel(
+        uuid=models.generate_uuid("dvportgroup-1"),
+        key="dvportgroup-1",
+        name="dpg-1",
+        vlan_id=5,
+        dvs_name="dvs-1",
+    )
+
+
+@pytest.fixture
+def vmi_model(dpg_model):
+    return models.VirtualMachineInterfaceModel(
+        uuid=models.generate_uuid("esxi-1_dvs-1_dpg-1"),
+        host_name="esxi-1",
+        dpg_model=dpg_model,
+    )
 
 
 @pytest.fixture
@@ -26,22 +45,12 @@ def test_create_vmi_model(vmi_service, vm_model):
     assert vmi_models[0].vpg_uuid == models.generate_uuid("esxi-1_dvs-1")
 
 
-def test_create_vmi_in_vnc(vmi_service, vnc_api_client, project, fabric_vn):
+def test_create_vmi_in_vnc(
+    vmi_service, vnc_api_client, project, fabric_vn, vmi_model
+):
     vnc_api_client.read_vn.return_value = fabric_vn
     vnc_api_client.read_vmi.return_value = None
-
-    dpg_model = models.DistributedPortGroupModel(
-        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
-        key="dvportgroup-1",
-        name="dpg-1",
-        vlan_id=5,
-        dvs_name="dvs-1",
-    )
-    vmi_model = models.VirtualMachineInterfaceModel(
-        uuid="0b1016bf-374b-3829-afba-807b8bf8396a",
-        host_name="esxi-1",
-        dpg_model=dpg_model,
-    )
+    vnc_api_client.read_vpg.return_value = mock.Mock()
 
     vmi_service.create_vmi_in_vnc(vmi_model)
 
@@ -60,26 +69,24 @@ def test_create_vmi_in_vnc(vmi_service, vnc_api_client, project, fabric_vn):
     )
 
 
-def test_attach_vmi_to_vpg(vmi_service, vnc_api_client):
+def test_attach_vmi_to_vpg(vmi_service, vnc_api_client, vmi_model):
     vnc_vpg = vnc_api.VirtualPortGroup()
     vnc_api_client.read_vpg.return_value = vnc_vpg
-
-    dpg_model = models.DistributedPortGroupModel(
-        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
-        key="dvportgroup-1",
-        name="dpg-1",
-        vlan_id=5,
-        dvs_name="dvs-1",
-    )
-    vmi_model = models.VirtualMachineInterfaceModel(
-        uuid="0b1016bf-374b-3829-afba-807b8bf8396a",
-        host_name="esxi-1",
-        dpg_model=dpg_model,
-    )
 
     vmi_service.attach_vmi_to_vpg(vmi_model)
 
     assert len(vnc_vpg.virtual_machine_interface_refs) == 1
+
+
+def test_attach_no_vmi(vmi_service, vnc_api_client, vmi_model):
+    vnc_vpg = vnc_api.VirtualPortGroup()
+    vnc_api_client.read_vpg.return_value = vnc_vpg
+    vnc_api_client.read_vmi.return_value = None
+
+    vmi_service.attach_vmi_to_vpg(vmi_model)
+
+    assert not vnc_vpg.get_virtual_machine_interface_refs()
+    vnc_api_client.update_vpg.assert_not_called()
 
 
 def test_find_affected_vmis(vmi_service, vmware_vm, dpg_model):
@@ -94,17 +101,9 @@ def test_find_affected_vmis(vmi_service, vmware_vm, dpg_model):
         vmware_vm, {dpg_model}
     )
     new_vm_model = models.VirtualMachineModel.from_vmware_vm(
-        vmware_vm, {dpg_model}
+        vmware_vm, {dpg_model_2}
     )
 
-    vmis_to_delete_1, vmis_to_create_1 = vmi_service.find_affected_vmis(
-        old_vm_model, new_vm_model
-    )
-
-    assert len(vmis_to_delete_1) == 0
-    assert len(vmis_to_create_1) == 0
-
-    new_vm_model.dpg_models = [dpg_model_2]
     vmis_to_delete_2, vmis_to_create_2 = vmi_service.find_affected_vmis(
         old_vm_model, new_vm_model
     )
@@ -119,35 +118,44 @@ def test_find_affected_vmis(vmi_service, vmware_vm, dpg_model):
     )
 
 
-def test_update_vlan_id(vmi_service, project, fabric_vn, vnc_api_client):
-    vnc_api_client.read_vn.return_value = fabric_vn
+def test_find_no_affected_vmis(vmi_service, vmware_vm, dpg_model):
 
-    dpg_model = models.DistributedPortGroupModel(
-        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
-        key="dvportgroup-1",
-        name="dpg-1",
-        vlan_id=5,
-        dvs_name="dvs-1",
+    old_vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm, {dpg_model}
     )
-    dpg_model_2 = models.DistributedPortGroupModel(
-        uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
-        key="dvportgroup-1",
-        name="dpg-1",
-        vlan_id=6,
-        dvs_name="dvs-1",
+    new_vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm, {dpg_model}
     )
-    vmi_model = models.VirtualMachineInterfaceModel(
-        uuid="0b1016bf-374b-3829-afba-807b8bf8396a",
-        host_name="esxi-1",
-        dpg_model=dpg_model,
+
+    vmis_to_delete_1, vmis_to_create_1 = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
     )
+
+    assert len(vmis_to_delete_1) == 0
+    assert len(vmis_to_create_1) == 0
+
+
+def test_update_vlan_id(
+    vmi_service, project, fabric_vn, vnc_api_client, vmi_model
+):
+    vnc_api_client.read_vn.return_value = fabric_vn
     vnc_api_client.read_vmi.return_value = vmi_model.to_vnc_vmi(
         project, fabric_vn
     )
-    vmi_model.dpg_model = dpg_model_2
 
+    vmi_model.dpg_model.vlan_id = 6
     vmi_service.create_vmi_in_vnc(vmi_model)
 
     vnc_api_client.recreate_vmi_with_new_vlan.assert_called_once_with(
         mock.ANY, fabric_vn, 6
     )
+
+
+def test_create_no_vpg(vmi_service, vnc_api_client, fabric_vn, vmi_model):
+    vnc_api_client.read_vn.return_value = fabric_vn
+    vnc_api_client.read_vmi.return_value = None
+    vnc_api_client.read_vpg.return_value = None
+
+    vmi_service.create_vmi_in_vnc(vmi_model)
+
+    vnc_api_client.create_vmi.assert_not_called()
