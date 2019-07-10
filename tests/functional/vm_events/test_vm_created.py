@@ -132,3 +132,7 @@ def test_vm_created_no_pis(
     # No VPGs are created in VNC, since there are no PIs for esxi-1_dvs-2
     with pytest.raises(vnc_api.NoIdError):
         vnc_test_client.read_vpg(models.generate_uuid("esxi-1_dvs-2"))
+
+    # No VMIs are created in VNC, since there are no VPGs for esxi-1_dvs-2
+    with pytest.raises(vnc_api.NoIdError):
+        vnc_test_client.read_vmi(models.generate_uuid("esxi-1_dvs-2_dpg-4"))
