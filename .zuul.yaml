@@ -1,0 +1,7 @@
+- project:
+    name: Juniper/contrail-vcenter-fabric-manager
+    gate:
+      queue: contrail-vnc
+      jobs:
+        - contrail-build-test-containers
+
