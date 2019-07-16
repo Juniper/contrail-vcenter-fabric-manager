@@ -26,6 +26,13 @@ def vnc_api_client(vnc_lib):
 
 
 @pytest.fixture
+def fabric():
+    fabric = vnc_api.Fabric("fabric-name")
+    fabric.set_uuid("fabric-uuid-1")
+    return fabric
+
+
+@pytest.fixture
 def vmi_1(project):
     vmi = vnc_api.VirtualMachineInterface(
         name="esxi-1_dvs-1_dpg-1", parent_obj=project
@@ -46,8 +53,8 @@ def vmi_2(project):
 
 
 @pytest.fixture
-def vpg_1():
-    vpg = vnc_api.VirtualPortGroup(name="esxi-1_dvs-1")
+def vpg_1(fabric):
+    vpg = vnc_api.VirtualPortGroup(name="esxi-1_dvs-1", parent_obj=fabric)
     vpg.set_uuid(models.generate_uuid(vpg.name))
     vpg.set_id_perms(constants.ID_PERMS)
     return vpg

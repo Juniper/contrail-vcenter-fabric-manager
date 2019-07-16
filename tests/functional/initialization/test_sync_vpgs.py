@@ -20,8 +20,10 @@ def vmware_dpg():
 
 
 @pytest.fixture
-def vnc_vpg():
-    vpg = vnc_api.VirtualPortGroup(name="esxi-1_dvs-1")
+def vnc_vpg(vnc_test_client):
+    vpg = vnc_api.VirtualPortGroup(
+        name="esxi-1_dvs-1", parent_obj=vnc_test_client.fabric
+    )
     vpg.set_uuid(models.generate_uuid(vpg.name))
     vpg.set_id_perms(constants.ID_PERMS)
     return vpg

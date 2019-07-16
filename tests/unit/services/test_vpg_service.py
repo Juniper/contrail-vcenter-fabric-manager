@@ -73,7 +73,7 @@ def test_create_dpg_model_without_vpg_creation_in_vnc(
     vnc_api_client.create_vpg.assert_not_called()
 
 
-def test_update_pis(vpg_service, vnc_api_client):
+def test_update_pis(vpg_service, vnc_api_client, fabric):
     pr = vnc_api.PhysicalRouter("qfx-1")
     pi_1 = vnc_api.PhysicalInterface(name="pi-1", parent_obj=pr)
     pi_2 = vnc_api.PhysicalInterface(name="pi-2", parent_obj=pr)
@@ -81,7 +81,7 @@ def test_update_pis(vpg_service, vnc_api_client):
     pi_1.set_uuid("pi-1-uuid")
     pi_2.set_uuid("pi-2-uuid")
     pi_3.set_uuid("pi-3-uuid")
-    previous_vpg = vnc_api.VirtualPortGroup()
+    previous_vpg = vnc_api.VirtualPortGroup(parent_obj=fabric)
     previous_vpg.add_physical_interface(pi_1)
     previous_vpg.add_physical_interface(pi_2)
     current_pis = [pi_2, pi_3]
@@ -96,11 +96,11 @@ def test_update_pis(vpg_service, vnc_api_client):
     )
 
 
-def test_update_pis_empty_refs(vpg_service, vnc_api_client):
+def test_update_pis_empty_refs(vpg_service, vnc_api_client, fabric):
     pr = vnc_api.PhysicalRouter("qfx-1")
     pi = vnc_api.PhysicalInterface(name="pi-1", parent_obj=pr)
     pi.set_uuid("pi-1-uuid")
-    previous_vpg = vnc_api.VirtualPortGroup()
+    previous_vpg = vnc_api.VirtualPortGroup(parent_obj=fabric)
     current_pis = [pi]
 
     vpg_service.update_pis_for_vpg(previous_vpg, current_pis)

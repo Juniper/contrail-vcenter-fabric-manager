@@ -7,6 +7,13 @@ from cvfm.services import VirtualMachineInterfaceService
 
 
 @pytest.fixture
+def vnc_fabric():
+    fabric = vnc_api.Fabric("fabric-name")
+    fabric.set_uuid("fabric-uuid-1")
+    return fabric
+
+
+@pytest.fixture
 def dpg_model():
     return models.DistributedPortGroupModel(
         uuid=models.generate_uuid("dvportgroup-1"),
@@ -69,8 +76,8 @@ def test_create_vmi_in_vnc(
     )
 
 
-def test_attach_vmi_to_vpg(vmi_service, vnc_api_client, vmi_model):
-    vnc_vpg = vnc_api.VirtualPortGroup()
+def test_attach_vmi_to_vpg(vmi_service, vnc_api_client, vmi_model, vnc_fabric):
+    vnc_vpg = vnc_api.VirtualPortGroup(parent_obj=vnc_fabric)
     vnc_api_client.read_vpg.return_value = vnc_vpg
 
     vmi_service.attach_vmi_to_vpg(vmi_model)
@@ -78,8 +85,8 @@ def test_attach_vmi_to_vpg(vmi_service, vnc_api_client, vmi_model):
     assert len(vnc_vpg.virtual_machine_interface_refs) == 1
 
 
-def test_attach_no_vmi(vmi_service, vnc_api_client, vmi_model):
-    vnc_vpg = vnc_api.VirtualPortGroup()
+def test_attach_no_vmi(vmi_service, vnc_api_client, vmi_model, vnc_fabric):
+    vnc_vpg = vnc_api.VirtualPortGroup(parent_obj=vnc_fabric)
     vnc_api_client.read_vpg.return_value = vnc_vpg
     vnc_api_client.read_vmi.return_value = None
 
