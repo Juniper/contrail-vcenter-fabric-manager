@@ -13,10 +13,8 @@ from pysandesh.sandesh_base import Sandesh
 from cvfm import controllers, services, synchronizers
 from cvfm.clients import VCenterAPIClient, VNCAPIClient
 from cvfm.database import Database
-from cvfm.event_listener import EventListener
 from cvfm.monitors import VMwareMonitor
 from cvfm.sandesh_handler import SandeshHandler
-from cvfm.supervisor import Supervisor
 from cvfm.parser import CVFMArgumentParser
 
 gevent.monkey.patch_all()
@@ -24,7 +22,6 @@ gevent.monkey.patch_all()
 
 def build_context(cfg):
     lock = gevent.lock.BoundedSemaphore()
-    update_set_queue = gevent.queue.Queue()
 
     database = Database()
     vcenter_api_client = VCenterAPIClient(cfg["vcenter_config"])
@@ -109,11 +106,7 @@ def build_context(cfg):
     vmware_controller = controllers.VmwareController(
         synchronizer, update_handler, lock
     )
-    vmware_monitor = VMwareMonitor(vmware_controller, update_set_queue)
-    event_listener = EventListener(
-        vmware_controller, update_set_queue, vcenter_api_client, database
-    )
-    supervisor = Supervisor(event_listener, vcenter_api_client)
+    vmware_monitor = VMwareMonitor(vmware_controller, vcenter_api_client)
     zookeeper_client = ZookeeperClient(
         "vcenter-fabric-manager",
         cfg["zookeeper_config"]["zookeeper_servers"],
@@ -123,7 +116,6 @@ def build_context(cfg):
         "lock": lock,
         "database": database,
         "vmware_monitor": vmware_monitor,
-        "supervisor": supervisor,
         "zookeeper-client": zookeeper_client,
     }
     return context
@@ -166,18 +158,14 @@ def run_introspect(cfg, database, lock):
     )
 
 
-def run_vcenter_fabric_manager(supervisor, vmware_monitor):
-    greenlets = [
-        gevent.spawn(supervisor.supervise),
-        gevent.spawn(vmware_monitor.monitor),
-    ]
+def run_vcenter_fabric_manager(vmware_monitor):
+    greenlets = [gevent.spawn(vmware_monitor.start)]
     gevent.joinall(greenlets, raise_error=True)
 
 
 def main(cfg):
     context = build_context(cfg)
     vmware_monitor = context["vmware_monitor"]
-    supervisor = context["supervisor"]
     database = context["database"]
     lock = context["lock"]
     run_introspect(cfg, database, lock)
@@ -189,7 +177,6 @@ def main(cfg):
         "/vcenter-fabric-manager",
         os.getpid(),
         run_vcenter_fabric_manager,
-        supervisor,
         vmware_monitor,
     )
 
