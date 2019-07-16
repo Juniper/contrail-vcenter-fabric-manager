@@ -11,6 +11,7 @@ def vcenter_api_client(vmware_dpg, vmware_vm):
         container = mock.Mock(view=[vmware_dpg])
         content = mock.Mock()
         content.viewManager.CreateContainerView.return_value = container
+        content.searchIndex.FindByUuid.return_value = vmware_vm
         si.return_value.content = content
         return clients.VCenterAPIClient({})
 
@@ -25,16 +26,14 @@ def test_get_vms_for_portgroup(vcenter_api_client, vmware_vm):
 
 @mock.patch("cvfm.clients.time.sleep")
 def test_is_vm_removed(_, vcenter_api_client, vmware_vm):
-    vcenter_api_client._get_vm_by_uuid = mock.Mock()
-
-    vcenter_api_client._get_vm_by_uuid.return_value = vmware_vm
     # VM vm-1 still exists on esxi-1
     assert not vcenter_api_client.is_vm_removed(
-        vmware_vm.config.instanceUuid, "esxi-2"
-    )
-
-    vcenter_api_client._get_vm_by_uuid.return_value = None
-    # VM vm-1 was removed from host esxi-1 and whole vCenter
-    assert vcenter_api_client.is_vm_removed(
         vmware_vm.config.instanceUuid, "esxi-1"
     )
+
+    # VM vm-1 was removed from host esxi-1 and whole vCenter
+    with mock.patch.object(vcenter_api_client, "_si") as si:
+        si.content.searchIndex.FindByUuid.return_value = None
+        assert vcenter_api_client.is_vm_removed(
+            vmware_vm.config.instanceUuid, "esxi-1"
+        )
