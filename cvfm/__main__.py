@@ -6,17 +6,15 @@ import sys
 import gevent
 from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
 from pysandesh.connection_info import ConnectionState
-from cfgm_common.zkclient import ZookeeperClient
+from cfgm_common import zkclient
 from pysandesh.sandesh_base import Sandesh
 
 
 from cvfm import controllers, services, synchronizers
 from cvfm.clients import VCenterAPIClient, VNCAPIClient
 from cvfm.database import Database
-from cvfm.event_listener import EventListener
 from cvfm.monitors import VMwareMonitor
 from cvfm.sandesh_handler import SandeshHandler
-from cvfm.supervisor import Supervisor
 from cvfm.parser import CVFMArgumentParser
 
 gevent.monkey.patch_all()
@@ -24,7 +22,6 @@ gevent.monkey.patch_all()
 
 def build_context(cfg):
     lock = gevent.lock.BoundedSemaphore()
-    update_set_queue = gevent.queue.Queue()
 
     database = Database()
     vcenter_api_client = VCenterAPIClient(cfg["vcenter_config"])
@@ -109,12 +106,8 @@ def build_context(cfg):
     vmware_controller = controllers.VmwareController(
         synchronizer, update_handler, lock
     )
-    vmware_monitor = VMwareMonitor(vmware_controller, update_set_queue)
-    event_listener = EventListener(
-        vmware_controller, update_set_queue, vcenter_api_client, database
-    )
-    supervisor = Supervisor(event_listener, vcenter_api_client)
-    zookeeper_client = ZookeeperClient(
+    vmware_monitor = VMwareMonitor(vmware_controller, vcenter_api_client)
+    zookeeper_client = zkclient.ZookeeperClient(
         "vcenter-fabric-manager",
         cfg["zookeeper_config"]["zookeeper_servers"],
         cfg["defaults_config"]["host_ip"],
@@ -123,7 +116,6 @@ def build_context(cfg):
         "lock": lock,
         "database": database,
         "vmware_monitor": vmware_monitor,
-        "supervisor": supervisor,
         "zookeeper-client": zookeeper_client,
     }
     return context
@@ -166,30 +158,30 @@ def run_introspect(cfg, database, lock):
     )
 
 
-def run_vcenter_fabric_manager(supervisor, vmware_monitor):
-    greenlets = [
-        gevent.spawn(supervisor.supervise),
-        gevent.spawn(vmware_monitor.monitor),
-    ]
+def run_vcenter_fabric_manager(vmware_monitor):
+    greenlets = [gevent.spawn(vmware_monitor.start)]
     gevent.joinall(greenlets, raise_error=True)
+
+
+def zookeeper_connection_lost():
+    sys.exit(1)
 
 
 def main(cfg):
     context = build_context(cfg)
     vmware_monitor = context["vmware_monitor"]
-    supervisor = context["supervisor"]
     database = context["database"]
     lock = context["lock"]
     run_introspect(cfg, database, lock)
 
     zookeeper_client = context["zookeeper-client"]
+    zookeeper_client.set_lost_cb(zookeeper_connection_lost)
     logger = logging.getLogger("cvfm")
     logger.info("Waiting to be elected as master...")
     zookeeper_client.master_election(
         "/vcenter-fabric-manager",
         os.getpid(),
         run_vcenter_fabric_manager,
-        supervisor,
         vmware_monitor,
     )
 
@@ -197,12 +189,15 @@ def main(cfg):
 if __name__ == "__main__":
     parser = CVFMArgumentParser()
     config = parser.parse_args(sys.argv[1:])
+    logger = logging.getLogger("cvfm")
     try:
         main(config)
         sys.exit(0)
+    except zkclient.kazoo.exceptions.ConnectionClosedError:
+        logger.error("Connection to Zookeeper closed. Restarting...")
+        sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
-    except Exception:
-        logger = logging.getLogger("cvfm")
+    except BaseException:
         logger.critical("", exc_info=True)
         raise
