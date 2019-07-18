@@ -4,7 +4,7 @@ import uuid as uid
 from vnc_api import vnc_api
 
 from cvfm import constants as const
-from cvfm.exceptions import VNCVMICreationException
+from cvfm.exceptions import VNCVMICreationError
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ class VirtualMachineInterfaceModel(object):
 
     def to_vnc_vmi(self, project, fabric_vn):
         if fabric_vn is None:
-            raise VNCVMICreationException(
+            raise VNCVMICreationError(
                 "Cannot create VNC VMI without a fabric VN."
             )
 
