@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ad9c6bae_088e4441",
+        "filename": "cvfm/__main__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-18T15:22:14Z",
+      "side": 1,
+      "message": "It should be moved to run_introspect function",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 5
+      },
+      "revId": "6ceea6b2799184eb83b118d553dfb88873ae4606",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5d4a135_5dedb78b",
+        "filename": "cvfm/__main__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-18T15:22:14Z",
+      "side": 1,
+      "message": "Please rename to run sandesh",
+      "range": {
+        "startLine": 156,
+        "startChar": 4,
+        "endLine": 156,
+        "endChar": 18
+      },
+      "revId": "6ceea6b2799184eb83b118d553dfb88873ae4606",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a214fada_d86f7c2b",
+        "filename": "cvfm/__main__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-18T15:22:14Z",
+      "side": 1,
+      "message": "It isn\u0027t command for introspect. It\u0027s for UVE messages sending",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 167,
+        "endChar": 0
+      },
+      "revId": "6ceea6b2799184eb83b118d553dfb88873ae4606",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25dda643_3a397877",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-18T15:22:14Z",
+      "side": 1,
+      "message": "Please rename to someting more meaningful. e.g. translate_conn_error",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 14
+      },
+      "revId": "6ceea6b2799184eb83b118d553dfb88873ae4606",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4f9e476_bd601d15",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-18T15:22:14Z",
+      "side": 1,
+      "message": "Please replace by vars(cls)",
+      "range": {
+        "startLine": 29,
+        "startChar": 20,
+        "endLine": 29,
+        "endChar": 32
+      },
+      "revId": "6ceea6b2799184eb83b118d553dfb88873ae4606",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
