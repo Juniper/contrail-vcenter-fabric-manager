@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 
 from cvfm import exceptions, constants
+from cvfm.exceptions import ConnectionLostError
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ class VmwareController(object):
             try:
                 self._synchronizer.sync()
                 logger.info("Synchronization completed")
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception("Unexpected error during CVFM sync")
 
@@ -61,6 +64,8 @@ class AbstractChangeHandler(object):
             if name.startswith(self.PROPERTY_NAME):
                 try:
                     self._handle_change(obj, value)
+                except ConnectionLostError:
+                    raise
                 except Exception:
                     logger.exception(
                         "Unexpected exception during handling %s", value
@@ -93,6 +98,8 @@ class AbstractEventHandler(AbstractChangeHandler):
             try:
                 logger.debug("Detected event: %s", value)
                 self._handle_event(value)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected exception during handling %s", value

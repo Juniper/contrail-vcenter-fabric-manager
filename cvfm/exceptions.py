@@ -8,3 +8,11 @@ class VNCVMICreationException(Exception):
 
 class VNCPortValidationException(Exception):
     pass
+
+
+class ConnectionLostError(Exception):
+    pass
+
+
+class VNCConnectionLostError(ConnectionLostError):
+    pass
