@@ -2,7 +2,7 @@ import mock
 import pytest
 
 from cvfm import models
-from cvfm.exceptions import DPGCreationException
+from cvfm.exceptions import DPGCreationError
 from cvfm.services import DistributedPortGroupService
 
 
@@ -172,17 +172,17 @@ def test_dpg_rename(dpg_service, dpg_model, database):
 def test_validate_dpg_vlan_id(dpg_service, vmware_dpg, vlan_id):
     vmware_dpg.config.defaultPortConfig.vlan.vlanId = vlan_id
 
-    with pytest.raises(DPGCreationException):
+    with pytest.raises(DPGCreationError):
         dpg_service.create_dpg_model(vmware_dpg)
 
 
 def test_validate_dpg_type(dpg_service, vmware_network):
-    with pytest.raises(DPGCreationException):
+    with pytest.raises(DPGCreationError):
         dpg_service.create_dpg_model(vmware_network)
 
 
 def test_validate_dpg_dvs(dpg_service, vmware_dpg):
     vmware_dpg.config.distributedVirtualSwitch.name = "dvs-2"
 
-    with pytest.raises(DPGCreationException):
+    with pytest.raises(DPGCreationError):
         dpg_service.create_dpg_model(vmware_dpg)

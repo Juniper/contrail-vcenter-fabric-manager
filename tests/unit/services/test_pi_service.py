@@ -3,7 +3,7 @@ import pytest
 from vnc_api import vnc_api
 
 from cvfm import services
-from cvfm.exceptions import VNCPortValidationException
+from cvfm.exceptions import VNCPortValidationError
 
 
 @pytest.fixture
@@ -124,11 +124,11 @@ def test_validate_vnc_port(port):
     services.validate_vnc_port(port)
 
     port.esxi_port_info.dvs_name = None
-    with pytest.raises(VNCPortValidationException):
+    with pytest.raises(VNCPortValidationError):
         services.validate_vnc_port(port)
 
     port.esxi_port_info = None
-    with pytest.raises(VNCPortValidationException):
+    with pytest.raises(VNCPortValidationError):
         services.validate_vnc_port(port)
 
 

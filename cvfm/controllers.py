@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 
 from cvfm import exceptions, constants
+from cvfm.exceptions import CVFMError
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ class VmwareController(object):
             try:
                 self._synchronizer.sync()
                 logger.info("Synchronization completed")
+            except CVFMError:
+                raise
             except Exception:
                 logger.exception("Unexpected error during CVFM sync")
 
@@ -61,6 +64,8 @@ class AbstractChangeHandler(object):
             if name.startswith(self.PROPERTY_NAME):
                 try:
                     self._handle_change(obj, value)
+                except CVFMError:
+                    raise
                 except Exception:
                     logger.exception(
                         "Unexpected exception during handling %s", value
@@ -93,6 +98,8 @@ class AbstractEventHandler(AbstractChangeHandler):
             try:
                 logger.debug("Detected event: %s", value)
                 self._handle_event(value)
+            except CVFMError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected exception during handling %s", value
@@ -226,7 +233,7 @@ class DVPortgroupCreatedHandler(AbstractEventHandler):
         try:
             dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
             logger.info("DPG Model created: %s", dpg_model)
-        except exceptions.DPGCreationException:
+        except exceptions.DPGCreationError:
             logger.exception(
                 "Error while creating a model for DPG: %s", vmware_dpg.name
             )
@@ -243,7 +250,7 @@ class DVPortgroupReconfiguredHandler(AbstractEventHandler):
         logger.info("Detected DPG %s reconfiguration", event.net.name)
         try:
             dpg_model = self._dpg_service.create_dpg_model(vmware_dpg)
-        except exceptions.DPGCreationException:
+        except exceptions.DPGCreationError:
             logger.info(
                 "Detected DPG %s reconfiguration to invalid VLAN",
                 event.net.name,
@@ -299,6 +306,9 @@ class DVPortgroupDestroyedHandler(AbstractEventHandler):
         dpg_name = event.net.name
         logger.info("Detected DPG %s deletion", dpg_name)
         dpg_model = self._dpg_service.delete_dpg_model(dpg_name)
+        if not dpg_model:
+            logger.error("DPG %s not found in database", dpg_name)
+            return
         self._dpg_service.delete_fabric_vn(dpg_model.uuid)
 
 
