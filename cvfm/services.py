@@ -4,9 +4,10 @@ from pyVmomi import vim
 
 from cvfm import models, exceptions, constants
 from cvfm.exceptions import (
-    VNCVMICreationException,
-    DPGCreationException,
-    VNCPortValidationException,
+    VNCVMICreationError,
+    DPGCreationError,
+    VNCPortValidationError,
+    ConnectionLostError,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ class VirtualMachineService(Service):
         for vmware_vm in vmware_vms:
             try:
                 self.create_vm_model(vmware_vm)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception("Unexpected error during VM model creation")
 
@@ -112,7 +115,7 @@ class VirtualMachineInterfaceService(Service):
         project = self._vnc_api_client.get_project()
         try:
             vnc_vmi = vmi_model.to_vnc_vmi(project, fabric_vn)
-        except VNCVMICreationException as exc:
+        except VNCVMICreationError as exc:
             logger.error(
                 "Unable to create VMI in VNC for %s. Reason: %s",
                 vmi_model,
@@ -176,12 +179,14 @@ class DistributedPortGroupService(Service):
         for vmware_dpg in self._vcenter_api_client.get_all_portgroups():
             try:
                 self.create_dpg_model(vmware_dpg)
-            except exceptions.DPGCreationException as exc:
+            except exceptions.DPGCreationError as exc:
                 logger.info(
                     "Unable to create DPG model for %s portgroup, Reason: %s",
                     vmware_dpg.name,
                     exc,
                 )
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception("Unexpected error during DPG model creation")
 
@@ -290,23 +295,21 @@ class DistributedPortGroupService(Service):
     def _validate_dvs(self, vmware_dpg):
         dvs_name = vmware_dpg.config.distributedVirtualSwitch.name
         if not self._database.is_dvs_supported(dvs_name):
-            raise DPGCreationException(
-                "DVS {} is not supported.".format(dvs_name)
-            )
+            raise DPGCreationError("DVS {} is not supported.".format(dvs_name))
 
     @staticmethod
     def _validate_vlan_id(vmware_dpg):
         try:
             vlan_id = int(vmware_dpg.config.defaultPortConfig.vlan.vlanId)
         except (TypeError, AttributeError):
-            raise DPGCreationException("VLAN ID must be a number.")
+            raise DPGCreationError("VLAN ID must be a number.")
         if vlan_id == 0:
-            raise DPGCreationException("VLAN ID cannot be 0.")
+            raise DPGCreationError("VLAN ID cannot be 0.")
 
     @staticmethod
     def _validate_type(vmware_dpg):
         if not isinstance(vmware_dpg, vim.DistributedVirtualPortgroup):
-            raise DPGCreationException(
+            raise DPGCreationError(
                 "{} is not a Distributed Portgroup".format(vmware_dpg.name)
             )
 
@@ -386,12 +389,12 @@ class DistributedVirtualSwitchService(Service):
 def validate_vnc_port(vnc_port):
     esxi_port_info = vnc_port.get_esxi_port_info()
     if not esxi_port_info:
-        raise VNCPortValidationException(
+        raise VNCPortValidationError(
             "No ESXi info could be read from port %s", vnc_port.name
         )
     dvs_name = esxi_port_info.get_dvs_name()
     if not dvs_name:
-        raise VNCPortValidationException(
+        raise VNCPortValidationError(
             "No DVS name could be read from port %s", vnc_port.name
         )
 
@@ -437,7 +440,7 @@ class PhysicalInterfaceService(Service):
         for vnc_port in node_ports:
             try:
                 self._create_pis_for_port(vnc_node, vnc_port)
-            except VNCPortValidationException:
+            except VNCPortValidationError:
                 continue
 
     def _create_pis_for_port(self, vnc_node, vnc_port):

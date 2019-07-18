@@ -1,5 +1,7 @@
 import logging
 
+from cvfm.exceptions import ConnectionLostError
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,6 +73,8 @@ class DistributedPortGroupSynchronizer(object):
         for dpg_model in vns_to_create:
             try:
                 self._dpg_service.create_fabric_vn(dpg_model)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during creating VN for %s", dpg_model
@@ -96,6 +100,8 @@ class DistributedPortGroupSynchronizer(object):
         for fabric_vn in fabric_vns_to_delete:
             try:
                 self._dpg_service.delete_fabric_vn(fabric_vn.uuid)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during deleting VN with uuid: %s",
@@ -121,6 +127,8 @@ class VirtualPortGroupSynchronizer(object):
             try:
                 pi_models = self._pi_service.get_pi_models_for_vpg(vpg_model)
                 self._vpg_service.create_vpg_in_vnc(vpg_model, pi_models)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during syncing %s", vpg_model
@@ -144,6 +152,8 @@ class VirtualPortGroupSynchronizer(object):
         for vpg_uuid in vpgs_to_delete:
             try:
                 self._vpg_service.delete_vpg(vpg_uuid)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during deleting VPG with uuid: %s",
@@ -170,6 +180,8 @@ class VirtualMachineInterfaceSynchronizer(object):
             try:
                 self._vmi_service.create_vmi_in_vnc(vmi_model)
                 self._vmi_service.attach_vmi_to_vpg(vmi_model)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during syncing %s", vmi_model
@@ -196,6 +208,8 @@ class VirtualMachineInterfaceSynchronizer(object):
         for vmi_uuid in vmis_to_delete:
             try:
                 self._vmi_service.delete_vmi(vmi_uuid)
+            except ConnectionLostError:
+                raise
             except Exception:
                 logger.exception(
                     "Unexpected error during deleting VMI with uuid %s",

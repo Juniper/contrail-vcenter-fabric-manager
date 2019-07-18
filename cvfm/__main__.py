@@ -13,6 +13,7 @@ from pysandesh.sandesh_base import Sandesh
 from cvfm import controllers, services, synchronizers
 from cvfm.clients import VCenterAPIClient, VNCAPIClient
 from cvfm.database import Database
+from cvfm.exceptions import CVFMError
 from cvfm.monitors import VMwareMonitor
 from cvfm.sandesh_handler import SandeshHandler
 from cvfm.parser import CVFMArgumentParser
@@ -24,6 +25,9 @@ def build_context(cfg):
     lock = gevent.lock.BoundedSemaphore()
 
     database = Database()
+
+    run_sandesh(cfg, database, lock)
+
     vcenter_api_client = VCenterAPIClient(cfg["vcenter_config"])
     vnc_api_client = VNCAPIClient(cfg["vnc_config"], cfg.get("auth_config"))
 
@@ -116,14 +120,13 @@ def build_context(cfg):
         "lock": lock,
         "database": database,
         "vmware_monitor": vmware_monitor,
-        "zookeeper-client": zookeeper_client,
+        "zookeeper_client": zookeeper_client,
     }
     return context
 
 
-def run_introspect(cfg, database, lock):
+def run_sandesh(cfg, database, lock):
     introspect_config = cfg["introspect_config"]
-
     sandesh = Sandesh()
     sandesh_handler = SandeshHandler(database, lock)
     sandesh_handler.bind_handlers()
@@ -164,17 +167,15 @@ def run_vcenter_fabric_manager(vmware_monitor):
 
 
 def zookeeper_connection_lost():
+    logger.error("Connection to Zookeeper lost.")
     sys.exit(1)
 
 
 def main(cfg):
     context = build_context(cfg)
-    vmware_monitor = context["vmware_monitor"]
-    database = context["database"]
-    lock = context["lock"]
-    run_introspect(cfg, database, lock)
 
-    zookeeper_client = context["zookeeper-client"]
+    vmware_monitor = context["vmware_monitor"]
+    zookeeper_client = context["zookeeper_client"]
     zookeeper_client.set_lost_cb(zookeeper_connection_lost)
     logger = logging.getLogger("cvfm")
     logger.info("Waiting to be elected as master...")
@@ -193,11 +194,12 @@ if __name__ == "__main__":
     try:
         main(config)
         sys.exit(0)
-    except zkclient.kazoo.exceptions.ConnectionClosedError:
-        logger.error("Connection to Zookeeper closed. Restarting...")
+    except (CVFMError, zkclient.kazoo.exceptions.ConnectionClosedError) as exc:
+        logger.exception(exc)
+        logger.error("Restarting...")
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
-    except BaseException:
+    except Exception:
         logger.critical("", exc_info=True)
         raise
