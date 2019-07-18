@@ -1,7 +1,7 @@
 import pytest
 
 from cvfm import models
-from cvfm.exceptions import VNCVMICreationException
+from cvfm.exceptions import VNCVMICreationError
 
 
 def test_from_vm_model(vm_model):
@@ -48,7 +48,7 @@ def test_no_fabric_vn(vmware_dpg, project):
         dpg_model=dpg_model,
     )
 
-    with pytest.raises(VNCVMICreationException):
+    with pytest.raises(VNCVMICreationError):
         vmi_model.to_vnc_vmi(project, None)
 
 

@@ -2,7 +2,7 @@ import mock
 import pytest
 from vnc_api import vnc_api
 
-from cvfm import clients, models, constants
+from cvfm import clients, models, constants, exceptions
 from tests import utils
 
 
@@ -199,3 +199,10 @@ def test_read_nodes_by_host_names(vnc_api_client):
     assert len(result) == 2
     assert node_1 in result
     assert node_2 in result
+
+
+def test_connection_lost(vnc_api_client, vnc_lib):
+    vnc_lib.virtual_networks_list.side_effect = vnc_api.ConnectionError
+
+    with pytest.raises(exceptions.VNCConnectionLostError):
+        vnc_api_client.read_all_vns()
