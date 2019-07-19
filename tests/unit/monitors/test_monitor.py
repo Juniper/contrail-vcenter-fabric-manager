@@ -1,4 +1,3 @@
-import gevent
 import mock
 import pytest
 
@@ -38,11 +37,7 @@ def test_init(vmware_controller, vcenter_api_client):
 
 def test_start(vmware_controller, vcenter_api_client):
     update_set = mock.Mock()
-    vcenter_api_client.wait_for_updates.side_effect = [
-        None,
-        update_set,
-        gevent.Timeout(),
-    ]
+    vcenter_api_client.wait_for_updates.side_effect = [None, update_set]
     vmware_monitor = VMwareMonitor(vmware_controller, vcenter_api_client)
 
     try:
@@ -51,5 +46,4 @@ def test_start(vmware_controller, vcenter_api_client):
         pass
 
     vmware_controller.handle_update.assert_called_once_with(update_set)
-    vcenter_api_client.renew_connection.assert_called_once()
-    vmware_controller.sync.asser_called_once()
+    vmware_controller.sync.assert_called_once()
