@@ -1,14 +1,17 @@
 import atexit
 import functools
 import logging
+import socket
 import time
 
+import gevent
 from pyVim.connect import Disconnect, SmartConnectNoSSL
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 from vnc_api import vnc_api
 
 from cvfm import constants as const
-from cvfm.exceptions import VNCConnectionLostError
+from cvfm.constants import WAIT_FOR_UPDATE_TIMEOUT
+from cvfm.exceptions import VNCConnectionLostError, VCenterConnectionLostError
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,17 @@ def raises_vnc_conn_error(func):
             raise VNCConnectionLostError("Connection to VNC lost.")
 
     return wrapper_raises_conn_error
+
+
+def raises_socket_error(func):
+    @functools.wraps(func)
+    def wrapper_raises_socket_error(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except socket.error:
+            raise VCenterConnectionLostError("Connection to vCenter lost.")
+
+    return wrapper_raises_socket_error
 
 
 def api_client_error_translator(decorator):
@@ -63,6 +77,7 @@ def has_proper_creator(vnc_object):
     return False
 
 
+@api_client_error_translator(raises_socket_error)
 class VCenterAPIClient(object):
     def __init__(self, vcenter_cfg):
         super(VCenterAPIClient, self).__init__()
@@ -141,11 +156,19 @@ class VCenterAPIClient(object):
             self._wait_options.maxWaitSeconds = max_wait_seconds
 
     def wait_for_updates(self):
-        update_set = self._property_collector.WaitForUpdatesEx(
-            self._version, self._wait_options
-        )
-        if update_set:
-            self._version = update_set.version
+        timeout = gevent.Timeout(WAIT_FOR_UPDATE_TIMEOUT * 2)
+        timeout.start()
+        try:
+            update_set = self._property_collector.WaitForUpdatesEx(
+                self._version, self._wait_options
+            )
+            timeout.cancel()
+            if update_set:
+                self._version = update_set.version
+        except gevent.Timeout:
+            raise VCenterConnectionLostError("Wait for Updates timed out")
+        finally:
+            timeout.cancel()
         return update_set
 
     def get_all_vms(self):
