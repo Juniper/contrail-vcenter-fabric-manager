@@ -20,3 +20,7 @@ class ConnectionLostError(CVFMError):
 
 class VNCConnectionLostError(ConnectionLostError):
     pass
+
+
+class VCenterConnectionLostError(CVFMError):
+    pass

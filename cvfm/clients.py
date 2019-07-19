@@ -1,6 +1,7 @@
 import atexit
 import functools
 import logging
+import socket
 import time
 
 from pyVim.connect import Disconnect, SmartConnectNoSSL
@@ -8,7 +9,7 @@ from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 from vnc_api import vnc_api
 
 from cvfm import constants as const
-from cvfm.exceptions import VNCConnectionLostError
+from cvfm.exceptions import VNCConnectionLostError, VCenterConnectionLostError
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,17 @@ def raises_vnc_conn_error(func):
             raise VNCConnectionLostError("Connection to VNC lost.")
 
     return wrapper_raises_conn_error
+
+
+def raises_socket_error(func):
+    @functools.wraps(func)
+    def wrapper_raises_socket_error(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except socket.error:
+            raise VCenterConnectionLostError("Connection to vCenter lost.")
+
+    return wrapper_raises_socket_error
 
 
 def api_client_error_translator(decorator):
@@ -63,6 +75,7 @@ def has_proper_creator(vnc_object):
     return False
 
 
+@api_client_error_translator(raises_socket_error)
 class VCenterAPIClient(object):
     def __init__(self, vcenter_cfg):
         super(VCenterAPIClient, self).__init__()

@@ -3,6 +3,7 @@ import mock
 import pytest
 
 from cvfm.constants import EVENTS_TO_OBSERVE, WAIT_FOR_UPDATE_TIMEOUT
+from cvfm.exceptions import VCenterConnectionLostError
 from cvfm.monitors import VMwareMonitor
 
 
@@ -47,9 +48,8 @@ def test_start(vmware_controller, vcenter_api_client):
 
     try:
         vmware_monitor.start()
-    except StopIteration:
+    except (StopIteration, VCenterConnectionLostError):
         pass
 
     vmware_controller.handle_update.assert_called_once_with(update_set)
-    vcenter_api_client.renew_connection.assert_called_once()
-    vmware_controller.sync.asser_called_once()
+    vmware_controller.sync.assert_called_once()
