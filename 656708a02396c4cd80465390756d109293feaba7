@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7731d186_48e0223e",
+        "filename": "cvfm/monitors.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-07-19T14:01:39Z",
+      "side": 1,
+      "message": "Move logic with gevent.Timeout catching into wait_for_updates method in vCenterAPIClient",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 78
+      },
+      "revId": "656708a02396c4cd80465390756d109293feaba7",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
