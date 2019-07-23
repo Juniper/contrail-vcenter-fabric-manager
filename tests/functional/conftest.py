@@ -89,6 +89,13 @@ def dvs_service(vcenter_api_client, vnc_api_client, database):
 
 
 @pytest.fixture
+def dvs_service(vcenter_api_client, vnc_api_client, database):
+    return services.DistributedVirtualSwitchService(
+        vcenter_api_client, vnc_api_client, database
+    )
+
+
+@pytest.fixture
 def pi_service(vcenter_api_client, vnc_api_client, database):
     return services.PhysicalInterfaceService(
         vcenter_api_client, vnc_api_client, database
@@ -97,35 +104,25 @@ def pi_service(vcenter_api_client, vnc_api_client, database):
 
 @pytest.fixture
 def update_handler(
-    vm_service, vmi_service, dpg_service, vpg_service, pi_service
+    vm_service, vmi_service, dpg_service, vpg_service, dvs_service, pi_service
 ):
-    dpg_created_handler = controllers.DVPortgroupCreatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    dpg_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    dpg_renamed_handler = controllers.DVPortgroupRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    dpg_destroyed_handler = controllers.DVPortgroupDestroyedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    vm_updated_handler = controllers.VmUpdatedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    vm_reconfigured_handler = controllers.VmReconfiguredHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    vm_renamed_handler = controllers.VmRenamedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    vm_removed_handler = controllers.VmRemovedHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
-    host_change_handler = controllers.HostChangeHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
-    )
+    kw = {
+        "vm_service": vm_service,
+        "vmi_service": vmi_service,
+        "dpg_service": dpg_service,
+        "vpg_service": vpg_service,
+        "dvs_service": dvs_service,
+        "pi_service": pi_service,
+    }
+    dpg_created_handler = controllers.DVPortgroupCreatedHandler(**kw)
+    dpg_reconfigured_handler = controllers.DVPortgroupReconfiguredHandler(**kw)
+    dpg_renamed_handler = controllers.DVPortgroupRenamedHandler(**kw)
+    dpg_destroyed_handler = controllers.DVPortgroupDestroyedHandler(**kw)
+    vm_updated_handler = controllers.VmUpdatedHandler(**kw)
+    vm_reconfigured_handler = controllers.VmReconfiguredHandler(**kw)
+    vm_renamed_handler = controllers.VmRenamedHandler(**kw)
+    vm_removed_handler = controllers.VmRemovedHandler(**kw)
+    host_change_handler = controllers.HostChangeHandler(**kw)
     handlers = [
         dpg_created_handler,
         dpg_reconfigured_handler,
@@ -142,36 +139,40 @@ def update_handler(
 
 @pytest.fixture
 def dpg_synchronizer(dpg_service):
-    return synchronizers.DistributedPortGroupSynchronizer(dpg_service)
+    return synchronizers.DistributedPortGroupSynchronizer(
+        dpg_service=dpg_service
+    )
 
 
 @pytest.fixture
 def vpg_synchronizer(vm_service, vpg_service, pi_service):
     return synchronizers.VirtualPortGroupSynchronizer(
-        vm_service, vpg_service, pi_service
+        vm_service=vm_service, vpg_service=vpg_service, pi_service=pi_service
     )
 
 
 @pytest.fixture
 def vm_synchronizer(vm_service):
-    return synchronizers.VirtualMachineSynchronizer(vm_service)
+    return synchronizers.VirtualMachineSynchronizer(vm_service=vm_service)
 
 
 @pytest.fixture
 def vmi_synchronizer(vm_service, vmi_service):
     return synchronizers.VirtualMachineInterfaceSynchronizer(
-        vm_service, vmi_service
+        vm_service=vm_service, vmi_service=vmi_service
     )
 
 
 @pytest.fixture
 def dvs_synchronizer(dvs_service):
-    return synchronizers.DistributedVirtualSwitchSynchronizer(dvs_service)
+    return synchronizers.DistributedVirtualSwitchSynchronizer(
+        dvs_service=dvs_service
+    )
 
 
 @pytest.fixture
 def pi_synchronizer(pi_service):
-    return synchronizers.PhysicalInterfaceSynchronizer(pi_service)
+    return synchronizers.PhysicalInterfaceSynchronizer(pi_service=pi_service)
 
 
 @pytest.fixture
@@ -184,7 +185,7 @@ def synchronizer(
     dvs_synchronizer,
     pi_synchronizer,
 ):
-    return synchronizers.Synchronizer(
+    return synchronizers.CVFMSynchronizer(
         database,
         vm_synchronizer,
         dpg_synchronizer,
@@ -197,7 +198,7 @@ def synchronizer(
 
 @pytest.fixture
 def vmware_controller(synchronizer, update_handler, lock):
-    controller = controllers.VmwareController(
+    controller = controllers.VMwareController(
         synchronizer=synchronizer, update_handler=update_handler, lock=lock
     )
     controller.sync()
