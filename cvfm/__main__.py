@@ -5,17 +5,20 @@ import sys
 
 import gevent
 from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
-from pysandesh.connection_info import ConnectionState
 from cfgm_common import zkclient
-from pysandesh.sandesh_base import Sandesh
+from pysandesh import sandesh_base, connection_info
 
 
-from cvfm import controllers, services, synchronizers
-from cvfm.clients import VCenterAPIClient, VNCAPIClient
-from cvfm.database import Database
+from cvfm import (
+    controllers,
+    services,
+    synchronizers,
+    sandesh_handler,
+    clients,
+    monitors,
+)
+from cvfm import database as db
 from cvfm.exceptions import CVFMError
-from cvfm.monitors import VMwareMonitor
-from cvfm.sandesh_handler import SandeshHandler
 from cvfm.parser import CVFMArgumentParser
 
 gevent.monkey.patch_all()
@@ -24,12 +27,48 @@ gevent.monkey.patch_all()
 def build_context(cfg):
     lock = gevent.lock.BoundedSemaphore()
 
-    database = Database()
+    database = db.Database()
 
-    run_sandesh(cfg, database, lock)
+    introspect_config = cfg["introspect_config"]
+    sandesh = sandesh_base.Sandesh()
+    sndesh_handler = sandesh_handler.SandeshHandler(database, lock)
+    sndesh_handler.bind_handlers()
+    sandesh.init_generator(
+        module="cvfm",
+        source=introspect_config["hostname"],
+        node_type=introspect_config["node_type_name"],
+        instance_id=introspect_config["instance_id"],
+        collectors=introspect_config["collectors"],
+        client_context="cvfm_context",
+        http_port=introspect_config["introspect_port"],
+        sandesh_req_uve_pkg_list=["cfgm_common", "cvfm"],
+        config=cfg["sandesh_config"],
+    )
+    sandesh.sandesh_logger().set_logger_params(
+        logger=sandesh.logger(),
+        enable_local_log=True,
+        level=introspect_config["logging_level"],
+        file=introspect_config["log_file"],
+        enable_syslog=False,
+        syslog_facility=None,
+    )
+    connection_info.ConnectionState.init(
+        sandesh=sandesh,
+        hostname=introspect_config["hostname"],
+        module_id=introspect_config["name"],
+        instance_id=introspect_config["instance_id"],
+        conn_status_cb=staticmethod(
+            connection_info.ConnectionState.get_conn_state_cb
+        ),
+        uve_type_cls=NodeStatusUVE,
+        uve_data_type_cls=NodeStatus,
+        table=introspect_config["table"],
+    )
 
-    vcenter_api_client = VCenterAPIClient(cfg["vcenter_config"])
-    vnc_api_client = VNCAPIClient(cfg["vnc_config"], cfg.get("auth_config"))
+    vcenter_api_client = clients.VCenterAPIClient(cfg["vcenter_config"])
+    vnc_api_client = clients.VNCAPIClient(
+        cfg["vnc_config"], cfg.get("auth_config")
+    )
 
     service_kwargs = {
         "vcenter_api_client": vcenter_api_client,
@@ -97,7 +136,7 @@ def build_context(cfg):
         dvs_service
     )
     pi_synchronizer = synchronizers.PhysicalInterfaceSynchronizer(pi_service)
-    synchronizer = synchronizers.Synchronizer(
+    synchronizer = synchronizers.CVFMSynchronizer(
         database,
         vm_synchronizer,
         dpg_synchronizer,
@@ -110,55 +149,16 @@ def build_context(cfg):
     vmware_controller = controllers.VmwareController(
         synchronizer, update_handler, lock
     )
-    vmware_monitor = VMwareMonitor(vmware_controller, vcenter_api_client)
-    zookeeper_client = zkclient.ZookeeperClient(
-        "vcenter-fabric-manager",
-        cfg["zookeeper_config"]["zookeeper_servers"],
-        cfg["defaults_config"]["host_ip"],
+    vmware_monitor = monitors.VMwareMonitor(
+        vmware_controller, vcenter_api_client
     )
+
     context = {
         "lock": lock,
         "database": database,
         "vmware_monitor": vmware_monitor,
-        "zookeeper_client": zookeeper_client,
     }
     return context
-
-
-def run_sandesh(cfg, database, lock):
-    introspect_config = cfg["introspect_config"]
-    sandesh = Sandesh()
-    sandesh_handler = SandeshHandler(database, lock)
-    sandesh_handler.bind_handlers()
-    sandesh.init_generator(
-        module="cvfm",
-        source=introspect_config["hostname"],
-        node_type=introspect_config["node_type_name"],
-        instance_id=introspect_config["instance_id"],
-        collectors=introspect_config["collectors"],
-        client_context="cvfm_context",
-        http_port=introspect_config["introspect_port"],
-        sandesh_req_uve_pkg_list=["cfgm_common", "cvfm"],
-        config=cfg["sandesh_config"],
-    )
-    sandesh.sandesh_logger().set_logger_params(
-        logger=sandesh.logger(),
-        enable_local_log=True,
-        level=introspect_config["logging_level"],
-        file=introspect_config["log_file"],
-        enable_syslog=False,
-        syslog_facility=None,
-    )
-    ConnectionState.init(
-        sandesh=sandesh,
-        hostname=introspect_config["hostname"],
-        module_id=introspect_config["name"],
-        instance_id=introspect_config["instance_id"],
-        conn_status_cb=staticmethod(ConnectionState.get_conn_state_cb),
-        uve_type_cls=NodeStatusUVE,
-        uve_data_type_cls=NodeStatus,
-        table=introspect_config["table"],
-    )
 
 
 def run_vcenter_fabric_manager(vmware_monitor):
@@ -173,9 +173,12 @@ def zookeeper_connection_lost():
 
 def main(cfg):
     context = build_context(cfg)
-
+    zookeeper_client = zkclient.ZookeeperClient(
+        "vcenter-fabric-manager",
+        cfg["zookeeper_config"]["zookeeper_servers"],
+        cfg["defaults_config"]["host_ip"],
+    )
     vmware_monitor = context["vmware_monitor"]
-    zookeeper_client = context["zookeeper_client"]
     zookeeper_client.set_lost_cb(zookeeper_connection_lost)
     logger = logging.getLogger("cvfm")
     logger.info("Waiting to be elected as master...")
