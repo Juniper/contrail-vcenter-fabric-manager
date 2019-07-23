@@ -104,33 +104,37 @@ def database():
 
 @pytest.fixture
 def dpg_synchronizer(dpg_service):
-    return synchronizers.DistributedPortGroupSynchronizer(dpg_service)
+    return synchronizers.DistributedPortGroupSynchronizer(
+        dpg_service=dpg_service
+    )
 
 
 @pytest.fixture
 def vpg_synchronizer(vm_service, vpg_service, pi_service):
     return synchronizers.VirtualPortGroupSynchronizer(
-        vm_service, vpg_service, pi_service
+        vm_service=vm_service, vpg_service=vpg_service, pi_service=pi_service
     )
 
 
 @pytest.fixture
 def vmi_synchronizer(vm_service, vmi_service):
     return synchronizers.VirtualMachineInterfaceSynchronizer(
-        vm_service, vmi_service
+        vm_service=vm_service, vmi_service=vmi_service
     )
 
 
 @pytest.fixture
 def vm_synchronizer(vm_service):
-    return synchronizers.VirtualMachineSynchronizer(vm_service)
+    return synchronizers.VirtualMachineSynchronizer(vm_service=vm_service)
 
 
 @pytest.fixture
 def dvs_synchronizer(dvs_service):
-    return synchronizers.DistributedVirtualSwitchSynchronizer(dvs_service)
+    return synchronizers.DistributedVirtualSwitchSynchronizer(
+        dvs_service=dvs_service
+    )
 
 
 @pytest.fixture
 def pi_synchronizer(pi_service):
-    return synchronizers.PhysicalInterfaceSynchronizer(pi_service)
+    return synchronizers.PhysicalInterfaceSynchronizer(pi_service=pi_service)

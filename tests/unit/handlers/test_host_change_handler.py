@@ -36,7 +36,11 @@ def host_change_handler(
     vm_service, vmi_service, dpg_service, vpg_service, pi_service
 ):
     return controllers.HostChangeHandler(
-        vm_service, vmi_service, dpg_service, vpg_service, pi_service
+        vm_service=vm_service,
+        vmi_service=vmi_service,
+        dpg_service=dpg_service,
+        vpg_service=vpg_service,
+        pi_service=pi_service,
     )
 
 
