@@ -5,7 +5,7 @@ from cvfm.exceptions import ConnectionLostError
 logger = logging.getLogger(__name__)
 
 
-class Synchronizer(object):
+class CVFMSynchronizer(object):
     def __init__(
         self,
         database,
@@ -37,20 +37,32 @@ class Synchronizer(object):
         self.dpg_synchronizer.sync_delete()
 
 
-class VirtualMachineSynchronizer(object):
-    def __init__(self, vm_service):
+class BaseSynchronizer(object):
+    def __init__(
+        self,
+        vm_service=None,
+        vmi_service=None,
+        dpg_service=None,
+        vpg_service=None,
+        dvs_service=None,
+        pi_service=None,
+    ):
         self._vm_service = vm_service
+        self._vmi_service = vmi_service
+        self._dpg_service = dpg_service
+        self._vpg_service = vpg_service
+        self._dvs_service = dvs_service
+        self._pi_service = pi_service
 
+
+class VirtualMachineSynchronizer(BaseSynchronizer):
     def sync(self):
         logger.info("Populating local database with VM models...")
         self._vm_service.populate_db_with_vms()
         logger.info("Populated local database with VM models")
 
 
-class DistributedPortGroupSynchronizer(object):
-    def __init__(self, dpg_service):
-        self._dpg_service = dpg_service
-
+class DistributedPortGroupSynchronizer(BaseSynchronizer):
     def sync_create(self):
         logger.info("Populating local database with DPG models...")
         self._dpg_service.populate_db_with_dpgs()
@@ -110,12 +122,7 @@ class DistributedPortGroupSynchronizer(object):
         logger.info("Deleted stale VNs from VNC...")
 
 
-class VirtualPortGroupSynchronizer(object):
-    def __init__(self, vm_service, vpg_service, pi_service):
-        self._vm_service = vm_service
-        self._vpg_service = vpg_service
-        self._pi_service = pi_service
-
+class VirtualPortGroupSynchronizer(BaseSynchronizer):
     def sync_create(self):
         logger.info("Creating lacking/Updating VPGs in VNC...")
         vm_models = self._vm_service.get_all_vm_models()
@@ -162,11 +169,7 @@ class VirtualPortGroupSynchronizer(object):
         logger.info("Deleted stale VPGs from VNC...")
 
 
-class VirtualMachineInterfaceSynchronizer(object):
-    def __init__(self, vm_service, vmi_service):
-        self._vm_service = vm_service
-        self._vmi_service = vmi_service
-
+class VirtualMachineInterfaceSynchronizer(BaseSynchronizer):
     def sync_create(self):
         vm_models = self._vm_service.get_all_vm_models()
         vmi_models = []
@@ -218,20 +221,14 @@ class VirtualMachineInterfaceSynchronizer(object):
         logger.info("Deleted stale VMIs from VNC")
 
 
-class DistributedVirtualSwitchSynchronizer(object):
-    def __init__(self, dvs_service):
-        self._dvs_service = dvs_service
-
+class DistributedVirtualSwitchSynchronizer(BaseSynchronizer):
     def sync(self):
         logger.info("Populating list of supported DVSes...")
         self._dvs_service.populate_db_with_supported_dvses()
         logger.info("List of supported DVSes populated")
 
 
-class PhysicalInterfaceSynchronizer(object):
-    def __init__(self, pi_service):
-        self._pi_service = pi_service
-
+class PhysicalInterfaceSynchronizer(BaseSynchronizer):
     def sync(self):
         logger.info("Populating list of Physical Interfaces...")
         self._pi_service.populate_db_with_pi_models()
