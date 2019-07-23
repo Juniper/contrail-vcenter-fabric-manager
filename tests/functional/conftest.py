@@ -184,7 +184,7 @@ def synchronizer(
     dvs_synchronizer,
     pi_synchronizer,
 ):
-    return synchronizers.Synchronizer(
+    return synchronizers.CVFMSynchronizer(
         database,
         vm_synchronizer,
         dpg_synchronizer,
@@ -197,7 +197,7 @@ def synchronizer(
 
 @pytest.fixture
 def vmware_controller(synchronizer, update_handler, lock):
-    controller = controllers.VmwareController(
+    controller = controllers.VMwareController(
         synchronizer=synchronizer, update_handler=update_handler, lock=lock
     )
     controller.sync()
