@@ -9,7 +9,7 @@ from cvfm.exceptions import CVFMError
 logger = logging.getLogger(__name__)
 
 
-class VmwareController(object):
+class VMwareController(object):
     def __init__(self, synchronizer, update_handler, lock):
         self._synchronizer = synchronizer
         self._update_handler = update_handler
@@ -49,12 +49,19 @@ class AbstractChangeHandler(object):
     __metaclass__ = ABCMeta
 
     def __init__(
-        self, vm_service, vmi_service, dpg_service, vpg_service, pi_service
+        self,
+        vm_service=None,
+        vmi_service=None,
+        dpg_service=None,
+        vpg_service=None,
+        dvs_service=None,
+        pi_service=None,
     ):
         self._vm_service = vm_service
         self._vmi_service = vmi_service
         self._dpg_service = dpg_service
         self._vpg_service = vpg_service
+        self._dvs_service = dvs_service
         self._pi_service = pi_service
 
     def handle_change(self, obj, property_change):
