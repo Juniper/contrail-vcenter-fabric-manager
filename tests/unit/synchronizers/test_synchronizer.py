@@ -49,7 +49,7 @@ def synchronizer(
     dvs_synchronizer,
     pi_synchronizer,
 ):
-    return synchronizers.Synchronizer(
+    return synchronizers.CVFMSynchronizer(
         database,
         vm_synchronizer,
         dpg_synchronizer,
