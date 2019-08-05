@@ -24,3 +24,7 @@ class VNCConnectionLostError(ConnectionLostError):
 
 class VCenterConnectionLostError(ConnectionLostError):
     pass
+
+
+class VNCAdminProjectNotFound(CVFMError):
+    pass
