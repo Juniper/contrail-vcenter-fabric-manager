@@ -257,13 +257,8 @@ class VNCAPIClient(object):
             return self.vnc_lib.project_read(
                 ["default-domain", self.project_name]
             )
-
         except vnc_api.NoIdError:
-            project = vnc_api.Project(name=self.project_name)
-            project.set_id_perms(const.ID_PERMS)
-            self.vnc_lib.project_create(project)
-
-        return self.vnc_lib.project_read(["default-domain", self.project_name])
+            logger.error("Unable to read project %s", self.project_name)
 
     def read_fabric(self, fabric_uuid):
         return self.vnc_lib.fabric_read(id=fabric_uuid)
