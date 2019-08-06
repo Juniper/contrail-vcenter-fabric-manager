@@ -3,7 +3,7 @@ import socket
 import gevent
 import mock
 import pytest
-
+from pyVmomi import vim
 from cvfm import clients, exceptions
 from cvfm.exceptions import VCenterConnectionLostError
 
@@ -74,3 +74,19 @@ def test_wait_for_updates_timeout(service_instance, vcenter_api_client):
 
     with pytest.raises(VCenterConnectionLostError):
         vcenter_api_client.wait_for_updates()
+
+
+def test_event_history_collector(service_instance, vcenter_api_client):
+    ehc_mock = mock.Mock()
+    event_manager = service_instance.content.eventManager
+    event_manager.CreateCollectorForEvents.return_value = ehc_mock
+    events = ["VmCreatedEvent"]
+
+    with mock.patch.object(
+        vcenter_api_client, "_datacenter", spec=vim.ManagedEntity
+    ):
+        ehc = vcenter_api_client.create_event_history_collector(events)
+
+    assert ehc is ehc_mock
+    filter_spec = event_manager.CreateCollectorForEvents.call_args[1]["filter"]
+    assert filter_spec.type == [vim.event.VmCreatedEvent]

@@ -39,6 +39,10 @@ def vmi_1(project):
     )
     vmi.set_uuid(models.generate_uuid(vmi.name))
     vmi.set_id_perms(constants.ID_PERMS)
+    vmi_properties = vnc_api.VirtualMachineInterfacePropertiesType(
+        sub_interface_vlan_tag=5
+    )
+    vmi.set_virtual_machine_interface_properties(vmi_properties)
     return vmi
 
 
@@ -58,6 +62,15 @@ def vpg_1(fabric):
     vpg.set_uuid(models.generate_uuid(vpg.name))
     vpg.set_id_perms(constants.ID_PERMS)
     return vpg
+
+
+@pytest.fixture
+def vn(project, vmi_1):
+    vn = vnc_api.VirtualNetwork(name="dvs-1_dpg-1", parent_obj=project)
+    vn.set_uuid(models.generate_uuid("dvportgroup-1"))
+    vn.set_id_perms(constants.ID_PERMS)
+    vn.virtual_machine_interface_back_refs = [{"uuid": vmi_1.uuid}]
+    return vn
 
 
 @pytest.fixture
@@ -206,3 +219,70 @@ def test_connection_lost(vnc_api_client, vnc_lib):
 
     with pytest.raises(exceptions.VNCConnectionLostError):
         vnc_api_client.read_all_vns()
+
+
+def test_recreate_vmi(vnc_api_client, vmi_1, vn, vnc_lib, project):
+    vpg = mock.Mock()
+    vmi_1.virtual_port_group_back_refs = [{"uuid": vpg.uuid}]
+    vnc_lib.virtual_port_group_read.return_value = vpg
+    vnc_lib.project_read.return_value = project
+
+    vnc_api_client.recreate_vmi_with_new_vlan(vmi_1, vn, 10)
+
+    # detach from vpg
+    vpg.del_virtual_machine_interface.assert_called_with(vmi_1)
+
+    # update vpg
+    assert vnc_lib.virtual_port_group_update.call_args_list[0][0][0] == vpg
+
+    # delete vmi
+    vnc_lib.virtual_machine_interface_delete.assert_called_once_with(
+        id=vmi_1.uuid
+    )
+
+    # create new vmi
+    created_vmi = vnc_lib.virtual_machine_interface_create.call_args[0][0]
+    utils.verify_vnc_vmi(created_vmi, vn_name="dvs-1_dpg-1", vlan=10)
+
+    # attach vmi to vpg
+    vpg.add_virtual_machine_interface.assert_called_once_with(created_vmi)
+
+    # update vpg
+    assert vnc_lib.virtual_port_group_update.call_args_list[1][0][0] == vpg
+
+
+def test_attach_pis_to_vpg(vnc_api_client, vnc_lib):
+    vpg = mock.Mock()
+    pi_1 = mock.Mock(fq_name=["1", "2", "3"])
+    pi_2 = mock.Mock(fq_name=["4", "5", "6"])
+    pis = [pi_1, pi_2]
+
+    vnc_api_client.attach_pis_to_vpg(vpg, pis)
+
+    assert vpg.add_physical_interface.call_count == 2
+    assert vpg.add_physical_interface.call_args_list[0][0][0] == pi_1
+    assert vpg.add_physical_interface.call_args_list[1][0][0] == pi_2
+    vnc_lib.virtual_port_group_update.assert_called_once_with(vpg)
+
+
+def test_detach_pis_to_vpg(vnc_api_client, vnc_lib):
+    vpg = mock.Mock()
+    pi_1 = mock.Mock(fq_name=["1", "2", "3"])
+    pi_2 = mock.Mock(fq_name=["4", "5", "6"])
+    pi_uuids = ["pi-1-uuid", "pi-2-uuid"]
+    vnc_lib.physical_interface_read.side_effect = [pi_1, pi_2]
+
+    vnc_api_client.detach_pis_from_vpg(vpg, pi_uuids)
+
+    assert vpg.del_physical_interface.call_count == 2
+    assert vpg.del_physical_interface.call_args_list[0][0][0] == pi_1
+    assert vpg.del_physical_interface.call_args_list[1][0][0] == pi_2
+    vnc_lib.virtual_port_group_update.assert_called_once_with(vpg)
+
+
+def test_get_vn_vlan(vnc_api_client, vnc_lib, vn, vmi_1):
+    vnc_lib.virtual_machine_interface_read.return_value = vmi_1
+
+    vlan_id = vnc_api_client.get_vn_vlan(vn)
+
+    assert vlan_id == 5
