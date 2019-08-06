@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b071877_d684bf3e",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-08-06T15:48:30Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we restart the plugin if we cannot find the project? If there\u0027s no project we can use for creating stuff in VNC, there\u0027s no point for CVFM to be running.",
+      "range": {
+        "startLine": 260,
+        "startChar": 8,
+        "endLine": 261,
+        "endChar": 72
+      },
+      "revId": "605aff39c99ffabbf4e40150516dcad18abd0e85",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
