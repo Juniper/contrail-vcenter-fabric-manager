@@ -11,11 +11,7 @@ from vnc_api import vnc_api
 
 from cvfm import constants as const
 from cvfm.constants import WAIT_FOR_UPDATE_TIMEOUT
-from cvfm.exceptions import (
-    VNCConnectionLostError,
-    VCenterConnectionLostError,
-    VNCAdminProjectNotFound,
-)
+from cvfm.exceptions import VNCConnectionLostError, VCenterConnectionLostError
 
 logger = logging.getLogger(__name__)
 
@@ -255,21 +251,19 @@ class VNCAPIClient(object):
             auth_token_url=auth_cfg.get("auth_token_url"),
         )
         self.project_name = vnc_cfg.get("project_name", const.VNC_PROJECT_NAME)
-        self.check_project()
 
     def get_project(self):
         try:
             return self.vnc_lib.project_read(
-                [const.VNC_PROJECT_DOMAIN, self.project_name]
+                ["default-domain", self.project_name]
             )
-        except vnc_api.NoIdError:
-            logger.error("Unable to read project %s in VNC", self.project_name)
-            raise VNCAdminProjectNotFound()
 
-    def check_project(self):
-        logger.info("Checking admin project existence in VNC...")
-        self.get_project()
-        logger.info("admin project exists in VNC")
+        except vnc_api.NoIdError:
+            project = vnc_api.Project(name=self.project_name)
+            project.set_id_perms(const.ID_PERMS)
+            self.vnc_lib.project_create(project)
+
+        return self.vnc_lib.project_read(["default-domain", self.project_name])
 
     def read_fabric(self, fabric_uuid):
         return self.vnc_lib.fabric_read(id=fabric_uuid)

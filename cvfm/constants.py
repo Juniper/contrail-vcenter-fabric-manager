@@ -24,6 +24,5 @@ TEMP_VM_RENAME_PHRASES = ["vmfs", "volumes"]
 
 HISTORY_COLLECTOR_PAGE_SIZE = 1000
 
-VNC_PROJECT_DOMAIN = "default-domain"
-VNC_PROJECT_NAME = "admin"
+VNC_PROJECT_NAME = "vCenter"
 ID_PERMS = IdPermsType(creator="vcenter-fabric-manager", enable=True)
