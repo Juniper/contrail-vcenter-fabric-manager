@@ -1,7 +1,4 @@
-import mock
-import pytest
-
-from cvfm import models, exceptions
+from cvfm import models
 
 
 def test_generate_uuid():

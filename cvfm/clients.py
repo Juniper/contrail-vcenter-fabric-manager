@@ -125,9 +125,6 @@ class VCenterAPIClient(object):
         except StopIteration:
             return None
 
-    def renew_connection(self):
-        self._create_connection()
-
     def create_event_history_collector(self, events_to_observe):
         event_manager = self._si.content.eventManager
         event_filter_spec = vim.event.EventFilterSpec()
@@ -151,13 +148,8 @@ class VCenterAPIClient(object):
         filter_spec = make_filter_spec(obj, filters)
         return self._property_collector.CreateFilter(filter_spec, True)
 
-    def make_wait_options(
-        self, max_wait_seconds=None, max_object_updates=None
-    ):
-        if max_object_updates is not None:
-            self._wait_options.maxObjectUpdates = max_object_updates
-        if max_wait_seconds is not None:
-            self._wait_options.maxWaitSeconds = max_wait_seconds
+    def make_wait_options(self, max_wait_seconds):
+        self._wait_options.maxWaitSeconds = max_wait_seconds
 
     def wait_for_updates(self):
         timeout = gevent.Timeout(WAIT_FOR_UPDATE_TIMEOUT * 2)
@@ -383,9 +375,10 @@ class VNCAPIClient(object):
 
     def read_all_physical_routers(self):
         pr_refs = self.vnc_lib.physical_routers_list()["physical-routers"]
-        return [
+        prs = [
             self._read_physical_router(pr_ref["uuid"]) for pr_ref in pr_refs
         ]
+        return [pr for pr in prs if pr is not None]
 
     def _read_node(self, node_uuid):
         try:
@@ -395,7 +388,8 @@ class VNCAPIClient(object):
 
     def _read_all_nodes(self):
         node_refs = self.vnc_lib.nodes_list()["nodes"]
-        return [self._read_node(node_ref["uuid"]) for node_ref in node_refs]
+        nodes = [self._read_node(node_ref["uuid"]) for node_ref in node_refs]
+        return [node for node in nodes if node is not None]
 
     def get_nodes_by_host_names(self, esxi_names):
         vnc_nodes = self._read_all_nodes()

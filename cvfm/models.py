@@ -13,8 +13,23 @@ def generate_uuid(key):
     return str(uid.uuid3(uid.NAMESPACE_DNS, key))
 
 
-class VirtualMachineModel(object):
+class Model(object):
+    def __init__(self, uuid):
+        self.uuid = uuid
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __ne__(self, other):
+        return self.uuid != other.uuid
+
+    def __hash__(self):
+        return hash(self.uuid)
+
+
+class VirtualMachineModel(Model):
     def __init__(self, name, vcenter_uuid, host_name, dpg_models):
+        super(VirtualMachineModel, self).__init__(vcenter_uuid)
         self.name = name
         self.vcenter_uuid = vcenter_uuid
         self.host_name = host_name
@@ -59,9 +74,9 @@ class VirtualMachineModel(object):
         )
 
 
-class DistributedPortGroupModel(object):
+class DistributedPortGroupModel(Model):
     def __init__(self, uuid, key, name, vlan_id, dvs_name):
-        self.uuid = uuid
+        super(DistributedPortGroupModel, self).__init__(uuid)
         self.key = key
         self.name = name
         self.vlan_id = vlan_id
@@ -102,19 +117,10 @@ class DistributedPortGroupModel(object):
             )
         )
 
-    def __eq__(self, other):
-        return self.uuid == other.uuid
 
-    def __ne__(self, other):
-        return self.uuid != other.uuid
-
-    def __hash__(self):
-        return hash(self.uuid)
-
-
-class VirtualPortGroupModel(object):
+class VirtualPortGroupModel(Model):
     def __init__(self, uuid, host_name, dvs_name):
-        self.uuid = uuid
+        super(VirtualPortGroupModel, self).__init__(uuid)
         self.host_name = host_name
         self.dvs_name = dvs_name
         self.name = "{host_name}_{dvs_name}".format(
@@ -141,15 +147,6 @@ class VirtualPortGroupModel(object):
             models.append(cls(uuid, host_name, dvs_name))
         return models
 
-    def __eq__(self, other):
-        return self.uuid == other.uuid
-
-    def __ne__(self, other):
-        return self.uuid != other.uuid
-
-    def __hash__(self):
-        return hash(self.uuid)
-
     def __repr__(self):
         return (
             "VirtualPortGroupModel(uuid={uuid}, name={name}, host_name={host_name}, "
@@ -162,9 +159,9 @@ class VirtualPortGroupModel(object):
         )
 
 
-class VirtualMachineInterfaceModel(object):
+class VirtualMachineInterfaceModel(Model):
     def __init__(self, uuid, host_name, dpg_model):
-        self.uuid = uuid
+        super(VirtualMachineInterfaceModel, self).__init__(uuid)
         self.host_name = host_name
         self.dpg_model = dpg_model
         self.name = "{host_name}_{dvs_name}_{dpg_name}".format(
@@ -213,15 +210,6 @@ class VirtualMachineInterfaceModel(object):
             )
         )
 
-    def __eq__(self, other):
-        return self.uuid == other.uuid
-
-    def __ne__(self, other):
-        return self.uuid != other.uuid
-
-    def __hash__(self):
-        return hash(self.uuid)
-
     def __repr__(self):
         return (
             "VirtualMachineInterfaceModel(uuid={uuid}, name={name}, host_name={host_name}, "
@@ -234,9 +222,9 @@ class VirtualMachineInterfaceModel(object):
         )
 
 
-class PhysicalInterfaceModel(object):
+class PhysicalInterfaceModel(Model):
     def __init__(self, uuid, fabric_uuid, host_name, dvs_name):
-        self.uuid = uuid
+        super(PhysicalInterfaceModel, self).__init__(uuid)
         self.fabric_uuid = fabric_uuid
         self.host_name = host_name
         self.dvs_name = dvs_name
