@@ -32,6 +32,12 @@ def port(node):
 
 
 @pytest.fixture
+def invalid_port(node):
+    esxi_port_info = vnc_api.ESXIProperties()
+    return vnc_api.Port("port-2", node, esxi_port_info=esxi_port_info)
+
+
+@pytest.fixture
 def fabric():
     fabric = vnc_api.Fabric("fabric-name")
     fabric.set_uuid("fabric-uuid-1")
@@ -92,6 +98,13 @@ def physical_router_3(fabric_2):
     return pr
 
 
+@pytest.fixture
+def physical_router_4():
+    pr = vnc_api.PhysicalRouter(name="pr-2-2")
+    pr.set_uuid("pr-uuid-2-2")
+    return pr
+
+
 def test_populate_db(
     pi_service,
     vcenter_api_client,
@@ -100,12 +113,13 @@ def test_populate_db(
     host,
     node,
     port,
+    invalid_port,
     physical_interface,
     physical_router,
 ):
     vcenter_api_client.get_all_hosts.return_value = [host]
     vnc_api_client.get_nodes_by_host_names.return_value = [node]
-    vnc_api_client.get_node_ports.return_value = [port]
+    vnc_api_client.get_node_ports.return_value = [port, invalid_port]
     vnc_api_client.get_pis_by_port.return_value = [physical_interface]
     vnc_api_client.read_all_physical_routers.return_value = [physical_router]
 
@@ -140,11 +154,13 @@ def test_populate_pr_to_fabric(
     physical_router_1,
     physical_router_2,
     physical_router_3,
+    physical_router_4,
 ):
     vnc_api_client.read_all_physical_routers.return_value = [
         physical_router_1,
         physical_router_2,
         physical_router_3,
+        physical_router_4,
     ]
 
     pr_to_fabric = pi_service._populate_pr_to_fabric()

@@ -51,12 +51,24 @@ def test_delete_vm_model(vm_service, vm_model, database):
     vm_model.property_filter.DestroyPropertyFilter.assert_called_once()
 
 
-def test_update_dpg_in_vm_models(vm_service, vm_model, database):
+def test_delete_already_deleted_vm_model(vm_service, vm_model, database):
+    result_vm_model = vm_service.delete_vm_model("vm-1")
+
+    assert result_vm_model is None
+    vm_model.property_filter.DestroyPropertyFilter.assert_not_called()
+
+
+def test_update_dpg_in_vm_models(vm_service, vm_model, vm_model_2, database):
     database.add_vm_model(vm_model)
+    database.add_vm_model(vm_model_2)
 
     assert len(vm_model.dpg_models) == 1
+    assert len(vm_model_2.dpg_models) == 1
+
     dpg_model = list(vm_model.dpg_models)[0]
     assert dpg_model.vlan_id == 5
+    dpg_model = list(vm_model_2.dpg_models)[0]
+    assert dpg_model.vlan_id == 15
 
     dpg_model = models.DistributedPortGroupModel(
         models.generate_uuid("dvportgroup-1"),
@@ -66,8 +78,11 @@ def test_update_dpg_in_vm_models(vm_service, vm_model, database):
         "dvs-1",
     )
     vm_service.update_dpg_in_vm_models(dpg_model)
+
     dpg_model = list(vm_model.dpg_models)[0]
     assert dpg_model.vlan_id == 6
+    dpg_model = list(vm_model_2.dpg_models)[0]
+    assert dpg_model.vlan_id == 15
 
 
 def test_populate_db(
@@ -142,3 +157,8 @@ def test_is_vm_removed(vm_service, database, vm_model, vcenter_api_client):
     vcenter_api_client.is_vm_removed.assert_called_once_with(
         vm_model.vcenter_uuid, "esxi-1"
     )
+
+
+def test_is_vm_removed_no_vm_model(vm_service, vcenter_api_client):
+    assert vm_service.is_vm_removed_from_vcenter("vm-1", "esxi-1")
+    vcenter_api_client.is_vm_removed.assert_not_called()

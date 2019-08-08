@@ -26,6 +26,16 @@ def vmware_dpg():
 
 
 @pytest.fixture
+def vmware_dpg_2():
+    dpg = mock.Mock(spec=vim.DistributedVirtualPortgroup)
+    dpg.configure_mock(name="dpg-2")
+    dpg.key = "dvportgroup-2"
+    dpg.config.distributedVirtualSwitch.name = "dvs-1"
+    dpg.config.defaultPortConfig.vlan.vlanId = 15
+    return dpg
+
+
+@pytest.fixture
 def vmware_network():
     net = mock.Mock(spec=vim.Network)
     net.configure_mock(name="network-1")
@@ -44,14 +54,40 @@ def vmware_vm(vmware_dpg, vmware_network):
 
 
 @pytest.fixture
+def vmware_vm_2(vmware_dpg_2):
+    vm = mock.Mock()
+    vm.configure_mock(name="vm-2")
+    vm.config.instanceUuid = "uuid-2"
+    vm.network = [vmware_dpg_2]
+    vm.runtime.host.name = "esxi-1"
+    return vm
+
+
+@pytest.fixture
 def dpg_model(vmware_dpg):
     return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg)
+
+
+@pytest.fixture
+def dpg_model_2(vmware_dpg_2):
+    return models.DistributedPortGroupModel.from_vmware_dpg(vmware_dpg_2)
 
 
 @pytest.fixture
 def vm_model(vmware_vm, dpg_model):
     dpg_models = {dpg_model}
     vm_model = models.VirtualMachineModel.from_vmware_vm(vmware_vm, dpg_models)
+    property_filter = mock.Mock(spec=vim.PropertyFilter)
+    vm_model.set_property_filter(property_filter)
+    return vm_model
+
+
+@pytest.fixture
+def vm_model_2(vmware_vm_2, dpg_model_2):
+    dpg_models = {dpg_model_2}
+    vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm_2, dpg_models
+    )
     property_filter = mock.Mock(spec=vim.PropertyFilter)
     vm_model.set_property_filter(property_filter)
     return vm_model

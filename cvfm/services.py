@@ -288,8 +288,8 @@ class DistributedPortGroupService(Service):
         return is_empty
 
     def _validate_dpg(self, vmware_dpg):
-        self._validate_vlan_id(vmware_dpg)
         self._validate_type(vmware_dpg)
+        self._validate_vlan_id(vmware_dpg)
         self._validate_dvs(vmware_dpg)
 
     def _validate_dvs(self, vmware_dpg):

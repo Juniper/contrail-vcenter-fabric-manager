@@ -40,6 +40,13 @@ def test_create_dpg_model(dpg_service, vmware_dpg, database):
     assert database.get_dpg_model("dpg-1") == dpg_model
 
 
+def test_create_dpg_model_invalid_network(
+    dpg_service, vmware_network, database
+):
+    with pytest.raises(DPGCreationError):
+        dpg_model = dpg_service.create_dpg_model(vmware_network)
+
+
 def test_create_fabric_vn(dpg_service, vnc_api_client, project, database):
     dpg_model = models.DistributedPortGroupModel(
         uuid="5a6bd262-1f96-3546-a762-6fa5260e9014",
@@ -136,8 +143,13 @@ def test_destroy_dpg_from_vm(dpg_service, database, dpg_model):
     assert deleted == dpg_model
 
 
-def test_populate_db(vcenter_api_client, dpg_service, vmware_dpg, database):
-    vcenter_api_client.get_all_portgroups.return_value = [vmware_dpg]
+def test_populate_db(
+    vcenter_api_client, dpg_service, vmware_dpg, vmware_network, database
+):
+    vcenter_api_client.get_all_portgroups.return_value = [
+        vmware_dpg,
+        vmware_network,
+    ]
 
     dpg_service.populate_db_with_dpgs()
 

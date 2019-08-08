@@ -3,6 +3,7 @@ import pytest
 from vnc_api import vnc_api
 
 from cvfm import models
+from cvfm.exceptions import VNCVMICreationError
 from cvfm.services import VirtualMachineInterfaceService
 
 
@@ -76,6 +77,17 @@ def test_create_vmi_in_vnc(
     )
 
 
+def test_unable_to_create_vmi_in_vnc(vmi_service, vnc_api_client, vmi_model):
+    vnc_api_client.read_vn.return_value = None
+    vnc_api_client.read_vmi.return_value = None
+    vnc_api_client.read_vpg.return_value = mock.Mock()
+
+    vmi_service.create_vmi_in_vnc(vmi_model)
+
+    vnc_api_client.create_vmi.assert_not_called()
+    vnc_api_client.recreate_vmi_with_new_vlan.assert_not_called()
+
+
 def test_attach_vmi_to_vpg(vmi_service, vnc_api_client, vmi_model, vnc_fabric):
     vnc_vpg = vnc_api.VirtualPortGroup(parent_obj=vnc_fabric)
     vnc_api_client.read_vpg.return_value = vnc_vpg
@@ -140,6 +152,21 @@ def test_find_no_affected_vmis(vmi_service, vmware_vm, dpg_model):
 
     assert len(vmis_to_delete_1) == 0
     assert len(vmis_to_create_1) == 0
+
+
+def test_find_affected_vmis_no_old_vm_model(vmi_service, vmware_vm, dpg_model):
+
+    old_vm_model = None
+    new_vm_model = models.VirtualMachineModel.from_vmware_vm(
+        vmware_vm, {dpg_model}
+    )
+
+    vmis_to_delete, vmis_to_create = vmi_service.find_affected_vmis(
+        old_vm_model, new_vm_model
+    )
+
+    assert len(vmis_to_delete) == 0
+    assert len(vmis_to_create) == 1
 
 
 def test_update_vlan_id(

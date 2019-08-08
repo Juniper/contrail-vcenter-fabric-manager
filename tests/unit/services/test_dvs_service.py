@@ -28,9 +28,29 @@ def port_2():
     return port
 
 
-def test_populate_db(dvs_service, database, vnc_api_client, port_1, port_2):
+@pytest.fixture
+def port_3():
+    port = vnc_api.Port("port-2")
+    esxi_port_info = vnc_api.ESXIProperties()
+    port.set_esxi_port_info(esxi_port_info)
+    return port
+
+
+@pytest.fixture
+def port_4():
+    return vnc_api.Port("port-4")
+
+
+def test_populate_db(
+    dvs_service, database, vnc_api_client, port_1, port_2, port_3, port_4
+):
     database.clear_database()
-    vnc_api_client.read_all_ports.return_value = [port_1, port_2]
+    vnc_api_client.read_all_ports.return_value = [
+        port_1,
+        port_2,
+        port_3,
+        port_4,
+    ]
 
     dvs_service.populate_db_with_supported_dvses()
 
