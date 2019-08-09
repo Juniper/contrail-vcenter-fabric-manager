@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4c8a27f_9693a194",
+        "filename": "cvfm/models.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-08-09T10:09:05Z",
+      "side": 1,
+      "message": "These methods can be inherited from base class with same behavior. Please remove them",
+      "range": {
+        "startLine": 120,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 0
+      },
+      "revId": "3b63c672569b030695d297eebb0fcfd783d03216",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e469d4d4_eb8f705d",
+        "filename": "tests/unit/clients/test_vnc_api_client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-08-09T10:09:05Z",
+      "side": 1,
+      "message": "Can we replace it by assert_called_once_with(pi_1) and assert_called_once_with(pi_2)\nOrder doesn\u0027t matter in this case",
+      "range": {
+        "startLine": 344,
+        "startChar": 0,
+        "endLine": 345,
+        "endChar": 69
+      },
+      "revId": "3b63c672569b030695d297eebb0fcfd783d03216",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2cc0013_26390f33",
+        "filename": "tests/unit/clients/test_vnc_api_client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-08-09T10:09:05Z",
+      "side": 1,
+      "message": "Same comment as above",
+      "range": {
+        "startLine": 359,
+        "startChar": 0,
+        "endLine": 360,
+        "endChar": 69
+      },
+      "revId": "3b63c672569b030695d297eebb0fcfd783d03216",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
