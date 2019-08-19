@@ -1,3 +1,4 @@
+from builtins import object
 import logging
 from abc import ABCMeta, abstractmethod
 
@@ -5,6 +6,7 @@ from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
 
 from cvfm import exceptions, constants
 from cvfm.exceptions import CVFMError
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +47,7 @@ class UpdateHandler(object):
                         )
 
 
-class AbstractChangeHandler(object):
-    __metaclass__ = ABCMeta
-
+class AbstractChangeHandler(with_metaclass(ABCMeta, object)):
     def __init__(
         self,
         vm_service=None,
@@ -96,8 +96,7 @@ class AbstractChangeHandler(object):
             self._vmi_service.attach_vmi_to_vpg(vmi_model)
 
 
-class AbstractEventHandler(AbstractChangeHandler):
-    __metaclass__ = ABCMeta
+class AbstractEventHandler(with_metaclass(ABCMeta, AbstractChangeHandler)):
     PROPERTY_NAME = "latestPage"
 
     def _handle_change(self, obj, value):

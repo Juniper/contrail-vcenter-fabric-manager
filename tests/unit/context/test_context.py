@@ -321,7 +321,7 @@ def test_context_handlers(handlers, services, patched_libs, config):
     c_lib.DVPortgroupRenamedHandler.assert_called_once_with(**services)
     c_lib.DVPortgroupDestroyedHandler.assert_called_once_with(**services)
 
-    c_lib.UpdateHandler.assert_called_once_with(handlers.values())
+    c_lib.UpdateHandler.assert_called_once_with(list(handlers.values()))
 
 
 def test_run_sandesh(

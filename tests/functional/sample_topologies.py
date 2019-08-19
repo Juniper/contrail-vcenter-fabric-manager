@@ -167,8 +167,12 @@ def topology_with_spine_switch(vnc_test_client, vcenter_api_client):
         vnc_test_client, esxi_2, esxi_2_ports_nums, port_dvses
     )
 
-    pis = dict(leaf_1_pis.items() + leaf_2_pis.items() + spine_pis.items())
-    ports = dict(esxi_1_ports.items() + esxi_2_ports.items())
+    pis = dict(
+        list(leaf_1_pis.items())
+        + list(leaf_2_pis.items())
+        + list(spine_pis.items())
+    )
+    ports = dict(list(esxi_1_ports.items()) + list(esxi_2_ports.items()))
     port_to_pi = {1: 1, 2: 2, 3: 5, 4: 6, 5: 3, 6: 4, 7: 7, 8: 8}
     utils.connect_ports_with_pis(vnc_test_client, pis, ports, port_to_pi)
 

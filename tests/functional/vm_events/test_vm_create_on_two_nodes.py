@@ -152,7 +152,7 @@ def test_vm_created_on_two_nodes(
     vmis = vnc_test_client.read_all_vmis()
     assert len(vmis) == 6
 
-    for vmi in vmis.values():
+    for vmi in list(vmis.values()):
         if "dpg-1" in vmi.name:
             expected_vlan = 5
         elif "dpg-2" in vmi.name:

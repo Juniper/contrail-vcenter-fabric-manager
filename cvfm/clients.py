@@ -1,3 +1,6 @@
+from builtins import next
+from builtins import range
+from builtins import object
 import atexit
 import functools
 import logging
