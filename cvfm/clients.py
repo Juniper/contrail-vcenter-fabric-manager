@@ -121,7 +121,7 @@ class VCenterAPIClient(object):
             self._si.content.rootFolder, [vim.Datacenter], True
         )
         try:
-            return (obj for obj in container.view if obj.name == name).next()
+            return next((obj for obj in container.view if obj.name == name))
         except StopIteration:
             return None
 
@@ -182,14 +182,14 @@ class VCenterAPIClient(object):
     def _get_dpg_by_key(self, key):
         all_dpgs = self.get_all_portgroups()
         try:
-            return (dpg for dpg in all_dpgs if dpg.key == key).next()
+            return next((dpg for dpg in all_dpgs if dpg.key == key))
         except StopIteration:
             return None
 
     def get_host(self, hostname):
         all_hosts = self.get_all_hosts()
         try:
-            return (host for host in all_hosts if host.name == hostname).next()
+            return next((host for host in all_hosts if host.name == hostname))
         except StopIteration:
             return None
 

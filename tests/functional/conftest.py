@@ -7,7 +7,7 @@ from cvfm import services, controllers, clients, synchronizers, parser
 from cvfm import database as db
 
 # imports fixtures from sample_topologies.py file
-from sample_topologies import *
+from tests.functional.sample_topologies import *
 from tests.functional.vcenter_api_mock_client import VCenterAPIMockClient
 from tests.functional.vnc_api_test_client import VNCAPITestClient
 
