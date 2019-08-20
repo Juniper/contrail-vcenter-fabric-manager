@@ -6,13 +6,14 @@ from cfgm_common import zkclient
 from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
 from pysandesh import connection_info, sandesh_base, sandesh_logger
 
+from cvfm.clients import rabbit as vnc_rabbit
 from cvfm import (
     clients,
     controllers,
-    monitors,
-    sandesh_handler,
     services,
     synchronizers,
+    sandesh_handler,
+    monitors,
 )
 from cvfm import database as db
 
@@ -31,9 +32,9 @@ class CVFMContext(object):
         self.database = None
         self.services = {}
         self.synchronizers = {}
+        self.monitors = {}
         self.synchronizer = None
         self.update_handler = None
-        self.vmware_monitor = None
 
     def build(self):
         self.lock = gevent.lock.BoundedSemaphore()
@@ -42,11 +43,13 @@ class CVFMContext(object):
         self._build_services()
         self._build_handlers()
         self._build_synchronizers()
-        self._build_monitor()
+        self._build_monitors()
 
-    def start(self):
-        self.run_sandesh()
-        self.vmware_monitor.start()
+    def start_vmware_monitor(self):
+        self.monitors["vmware_monitor"].start()
+
+    def start_vnc_monitor(self):
+        self.monitors["vnc_monitor"].start()
 
     def run_sandesh(self):
         introspect_config = self.config["introspect_config"]
@@ -77,12 +80,15 @@ class CVFMContext(object):
             table=introspect_config["table"],
         )
 
-    def _build_monitor(self):
+    def _build_monitors(self):
         vmware_controller = controllers.VMwareController(
             self.synchronizer, self.update_handler, self.lock
         )
-        self.vmware_monitor = monitors.VMwareMonitor(
+        self.monitors["vmware_monitor"] = monitors.VMwareMonitor(
             vmware_controller, self.clients["vcenter_api_client"]
+        )
+        self.monitors["vnc_monitor"] = monitors.VNCMonitor(
+            vmware_controller, self.clients["vnc_rabbit_client"]
         )
 
     def _build_handlers(self):
@@ -149,9 +155,11 @@ class CVFMContext(object):
         vcenter_config = self.config["vcenter_config"]
         vnc_config = self.config["vnc_config"]
         auth_config = self.config.get("auth_config")
+        rabbit_config = self.config["rabbit_config"]
         self.clients = {
             "vcenter_api_client": clients.VCenterAPIClient(vcenter_config),
             "vnc_api_client": clients.VNCAPIClient(vnc_config, auth_config),
+            "vnc_rabbit_client": vnc_rabbit.VNCRabbitClient(rabbit_config),
         }
 
     def configure_logger(self):

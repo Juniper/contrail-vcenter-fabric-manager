@@ -25,6 +25,7 @@ def config():
         "sandesh_config": mock.Mock(),
         "vnc_config": {},
         "vcenter_config": {},
+        "rabbit_config": {},
         "auth_config": {},
     }
 
@@ -36,6 +37,7 @@ def patched_libs(
     synchronizers_lib,
     services_lib,
     clients_lib,
+    rabbit_lib,
     sandesh,
     sandesh_handler,
     connection_state,
@@ -46,6 +48,7 @@ def patched_libs(
         "synchronizers_lib": synchronizers_lib,
         "services_lib": services_lib,
         "clients_lib": clients_lib,
+        "rabbit_lib": rabbit_lib,
         "sandesh": sandesh,
         "sandesh_handler": sandesh_handler,
         "connection_state": connection_state,
@@ -54,7 +57,11 @@ def patched_libs(
 
 @pytest.fixture
 def clients():
-    return {"vcenter_api_client": mock.Mock(), "vnc_api_client": mock.Mock()}
+    return {
+        "vcenter_api_client": mock.Mock(),
+        "vnc_api_client": mock.Mock(),
+        "vnc_rabbit_client": mock.Mock(),
+    }
 
 
 @pytest.fixture
@@ -63,6 +70,13 @@ def clients_lib(clients):
         c_mock.VCenterAPIClient.return_value = clients["vcenter_api_client"]
         c_mock.VNCAPIClient.return_value = clients["vnc_api_client"]
         yield c_mock
+
+
+@pytest.fixture
+def rabbit_lib(clients):
+    with mock.patch("cvfm.context.vnc_rabbit") as r_mock:
+        r_mock.VNCRabbitClient.return_value = clients["vnc_rabbit_client"]
+        yield r_mock
 
 
 @pytest.fixture
@@ -193,14 +207,15 @@ def controllers_lib(handlers, update_handler, controller):
 
 
 @pytest.fixture
-def monitor():
-    return mock.Mock()
+def monitors():
+    return {"vmware_monitor": mock.Mock(), "vnc_monitor": mock.Mock()}
 
 
 @pytest.fixture
-def monitors_lib(monitor):
+def monitors_lib(monitors):
     with mock.patch("cvfm.context.monitors") as m_lib:
-        m_lib.VMwareMonitor.return_value = monitor
+        m_lib.VMwareMonitor.return_value = monitors["vmware_monitor"]
+        m_lib.VNCMonitor.return_value = monitors["vnc_monitor"]
         yield m_lib
 
 
@@ -228,8 +243,8 @@ def connection_state():
         yield conn_state
 
 
-def test_context_monitor(
-    monitor, controller, clients, update_handler, patched_libs, config
+def test_context_monitors(
+    monitors, controller, clients, update_handler, patched_libs, config
 ):
     context = CVFMContext(config)
     context.build()
@@ -242,7 +257,13 @@ def test_context_monitor(
     monitors_lib.VMwareMonitor.assert_called_once_with(
         controller, clients["vcenter_api_client"]
     )
-    assert context.vmware_monitor == monitor
+    monitors_lib.VNCMonitor.assert_called_once_with(
+        controller, clients["vnc_rabbit_client"]
+    )
+    assert context.monitors == {
+        "vmware_monitor": monitors["vmware_monitor"],
+        "vnc_monitor": monitors["vnc_monitor"],
+    }
 
 
 def test_context_clients(clients, patched_libs, config):
@@ -256,9 +277,13 @@ def test_context_clients(clients, patched_libs, config):
     clients_lib.VNCAPIClient.assert_called_once_with(
         config["vnc_config"], config["auth_config"]
     )
+
+    rabbit_lib = patched_libs["rabbit_lib"]
+    rabbit_lib.VNCRabbitClient.assert_called_once_with(config["rabbit_config"])
     assert context.clients == {
         "vcenter_api_client": clients["vcenter_api_client"],
         "vnc_api_client": clients["vnc_api_client"],
+        "vnc_rabbit_client": clients["vnc_rabbit_client"],
     }
 
 
@@ -361,12 +386,12 @@ def test_run_sandesh(
     )
 
 
-def test_context_start(monitor, patched_libs, config):
+def test_context_start(monitors, patched_libs, config):
     context = CVFMContext(config)
     context.build()
 
-    with mock.patch.object(context, "run_sandesh") as run_sandesh:
-        context.start()
+    context.start_vmware_monitor()
+    context.start_vnc_monitor()
 
-    monitor.start.assert_called_once()
-    run_sandesh.assert_called_once()
+    monitors["vmware_monitor"].start.assert_called_once()
+    monitors["vnc_monitor"].start.assert_called_once()
