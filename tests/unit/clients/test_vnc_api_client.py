@@ -2,7 +2,8 @@ import mock
 import pytest
 from vnc_api import vnc_api
 
-from cvfm import clients, models, constants, exceptions
+from cvfm import models, constants, exceptions
+from cvfm.clients import clients
 from tests import utils
 
 
@@ -13,7 +14,7 @@ def vnc_lib():
 
 @pytest.fixture
 def vnc_api_client(vnc_lib):
-    with mock.patch("cvfm.clients.vnc_api.VncApi") as vnc_lib_mock:
+    with mock.patch("cvfm.clients.clients.vnc_api.VncApi") as vnc_lib_mock:
         vnc_lib_mock.return_value = vnc_lib
         return clients.VNCAPIClient(
             {

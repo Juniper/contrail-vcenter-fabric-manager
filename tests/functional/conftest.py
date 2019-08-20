@@ -18,7 +18,7 @@ def config():
     current_dir = os.path.dirname(current_path)
     config_path = os.path.join(current_dir, "cvfm.conf")
     config_parser = parser.CVFMArgumentParser()
-    return config_parser.parse_args(["-c", config_path])["vnc_config"]
+    return config_parser.parse_args(["-c", config_path])
 
 
 @pytest.fixture
@@ -31,14 +31,14 @@ def lock():
 
 @pytest.fixture
 def vnc_api_client(config):
-    vnc_client = clients.VNCAPIClient(config)
+    vnc_client = clients.VNCAPIClient(config["vnc_config"])
     vnc_client.project_name = "test-vcenter-fabric"
     return vnc_client
 
 
 @pytest.fixture
 def vnc_test_client(config):
-    test_client = VNCAPITestClient(config)
+    test_client = VNCAPITestClient(config["vnc_config"])
     yield test_client
     test_client.tear_down()
 
