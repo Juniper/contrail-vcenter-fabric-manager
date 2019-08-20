@@ -81,6 +81,25 @@ def test_zookeeper_config_from_file(argument_parser, arg_str):
     }
 
 
+def test_rabbit_config_from_file(argument_parser, arg_str):
+    with mock.patch("cvfm.parser.socket.getfqdn") as getfqdn:
+        getfqdn.return_value = "hostname"
+        rabbit_config = argument_parser.parse_args(arg_str)["rabbit_config"]
+
+    assert rabbit_config["rabbit_hosts"] == "192.168.0.1,192.168.0.11"
+    assert rabbit_config["rabbit_port"] == 5673
+    assert rabbit_config["rabbit_user"] == "guest"
+    assert rabbit_config["rabbit_password"] == "guest"
+    assert rabbit_config["rabbit_vhost"] == "/"
+    assert rabbit_config["rabbit_ha_mode"] is False
+    assert rabbit_config["q_name"] == "cvfm.hostname"
+    assert rabbit_config["heartbeat_seconds"] == 10
+    assert rabbit_config["kombu_ssl_version"] == "sslv23"
+    assert rabbit_config["kombu_ssl_certfile"] == "/path-to-rabbit-certfile"
+    assert rabbit_config["kombu_ssl_keyfile"] == "/path-to-rabbit-keyfile"
+    assert rabbit_config["kombu_ssl_ca_certs"] == "/path-to-rabbit-cafile"
+
+
 def test_auth_config_from_file(argument_parser, arg_str):
     auth_config = argument_parser.parse_args(arg_str)["auth_config"]
 
