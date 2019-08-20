@@ -27,3 +27,9 @@ HISTORY_COLLECTOR_PAGE_SIZE = 1000
 VNC_PROJECT_DOMAIN = "default-domain"
 VNC_PROJECT_NAME = "admin"
 ID_PERMS = IdPermsType(creator="vcenter-fabric-manager", enable=True)
+VNC_TOPOLOGY_OBJECTS = [
+    "node",
+    "port",
+    "physical-interface",
+    "physical-router",
+]
