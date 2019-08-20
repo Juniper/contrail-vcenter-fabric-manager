@@ -27,6 +27,7 @@ class CVFMArgumentParser(object):
             "vnc_config": {},
             "vcenter_config": {},
             "zookeeper_config": {},
+            "rabbit_config": {},
             "auth_config": {},
         }
         self._arg_parser = argparse.ArgumentParser()
@@ -48,6 +49,7 @@ class CVFMArgumentParser(object):
         self._read_vnc_config()
         self._read_vcenter_config()
         self._read_zookeeper_config()
+        self._read_rabbit_config()
         self._read_auth_config()
         return self.config
 
@@ -70,24 +72,23 @@ class CVFMArgumentParser(object):
         self.config["sandesh_config"] = sandesh_config
 
     def _read_introspect_config(self):
-        introspect_config = {}
-        if "INTROSPECT" in self._parsed_config.sections():
-            introspect_config.update(
-                dict(self._parsed_config.items("INTROSPECT"))
+        introspect_config = self._read_config(
+            "INTROSPECT", ints=["introspect_port"]
+        )
+
+        # This list cannot be parsed by generic _read_config, since its'
+        # items are separated by spaces instead of commas
+        collector_list = introspect_config.get("collectors")
+        if collector_list:
+            introspect_config["collectors"] = collector_list.split()
+        if introspect_config.get("collectors"):
+            random.shuffle(introspect_config["collectors"])
+
+        log_level = introspect_config.get("logging_level")
+        if log_level:
+            introspect_config["logging_level"] = translate_logging_level(
+                log_level
             )
-            if "introspect_port" in self._parsed_config.options("INTROSPECT"):
-                introspect_config[
-                    "introspect_port"
-                ] = self._parsed_config.getint("INTROSPECT", "introspect_port")
-            if "collectors" in self._parsed_config.options("INTROSPECT"):
-                introspect_config["collectors"] = self._parsed_config.get(
-                    "INTROSPECT", "collectors"
-                ).split()
-                random.shuffle(introspect_config["collectors"])
-            if "logging_level" in self._parsed_config.options("INTROSPECT"):
-                introspect_config["logging_level"] = translate_logging_level(
-                    self._parsed_config.get("INTROSPECT", "logging_level")
-                )
 
         introspect_config.update(
             {
@@ -113,64 +114,63 @@ class CVFMArgumentParser(object):
         self.config["introspect_config"] = introspect_config
 
     def _read_vnc_config(self):
-        vnc_config = {}
-        if "VNC" in self._parsed_config.sections():
-            vnc_config.update(dict(self._parsed_config.items("VNC")))
-            if "api_server_use_ssl" in self._parsed_config.options("VNC"):
-                vnc_config[
-                    "api_server_use_ssl"
-                ] = self._parsed_config.getboolean("VNC", "api_server_use_ssl")
-            if "api_server_insecure" in self._parsed_config.options("VNC"):
-                vnc_config[
-                    "api_server_insecure"
-                ] = self._parsed_config.getboolean(
-                    "VNC", "api_server_insecure"
-                )
-            if "api_server_port" in self._parsed_config.options("VNC"):
-                vnc_config["api_server_port"] = self._parsed_config.getint(
-                    "VNC", "api_server_port"
-                )
-            if "api_server_host" in self._parsed_config.options("VNC"):
-                vnc_config["api_server_host"] = self._parsed_config.get(
-                    "VNC", "api_server_host"
-                ).split(",")
-                random.shuffle(vnc_config["api_server_host"])
-
+        vnc_config = self._read_config(
+            section_name="VNC",
+            ints=["api_server_port"],
+            lists=["api_server_host"],
+            booleans=["api_server_use_ssl", "api_server_insecure"],
+        )
+        if vnc_config.get("api_server_host"):
+            random.shuffle(vnc_config["api_server_host"])
         self.config["vnc_config"] = vnc_config
 
     def _read_vcenter_config(self):
-        vcenter_config = {}
-        if "VCENTER" in self._parsed_config.sections():
-            vcenter_config.update(dict(self._parsed_config.items("VCENTER")))
-            if "vc_port" in self._parsed_config.options("VCENTER"):
-                vcenter_config["vc_port"] = self._parsed_config.getint(
-                    "VCENTER", "vc_port"
-                )
-            if "vc_preferred_api_versions" in self._parsed_config.options(
-                "VCENTER"
-            ):
-                vcenter_config[
-                    "vc_preferred_api_versions"
-                ] = self._parsed_config.get(
-                    "VCENTER", "vc_preferred_api_versions"
-                ).split(
-                    ","
-                )
-
+        vcenter_config = self._read_config(
+            section_name="VCENTER",
+            ints=["vc_port"],
+            lists=["vc_preferred_api_versions"],
+        )
         self.config["vcenter_config"] = vcenter_config
 
     def _read_zookeeper_config(self):
-        zookeeper_config = {}
-        if "ZOOKEEPER" in self._parsed_config.sections():
-            zookeeper_config.update(
-                dict(self._parsed_config.items("ZOOKEEPER"))
-            )
-
+        zookeeper_config = self._read_config("ZOOKEEPER")
         self.config["zookeeper_config"] = zookeeper_config
 
-    def _read_auth_config(self):
-        auth_config = {}
-        if "AUTH" in self._parsed_config.sections():
-            auth_config.update(dict(self._parsed_config.items("AUTH")))
+    def _read_rabbit_config(self):
+        rabbit_config = self._read_config(
+            "RABBIT", ints=["rabbit_port", "rabbit_health_check_interval"]
+        )
+        rabbit_config["rabbit_ha_mode"] = False
 
+        host_ip = self.config["defaults_config"]["host_ip"]
+        rabbit_config["q_name"] = "cvfm.{}".format(socket.getfqdn(host_ip))
+        rabbit_config["heartbeat_seconds"] = rabbit_config.get(
+            "rabbit_health_check_interval"
+        )
+
+        self.config["rabbit_config"] = rabbit_config
+
+    def _read_auth_config(self):
+        auth_config = self._read_config("AUTH")
         self.config["auth_config"] = auth_config
+
+    def _read_config(self, section_name, ints=(), lists=(), booleans=()):
+        config_dict = {}
+        if section_name in self._parsed_config.sections():
+            config_dict.update(dict(self._parsed_config.items(section_name)))
+            for int_param in ints:
+                if int_param in self._parsed_config.options(section_name):
+                    config_dict[int_param] = self._parsed_config.getint(
+                        section_name, int_param
+                    )
+            for list_param in lists:
+                if list_param in self._parsed_config.options(section_name):
+                    config_dict[list_param] = self._parsed_config.get(
+                        section_name, list_param
+                    ).split(",")
+            for bool_param in booleans:
+                if bool_param in self._parsed_config.options(section_name):
+                    config_dict[bool_param] = self._parsed_config.getboolean(
+                        section_name, bool_param
+                    )
+        return config_dict

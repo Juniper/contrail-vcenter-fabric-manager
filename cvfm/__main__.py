@@ -17,7 +17,11 @@ logger = logging.getLogger("cvfm")
 
 def run_vcenter_fabric_manager(context):
     context.build()
-    greenlets = [gevent.spawn(context.start)]
+    context.run_sandesh()
+    greenlets = [
+        gevent.spawn(context.start_vmware_monitor),
+        gevent.spawn(context.start_vnc_monitor),
+    ]
     gevent.joinall(greenlets, raise_error=True)
 
 
