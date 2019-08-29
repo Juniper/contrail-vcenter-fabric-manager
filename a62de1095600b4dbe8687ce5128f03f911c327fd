@@ -16,6 +16,24 @@
       "revId": "a62de1095600b4dbe8687ce5128f03f911c327fd",
       "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc7fa36f_13e05c94",
+        "filename": "cvfm/clients.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 582
+      },
+      "writtenOn": "2019-08-29T12:47:20Z",
+      "side": 1,
+      "message": "VncAmpqHandle implements various mechanisms, which we don\u0027t need in this situations. To create a proper VncAmpqHandle object, we would need to create more unnecessary objects just to satisfy its\u0027 __init__ method (and internal mechanisms, which we, again, don\u0027t use).\n\nWe used VncKombuClient instead of writing our own kombu wrapper, because it has many useful methods and it was easier to reuse them. To reuse VncAmqpHandle, we would need to put too much effort.",
+      "parentUuid": "e87b3e09_5f8adbe5",
+      "revId": "a62de1095600b4dbe8687ce5128f03f911c327fd",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
     }
   ]
 }
