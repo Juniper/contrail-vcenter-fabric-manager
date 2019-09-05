@@ -3,17 +3,16 @@ import sys
 
 import gevent
 from cfgm_common import zkclient
-
 from cfgm_common.uve.nodeinfo.ttypes import NodeStatus, NodeStatusUVE
-from pysandesh import sandesh_base, connection_info, sandesh_logger
+from pysandesh import connection_info, sandesh_base, sandesh_logger
 
 from cvfm import (
+    clients,
     controllers,
+    monitors,
+    sandesh_handler,
     services,
     synchronizers,
-    sandesh_handler,
-    clients,
-    monitors,
 )
 from cvfm import database as db
 

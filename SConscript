@@ -8,32 +8,45 @@ import fnmatch
 
 env = DefaultEnvironment()
 
-cvfm_sandesh_files = [
-    'vcenter_fabric_manager.sandesh',
-]
+cvfm_sandesh_files = ["vcenter_fabric_manager.sandesh"]
 
 cvfm_sandesh = [
-    env.SandeshGenPy(sandesh_file, 'cvfm/sandesh/', False)
+    env.SandeshGenPy(sandesh_file, "cvfm/sandesh/", False)
     for sandesh_file in cvfm_sandesh_files
 ]
 
-cvfm_source_files = [
-    file_ for file_ in os.listdir(Dir('#vcenter-fabric-manager/cvfm/').abspath)
-    if fnmatch.fnmatch(file_, '*.py')
-]
+cvfm_root_dir = Dir("#vcenter-fabric-manager/").abspath
 
-cvfm = [
-    env.Install(Dir('cvfm'), '#vcenter-fabric-manager/cvfm/' + cvfm_file)
-    for cvfm_file in cvfm_source_files
-]
-cvfm.append(env.Install(Dir('.'), "#vcenter-fabric-manager/setup.py"))
-cvfm.append(env.Install(Dir('.'), "#vcenter-fabric-manager/requirements.txt"))
+cvfm_source_files = []
+for root, dirs, files in os.walk(os.path.join(cvfm_root_dir, "cvfm")):
+    for _file in files:
+        if fnmatch.fnmatch(_file, "*.py"):
+            abs_path = os.path.join(root, _file)
+            if fnmatch.fnmatch(abs_path, "*/sandesh/*"):
+                continue
+            rel_path = os.path.relpath(abs_path, cvfm_root_dir)
+            cvfm_source_files.append(rel_path)
+
+cvfm = []
+for cvfm_file in cvfm_source_files:
+    target = "/".join(cvfm_file.split("/")[:-1])
+    cvfm.append(
+        env.Install(Dir(target), "#vcenter-fabric-manager/" + cvfm_file)
+    )
+
+cvfm.append(env.Install(Dir("."), "#vcenter-fabric-manager/setup.py"))
+cvfm.append(env.Install(Dir("."), "#vcenter-fabric-manager/requirements.txt"))
 
 env.Depends(cvfm, cvfm_sandesh)
-env.Alias('cvfm', cvfm)
+env.Alias("cvfm", cvfm)
 
-install_cmd = env.Command(None, 'setup.py',
-        'cd ' + Dir('.').path + ' && python setup.py install %s' % env['PYTHON_INSTALL_OPT'])
+install_cmd = env.Command(
+    None,
+    "setup.py",
+    "cd "
+    + Dir(".").path
+    + " && python setup.py install %s" % env["PYTHON_INSTALL_OPT"],
+)
 
 env.Depends(install_cmd, cvfm)
-env.Alias('cvfm-install', install_cmd)
+env.Alias("cvfm-install", install_cmd)
