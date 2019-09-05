@@ -17,10 +17,24 @@ cvfm_sandesh = [
     for sandesh_file in cvfm_sandesh_files
 ]
 
-cvfm_source_files = [
-    file_ for file_ in os.listdir(Dir('#vcenter-fabric-manager/cvfm/').abspath)
-    if fnmatch.fnmatch(file_, '*.py')
-]
+cvfm_root_dir = Dir("#vcenter-fabric-manager/").abspath
+
+cvfm_source_files = []
+for r, d, f in os.walk(os.path.join(cvfm_root_dir, "cvfm")):
+    for _file in f:
+        if fnmatch.fnmatch(_file, "*.py"):
+            abs_path = os.path.join(r, _file)
+            if fnmatch.fnmatch(abs_path, "*/sandesh/*"):
+                continue
+            rel_path = os.path.relpath(abs_path, cvfm_root_dir)
+            cvfm_source_files.append(rel_path)
+
+cvfm = []
+for cvfm_file in cvfm_source_files:
+    target = "/".join(cvfm_file.split("/")[:-1])
+    cvfm.append(
+        env.Install(Dir(target), "#vcenter-fabric-manager/" + cvfm_file)
+    )
 
 cvfm = [
     env.Install(Dir('cvfm'), '#vcenter-fabric-manager/cvfm/' + cvfm_file)

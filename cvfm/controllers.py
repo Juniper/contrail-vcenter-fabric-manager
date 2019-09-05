@@ -1,10 +1,9 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
-from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
-
-from cvfm import exceptions, constants
+from cvfm import constants, exceptions
 from cvfm.exceptions import CVFMError
+from pyVmomi import vim, vmodl
 
 logger = logging.getLogger(__name__)
 
