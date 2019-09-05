@@ -13,7 +13,7 @@ def vnc_lib():
 
 @pytest.fixture
 def vnc_api_client(vnc_lib):
-    with mock.patch("cvfm.clients.vnc_api.VncApi") as vnc_lib_mock:
+    with mock.patch("cvfm.clients.vnc.vnc_api.VncApi") as vnc_lib_mock:
         vnc_lib_mock.return_value = vnc_lib
         return clients.VNCAPIClient(
             {
