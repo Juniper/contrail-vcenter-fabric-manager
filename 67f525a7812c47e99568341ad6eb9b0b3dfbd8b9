@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e3997e0_d4a24d37",
+        "filename": "SConscript",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please rename these variable to more meaningful names",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 11
+      },
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5083ffff_eacdb31c",
+        "filename": "cvfm/clients/__init__.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please define __all__",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 17
+      },
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a71be04a_92ce65e7",
+        "filename": "cvfm/context.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please merge this import with import from 9 line",
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b57b04be_7051c0df",
+        "filename": "cvfm/controllers.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please unify these imports",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 5,
+        "endChar": 37
+      },
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f22f9df_41fc1e55",
+        "filename": "cvfm/services/__init__.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please define __all__",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 16
+      },
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56c28520_44cf00ab",
+        "filename": "cvfm/services/dpg.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 616
+      },
+      "writtenOn": "2019-09-05T13:10:57Z",
+      "side": 1,
+      "message": "Please unify these imports",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 65
+      },
+      "revId": "67f525a7812c47e99568341ad6eb9b0b3dfbd8b9",
+      "serverId": "c72cd27d-1743-4a55-84a4-cd13b8400c52",
+      "unresolved": true
+    }
+  ]
+}
