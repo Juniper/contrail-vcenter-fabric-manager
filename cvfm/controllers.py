@@ -1,10 +1,8 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
-from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
-
-from cvfm import exceptions, constants
-from cvfm.exceptions import CVFMError
+from cvfm import constants, exceptions
+from pyVmomi import vim, vmodl
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ class VMwareController(object):
             try:
                 self._synchronizer.sync()
                 logger.info("Synchronization completed")
-            except CVFMError:
+            except exceptions.CVFMError:
                 raise
             except Exception:
                 logger.exception("Unexpected error during CVFM sync")
@@ -71,7 +69,7 @@ class AbstractChangeHandler(object):
             if name.startswith(self.PROPERTY_NAME):
                 try:
                     self._handle_change(obj, value)
-                except CVFMError:
+                except exceptions.CVFMError:
                     raise
                 except Exception:
                     logger.exception(
@@ -105,7 +103,7 @@ class AbstractEventHandler(AbstractChangeHandler):
             try:
                 logger.debug("Detected event: %s", value)
                 self._handle_event(value)
-            except CVFMError:
+            except exceptions.CVFMError:
                 raise
             except Exception:
                 logger.exception(

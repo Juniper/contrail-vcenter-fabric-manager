@@ -20,7 +20,7 @@ def pg_view():
 
 @pytest.fixture
 def vcenter_api_client(service_instance, pg_view):
-    with mock.patch("cvfm.clients.SmartConnectNoSSL") as si:
+    with mock.patch("cvfm.clients.vcenter.SmartConnectNoSSL") as si:
         si.return_value = service_instance
         service_instance.content.viewManager.CreateContainerView.return_value = (
             pg_view
@@ -44,7 +44,7 @@ def test_get_vms_for_portgroup(
     assert not_found == []
 
 
-@mock.patch("cvfm.clients.time.sleep")
+@mock.patch("cvfm.clients.vcenter.time.sleep")
 def test_is_vm_removed(_, vcenter_api_client, vmware_vm):
     # VM vm-1 still exists on esxi-1
     with mock.patch.object(vcenter_api_client, "_si") as si:
@@ -61,7 +61,7 @@ def test_is_vm_removed(_, vcenter_api_client, vmware_vm):
         )
 
 
-@mock.patch("cvfm.clients.time.sleep")
+@mock.patch("cvfm.clients.vcenter.time.sleep")
 def test_is_vm_removed_host_is_none(_, vcenter_api_client, vmware_vm):
     vmware_vm.runtime.host = None
 
@@ -72,7 +72,7 @@ def test_is_vm_removed_host_is_none(_, vcenter_api_client, vmware_vm):
         )
 
 
-@mock.patch("cvfm.clients.time.sleep")
+@mock.patch("cvfm.clients.vcenter.time.sleep")
 def test_is_vm_removed_host_changed(_, vcenter_api_client, vmware_vm):
     with mock.patch.object(vcenter_api_client, "_si") as si:
         si.content.searchIndex.FindByUuid.return_value = vmware_vm
