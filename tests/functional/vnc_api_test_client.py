@@ -191,6 +191,12 @@ class VNCAPITestClient(object):
             ]
         ]
 
+    def read_all_physical_interfaces(self):
+        return [
+            self.read_physical_interface(pi_uuid)
+            for pi_uuid in self.read_all_physical_interface_uuids()
+        ]
+
     def delete_physical_interface(self, pi_uuid):
         self.vnc_lib.physical_interface_delete(id=pi_uuid)
 
@@ -232,6 +238,13 @@ class VNCAPITestClient(object):
 
     def add_port_to_physical_interface(self, pi, port):
         pi.add_port(port)
+        self.vnc_lib.physical_interface_update(pi)
+
+    def remove_ports_from_physical_interface(self, pi):
+        port_refs = pi.get_port_refs()
+        ports = [self.read_port(port_ref["uuid"]) for port_ref in port_refs]
+        for port in ports:
+            pi.del_port(port)
         self.vnc_lib.physical_interface_update(pi)
 
     def add_connection_between_pis(self, pi_1, pi_2):

@@ -20,6 +20,11 @@ def validate_vnc_port(vnc_port):
         raise VNCPortValidationError(
             "No DVS name could be read from port %s", vnc_port.name
         )
+    pi_back_refs = vnc_port.get_physical_interface_back_refs()
+    if not pi_back_refs:
+        raise VNCPortValidationError(
+            "No Physical Interfaces could be found for port %s", vnc_port.name
+        )
 
 
 class PhysicalInterfaceService(Service):

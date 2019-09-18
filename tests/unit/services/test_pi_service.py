@@ -28,7 +28,9 @@ def node():
 @pytest.fixture
 def port(node):
     esxi_port_info = vnc_api.ESXIProperties(dvs_name="dvs-1")
-    return vnc_api.Port("port-1", node, esxi_port_info=esxi_port_info)
+    vnc_port = vnc_api.Port("port-1", node, esxi_port_info=esxi_port_info)
+    vnc_port.physical_interface_back_refs = [{"uuid": "pi-1-uuid"}]
+    return vnc_port
 
 
 @pytest.fixture
@@ -142,6 +144,14 @@ def test_validate_vnc_port(port):
         services.validate_vnc_port(port)
 
     port.esxi_port_info = None
+    with pytest.raises(VNCPortValidationError):
+        services.validate_vnc_port(port)
+
+
+def test_validate_port_pi_back_refs(port):
+    services.validate_vnc_port(port)
+
+    port.physical_interface_back_refs = None
     with pytest.raises(VNCPortValidationError):
         services.validate_vnc_port(port)
 
