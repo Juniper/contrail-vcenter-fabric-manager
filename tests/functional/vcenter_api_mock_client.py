@@ -94,7 +94,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
         return utils.create_vm_reconfigured_update(vmware_vm, "remove")
 
     def is_vm_removed(self, vm_uuid, host_name):
-        for host in self.hosts.values():
+        for host in list(self.hosts.values()):
             for vm in host.vm:
                 if vm.config.instanceUuid == vm_uuid:
                     return False
@@ -111,11 +111,11 @@ class VCenterAPIMockClient(VCenterAPIClient):
         return utils.create_host_change_update(vmware_vm, new_host)
 
     def get_all_portgroups(self):
-        return self.portgroups.values()
+        return list(self.portgroups.values())
 
     def get_all_vms(self):
         vms = []
-        for host in self.hosts.values():
+        for host in list(self.hosts.values()):
             vms.extend(host.vm)
         return vms
 
@@ -131,7 +131,7 @@ class VCenterAPIMockClient(VCenterAPIClient):
         return self.hosts.get(host_name)
 
     def get_all_hosts(self):
-        return self.hosts.values()
+        return list(self.hosts.values())
 
     def add_host(self, host_name):
         host = mock.Mock(vm=[])

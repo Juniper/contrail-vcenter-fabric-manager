@@ -1,3 +1,4 @@
+from builtins import zip
 import mock
 
 from pyVmomi import vim, vmodl  # pylint: disable=no-name-in-module
@@ -45,7 +46,7 @@ def create_ports_for_node(vnc_test_client, node, port_nums, port_dvses):
 
 
 def connect_ports_with_pis(vnc_test_client, pis, ports, port_to_pi):
-    for port_num, pi_num in port_to_pi.items():
+    for port_num, pi_num in list(port_to_pi.items()):
         vnc_test_client.add_port_to_physical_interface(
             pis[pi_num], ports[port_num]
         )
