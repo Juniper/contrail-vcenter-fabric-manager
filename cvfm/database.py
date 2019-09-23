@@ -1,3 +1,4 @@
+from builtins import object
 import collections
 import logging
 
@@ -25,7 +26,7 @@ class Database(object):
         return self._vm_models.pop(vm_name, None)
 
     def get_all_vm_models(self):
-        return self._vm_models.values()
+        return list(self._vm_models.values())
 
     def clear_database(self):
         self._vm_models = {}
@@ -45,7 +46,7 @@ class Database(object):
         return self._dpg_models.pop(dpg_name, None)
 
     def get_all_dpg_models(self):
-        return self._dpg_models.values()
+        return list(self._dpg_models.values())
 
     def add_supported_dvs(self, dvs_name):
         self._supported_dvses.add(dvs_name)

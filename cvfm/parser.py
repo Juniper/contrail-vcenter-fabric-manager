@@ -1,5 +1,9 @@
+from future import standard_library
+
+standard_library.install_aliases()
+from builtins import object
 import argparse
-import ConfigParser
+import configparser
 import random
 import socket
 
@@ -37,7 +41,7 @@ class CVFMArgumentParser(object):
             dest="config_file",
             default="/etc/contrail/contrail-vcenter-fabric-manager/cvfm.conf",
         )
-        self._parsed_config = ConfigParser.SafeConfigParser()
+        self._parsed_config = configparser.ConfigParser()
 
     def parse_args(self, args_str=""):
         parsed_args, _ = self._arg_parser.parse_known_args(args=args_str)
