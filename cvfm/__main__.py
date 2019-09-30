@@ -39,7 +39,7 @@ def main(cfg):
     )
 
 
-if __name__ == "__main__":
+def server_main():
     parser = CVFMArgumentParser()
     config = parser.parse_args(sys.argv[1:])
     try:
@@ -54,3 +54,7 @@ if __name__ == "__main__":
     except Exception:
         logger.critical("", exc_info=True)
         raise
+
+
+if __name__ == "__main__":
+    server_main()
