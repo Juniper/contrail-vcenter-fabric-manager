@@ -2,8 +2,8 @@ from future import standard_library
 
 standard_library.install_aliases()
 from builtins import object
+from six.moves import configparser
 import argparse
-import configparser
 import random
 import socket
 
