@@ -6,10 +6,7 @@ from cvfm import parser
 
 
 @pytest.fixture
-@mock.patch("cvfm.parser.random")
-def argument_parser(rand):
-    rand = random
-    rand.seed(7)
+def argument_parser():
     return parser.CVFMArgumentParser()
 
 
@@ -36,10 +33,9 @@ def test_introspect_config_from_file(argument_parser, arg_str):
     parsed_args = argument_parser.parse_args(arg_str)
     introspect_config = parsed_args["introspect_config"]
 
-    assert introspect_config["collectors"] == [
-        "192.168.0.11:8086",
-        "192.168.0.1:8086",
-    ]
+    assert sorted(introspect_config["collectors"]) == sorted(
+        ["192.168.0.11:8086", "192.168.0.1:8086"]
+    )
     assert introspect_config["logging_level"] == "SYS_INFO"
     assert introspect_config["log_file"] == "cvfm.log"
     assert introspect_config["introspect_port"] == 9099
@@ -48,7 +44,9 @@ def test_introspect_config_from_file(argument_parser, arg_str):
 def test_vnc_config_from_file(argument_parser, arg_str):
     vnc_config = argument_parser.parse_args(arg_str)["vnc_config"]
 
-    assert vnc_config["api_server_host"] == ["192.168.0.11", "192.168.0.1"]
+    assert sorted(vnc_config["api_server_host"]) == sorted(
+        ["192.168.0.11", "192.168.0.1"]
+    )
     assert vnc_config["api_server_port"] == 8082
     assert vnc_config["api_server_use_ssl"] is True
     assert vnc_config["api_server_insecure"] is True
