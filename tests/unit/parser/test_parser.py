@@ -9,7 +9,7 @@ from cvfm import parser
 @mock.patch("cvfm.parser.random")
 def argument_parser(rand):
     rand = random
-    rand.seed(7)
+    rand.seed(14)
     return parser.CVFMArgumentParser()
 
 
