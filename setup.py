@@ -9,6 +9,7 @@ setup(
     zip_safe=False,
     long_description="Contrail vCenter Fabric Manager",
     install_requires=["six", "future"],
+    test_suite="tests",
     entry_points={
         "console_scripts": [
             "contrail-vcenter-fabric-manager = cvfm.__main__:server_main"
