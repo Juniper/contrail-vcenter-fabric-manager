@@ -2,9 +2,8 @@ from builtins import next
 from builtins import range
 from builtins import object
 import atexit
-import logging
 import time
-
+import logging
 import gevent
 
 from cvfm import constants as const
